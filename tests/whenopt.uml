@@ -1,0 +1,12 @@
+
+let
+
+    fun is x y = if x = y then () else raise Match
+
+in
+    putc ( chr_ 
+    (case getc_ () of
+	 ((is 555) _) => 666
+       | _ => 777))
+
+end

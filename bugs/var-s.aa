@@ -1,0 +1,7 @@
+
+let
+    fun B s = [text[s]text]
+    fun A link body = [text]
+in
+    [[B[text]]text[A[text][text]]]
+end

@@ -1,0 +1,14 @@
+let 
+  exception E of int
+  exception F
+
+  fun f x = if x = 0 then raise (E 88) else ()
+
+  fun g x = f x
+            handle E y => putc ?G
+in
+  g 1;
+  f 0
+  handle E y => putc (chr_ y)
+       | F => putc ?F
+end

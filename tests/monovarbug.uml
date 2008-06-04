@@ -1,0 +1,6 @@
+let
+    fun resolve _ = 1
+    and next _ = 0
+in
+    next ()
+end

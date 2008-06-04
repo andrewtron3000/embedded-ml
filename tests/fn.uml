@@ -1,0 +1,5 @@
+let
+    fun f1 () = ?a
+in
+    putc (f1 ()); putc (f1 ())
+end

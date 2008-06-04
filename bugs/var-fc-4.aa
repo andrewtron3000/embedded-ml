@@ -1,0 +1,8 @@
+
+let
+    fun B s = [<b>[s]</b>]
+    fun A link body = [<a href="[link]">[body]</a>]
+in
+    print
+    [[B[text]]text[A[text][text]]]
+end

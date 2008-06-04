@@ -1,0 +1,5 @@
+set line /dev/ttyUSB0
+set carrier-watch off
+set flow-control none
+set baud 19200
+

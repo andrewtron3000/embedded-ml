@@ -1,0 +1,585 @@
+\ Runtime system for the Forth backend of Humlock (GForth version)
+
+\ Define the global exception handler variable.
+\ aka exception_handler
+variable ex
+0 ex !
+
+\ Define a global with which to generate unique tags.
+\ aka newtag_variable
+variable nt
+0 nt !
+
+\ ( source_addr dest_addr length_in_words -- )
+\ aka efficient_copy
+: ey
+   0 2dup <> if 
+      do
+         2dup \ s d s d
+         swap \ s d d s
+         i 4 * + \ s d d s+i
+         @ \ s d d sw
+         swap \ s d sw d
+         i 4 * + \ s d sw d+i
+         ! \ s d 
+      loop
+   else
+      2drop
+   then
+   drop drop
+;
+
+\ ( target dest_addr length_in_words -- )
+\ aka efficient_set
+: es
+   0 2dup <> if 
+      do
+         2dup \ t d t d
+         i 4 * + \ t d t d+i
+         ! \ t d
+      loop
+   else
+      2drop
+   then
+   drop drop
+;
+
+\ Define the top stack frame
+\ Must be large enough to hold Limits.STACK_SIZE variables
+hex
+d00 constant numberStackVars
+create STACKframe numberStackVars 4 * allot
+
+( var number -- addr of var)
+: v
+  dup numberStackVars 1 - >
+  if
+     s" too many stack variables requested..." type cr
+     begin
+        1 drop
+     again
+ else
+     2 lshift STACKframe +
+ then
+;
+
+\
+\ Heap management
+\
+hex
+
+80000000 constant GMHEAPforwardbiton
+7fffffff constant GMHEAPforwardbitoff
+
+1fffffff constant GMHEAPmask
+60000000 constant GMHEAPtagmask
+00000000 constant GMHEAPuntracedmask
+20000000 constant GMHEAPtaggedmask
+40000000 constant GMHEAPtracedmask
+
+
+\ Dynamic Heap
+1ffff8 constant GMHEAPtotalsize \ 2M heap
+create GMHEAPbuffer GMHEAPtotalsize 2 * allot 
+variable GMHEAP
+variable GMHEAPactive
+variable GMHEAPinactive
+variable GMHEAPnextunused
+variable GMHEAPnextunusedinactive
+variable GMHEAPscavengeindex
+-1 constant GMHEAPillegaladdress
+
+variable GMHEAPscanindex
+
+
+\
+\  Standard heap routines.
+\
+
+\ initializeHeap creates an initial heap named GMHEAP.
+\ ( -- )
+: initializeHeap
+    GMHEAPbuffer GMHEAP !
+    0 GMHEAPnextunused !
+    0 GMHEAPnextunusedinactive !
+    0 GMHEAPscavengeindex !
+    0 GMHEAPactive !
+    GMHEAPtotalsize GMHEAPinactive !
+;
+
+\ hBytesRemaining returns the number of bytes of heap available for use.
+\ ( -- bytesRemaining )
+: hBytesRemaining
+    GMHEAPtotalsize GMHEAPnextunused @ - \ numavailablebytes
+;
+
+\ Used after garbage collection is complete, switches
+\ the heaps - using the new compacted one.
+\ ( -- )
+: hSwitchHeaps
+    GMHEAPactive @
+    0
+    = if
+        0 GMHEAPinactive !
+        GMHEAPtotalsize GMHEAPactive !
+    else
+        0 GMHEAPactive !
+        GMHEAPtotalsize GMHEAPinactive !
+    then
+    GMHEAPnextunusedinactive @ GMHEAPnextunused !
+    0 GMHEAPnextunusedinactive !
+    0 GMHEAPscavengeindex !
+;
+
+\ hPeek nondestructively looks at the current tag in the heap
+\ it also gets all heap bits.
+\ ( heapAddr -- heapAddr tag )
+: hPeek
+    dup @
+;
+
+\ hExtractTag nondestructively looks at the current tag in the heap
+\ it masks all heap bits out
+\ ( heapAddr -- heapAddr tag )
+: hExtractTag
+    dup                            \ heapAddr heapAddr
+    @ GMHEAPtagmask and            \ tag (with no heap bits)
+;
+
+
+( heapaddr -- heapaddr )
+: checkVarSanity
+  dup 
+  GMHEAP @ GMHEAPactive @ + 
+  < if 
+     s" GRRrrr TOO LOW" type 
+  then 
+  dup 
+  GMHEAP @ GMHEAPactive @ + GMHEAPtotalsize 1 - + 
+  > if 
+     s" GRRrrr TOO HI" type 
+  then
+;
+
+\ ( heapAddr -- )
+: dumpHeapElement
+    cr
+    s" nodeaddr = " type
+    dup u. \ heapaddr
+    hExtractTag \ heapAddr tag
+    swap \ tag heapAddr 
+    hPeek \ tag heapAddr tagwithbits
+    s" <" type s" tag=" type u. \ tag heapaddr 
+    swap \ heapaddr tag
+    case 
+       GMHEAPuntracedmask of \ heapaddr
+          s" value=" type
+          4 + @ u.
+       endof
+       GMHEAPtaggedmask of \ heapaddr
+          s" tag=" type
+          4 + @ u.
+       endof
+       GMHEAPtracedmask of \ heapaddr
+          hPeek \ heapAddr tag
+          GMHEAPmask and \ heapaddr len
+          0
+          2dup <> if 
+              do \ heapAddr 
+                  dup \ heapAddr heapAddr
+                  s" addr=" type
+                  i 1 + 4 * + \ heapAddr heapAddr+offset
+                  @ u.
+              loop
+          else
+              2drop
+          then
+          \ heapaddr
+          drop
+       endof
+       s" um... a default case in dumpHeapElement..." type cr \ default stuff here
+   endcase
+   s" >" type
+;
+
+\ setForwardBit sets the forward bit, and stores the forward pointer
+\ in the heapaddr[1].  The forward bit is
+\ used during the stop and copy garbage collection.
+\ ( newHeapAddr oldHeapAddr -- newHeapAddr )
+: setForwardBit
+    dup dup @                \ newHeapAddr oldHeapAddr oldHeapAddr tag
+    GMHEAPforwardbiton or    \ newHeapAddr oldHeapAddr oldHeapAddr tagforward
+    swap !                   \ newHeapAddr oldHeapAddr 
+    swap                     \ oldHeapAddr newHeapAddr
+    dup                      \ oldHeapAddr newHeapAddr newHeapAddr
+    rot                      \ newHeapAddr newHeapAddr oldHeapAddr
+    4 + !                    \ newHeapAddr
+;
+
+\ ( tag -- boolean )
+: isForwardBitSet
+    GMHEAPforwardbiton and
+    if
+        true
+    else
+        false
+    then
+;
+
+\ hLookup extracts the tag from a heap address 
+\ ( addr -- element_1 tag )
+: hLookup
+    dup                            \ heapAddr heapAddr
+    @ GMHEAPmask and               \ heapAddr tag
+    swap                           \ tag heapAddr 
+    4 + @                          \ tag element_1
+    swap                           \ element_1 tag
+;    
+
+\ hCopyToInactive copies a node into the inactive heap.  Used during
+\ garbage collection.
+\ ( old_addr -- old_addr new_addr )
+: hCopyToInactive
+    >r                                \ ( -- )
+    r@ hExtractTag                    \ ( oa tag -- )
+    case 
+       GMHEAPuntracedmask of \ old_addr
+          GMHEAPinactive @ GMHEAP @ + GMHEAPnextunusedinactive @ +
+          dup r@ @ GMHEAPforwardbitoff and swap ! \ oa ia 
+          dup 4 + r@ 4 + @ swap ! \ oa ia 
+          GMHEAPnextunusedinactive @ 8 + GMHEAPnextunusedinactive !
+       endof
+       GMHEAPtaggedmask of \ oa
+          GMHEAPinactive @ GMHEAP @ + GMHEAPnextunusedinactive @ +
+          dup r@ @ GMHEAPforwardbitoff and swap !
+          dup 4 + r@ 4 + @ swap !
+          GMHEAPnextunusedinactive @ 8 + GMHEAPnextunusedinactive !
+       endof
+       GMHEAPtracedmask of \ oa 
+          GMHEAPinactive @ GMHEAP @ + GMHEAPnextunusedinactive @ +
+          dup r@ @ GMHEAPforwardbitoff and swap ! \ oa ia
+          r@ @ GMHEAPmask and \ oa ia len
+          0
+          2dup <> if 
+             do \ oa ia 
+                2dup \ oa ia oa ia 
+                i 1 + 4 * + swap i 1 + 4 * + \ oa id id+off oa+off
+                @ swap ! \ oa id
+             loop
+          else
+             2drop
+             dup 4 + 0 swap ! \ store zero in first word if 0 len
+          then
+          r@ @ GMHEAPmask and 1 + 4 * \ oa id len+1
+          r@ @ GMHEAPmask and 0 = if \ add one more if the length was zero.
+             4 +
+          then
+          GMHEAPnextunusedinactive @ + GMHEAPnextunusedinactive !
+       endof
+       s" um... a default case in hCopyInactive..." type cr \ default stuff here
+   endcase \ old_addr
+   r> drop 
+;
+
+\ hEvacuateNode evacuates a node to the (currently) inactive heap.
+\ This is the first of two parts of garbage collection.  The second
+\ part is the scavenger.  See section 2.9.4 of Peyton-Jones/Lester
+\ ( oldHeapAddr -- newHeapAddr )
+: hEvacuateNode
+    hPeek \ oldHeapAddr tag
+    isForwardBitSet \ oldHeapAddr bool
+    if \ oldHeapAddr
+        hLookup \ element_1 tag (note element_1 contains new addr) 
+        drop \ element_1
+    else \ oldHeapAddr
+        hCopyToInactive \ oldHeapAddr newHeapAddr
+        swap            \ newHeapAddr oldHeapAddr
+        setForwardBit   \ newHeapAddr
+    then
+;
+
+\ hScavenge is designed to walk the new heap and pull nodes from the
+\ old heap into it.
+\ ( -- )
+: hScavenge
+    begin
+        GMHEAPinactive @ GMHEAPnextunusedinactive @ +
+        GMHEAPinactive @ GMHEAPscavengeindex @ +     
+        dup \ nextinactiveAddr scavengeAddr scavengeAddr
+        >r  \ nextinactiveAddr scavengeAddr
+        >
+    while
+            r@ GMHEAP @ + \ scavengeAddr
+            hExtractTag \ addr tag  
+            case
+                GMHEAPuntracedmask of \ addr
+                   drop 8
+                endof \ used_space
+                GMHEAPtaggedmask of \ addr
+                   dup \ addr addr
+                   4 + @ \ addr oldaddr
+                   dup 0 <> if
+                      hEvacuateNode \ addr new_addr
+                      swap
+                      4 + !
+                   else
+                      2drop
+                   then
+                   8
+                endof \ used_space
+                GMHEAPtracedmask of \ addr
+                   dup @ GMHEAPmask and \ addr len
+                   0
+                   2dup <> if
+                      do \ addr
+                         dup \ addr addr
+                         i 1 + 4 * + @ \ addr oldaddr
+                         hEvacuateNode \ addr newhaddr
+                         swap dup      \ newhaddr addr addr
+                         rot swap      \ addr newhaddr addr
+                         i 1 + 4 * + ! \ addr 
+                      loop
+                   else
+                      2drop
+                   then
+                   drop
+                   r@ GMHEAP @ + @ GMHEAPmask and 1 + 4 * \ len+1
+                   dup 4 = if 
+                      \ add four more if the length was zero.
+                      4 +
+                   then
+                endof \ used_space
+                s" hmmmmmmmm" type cr
+            endcase
+            GMHEAPscavengeindex @ + GMHEAPscavengeindex !
+            r> drop
+    repeat
+    r> drop
+;
+
+: hScan
+    0 GMHEAPscanindex !
+    begin
+        GMHEAPactive @ GMHEAPnextunused @ +
+        GMHEAPactive @ GMHEAPscanindex @ +     
+        dup \ nextinactiveAddr scavengeAddr scavengeAddr
+        >r  \ nextinactiveAddr scavengeAddr
+        >
+    while
+            r@ GMHEAP @ + \ scavengeAddr
+            dup dumpHeapElement
+            hExtractTag \ addr tag  
+            case
+                GMHEAPuntracedmask of \ addr
+                   drop 8
+                endof \ used_space
+                GMHEAPtaggedmask of \ addr
+                   drop 8
+                endof \ used_space
+                GMHEAPtracedmask of \ addr
+                   r@ GMHEAP @ + @ GMHEAPmask and \ addr len
+                   1 = if
+                      r@ GMHEAP @ + 4 + @ 0 = if
+                         cr cr cr s" yikes at " type r@ u. cr cr cr
+                      then 
+                   then
+                   drop
+                   r@ GMHEAP @ + @ GMHEAPmask and 1 + 4 * \ len+1
+                   r@ GMHEAP @ + @ GMHEAPmask and 0 = if 
+                      \ add one more if the length was zero.
+                      4 +
+                   then
+                endof \ used_space
+            endcase
+            GMHEAPscanindex @ + GMHEAPscanindex !
+            r> drop
+    repeat
+    r> drop
+;
+
+: hScanInactive
+    0 GMHEAPscanindex !
+    begin
+        GMHEAPinactive @ GMHEAPnextunusedinactive @ +
+        GMHEAPinactive @ GMHEAPscanindex @ +     
+        dup \ nextinactiveAddr scavengeAddr scavengeAddr
+        >r  \ nextinactiveAddr scavengeAddr
+        >
+    while
+            r@ GMHEAP @ + \ scavengeAddr
+            dup dumpHeapElement
+            hExtractTag \ addr tag  
+            case
+                GMHEAPuntracedmask of \ addr
+                   drop 8
+                endof \ used_space
+                GMHEAPtaggedmask of \ addr
+                   drop 8
+                endof \ used_space
+                GMHEAPtracedmask of \ addr
+                   r@ GMHEAP @ + @ GMHEAPmask and \ addr len
+                   1 = if
+                      r@ GMHEAP @ + 4 + @ 0 = if
+                         cr cr cr s" yikes at " type r@ u. cr cr cr
+                      then 
+                   then
+                   drop
+                   r@ GMHEAP @ + @ GMHEAPmask and 1 + 4 * \ len+1
+                   r@ GMHEAP @ + @ GMHEAPmask and 0 = if 
+                      \ add one more if the length was zero.
+                      4 +
+                   then
+                endof \ used_space
+            endcase
+            GMHEAPscanindex @ + GMHEAPscanindex !
+            r> drop
+    repeat
+    r> drop
+;
+
+( context_len -- context_len )
+: dumpStackFrame
+   dup dup s" contextlen=" type u.
+   0
+   2dup <> if
+      do
+         i v @ 
+         dup 0 <> if
+            dumpHeapElement
+         else
+            drop
+         then  
+      loop
+   else
+      2drop
+   then   
+;
+
+( context_len -- )
+: hTransferStackFrame
+   ex @
+   dup 0 <> if
+      hEvacuateNode ex !
+   else
+      drop
+   then
+   0
+   2dup <> if
+      do
+         i v @ 
+         dup 0 <> if 
+            hEvacuateNode i v !
+         else
+            drop
+         then
+      loop
+   else
+      2drop
+   then   
+;
+
+( context_len -- )
+: hGarbageCollect
+\   s" <startgc currheap=" type GMHEAP @ GMHEAPactive @ + u. s" nextheap=" type GMHEAP @ GMHEAPinactive @ + u. s" >" type  
+   hTransferStackFrame
+   hScavenge
+   hSwitchHeaps
+\   s" <endgc>" type
+;
+
+\ ( context_len size_in_word32 -- size_in_word32 )
+: checkHeapForSpace 
+   dup 4 * \ context_len size_in_word32 size_in_bytes
+   hBytesRemaining 
+   > if
+      swap \ size_in_word32 context_len
+      hGarbageCollect \ size_in_word32
+      dup 4 * \ size_in_word32 size_in_bytes
+      hBytesRemaining
+      > if 
+         cr cr cr s" heap space expended " type cr cr cr
+         begin
+            1 drop
+         again
+      then \ size_in_word32
+   else
+      swap \ size_in_word32 context_len
+      drop \ size_in_word32 
+   then
+;
+
+( context_len size_in_word32 -- addr )
+: alloc_
+   checkHeapForSpace 
+   GMHEAP @ GMHEAPactive @ + GMHEAPnextunused @ + 
+   swap \ new_heap_addr size_in_word32   
+   GMHEAPnextunused @ swap 4 * + GMHEAPnextunused !
+;
+
+\ (context_len value -- addr)
+\ aka alloc_untraced
+: au
+   >r 2 alloc_ \ addr
+   dup 4 + r> swap !
+   dup 0 swap !
+;
+
+\ (context_len tag -- addr)
+\ aka alloc_tagged
+: at
+   GMHEAPmask and GMHEAPtaggedmask or >r \ context_len 
+   2 alloc_ dup                          \ addr addr
+   r> swap !                             \ addr
+;
+
+\ ( context_len traced_size_in_word32 -- addr )
+\ aka alloc_traced_array
+: ay
+   >r                       \ context_len 
+   r@ 1 +                   \ context_len traced_size+1
+   r@ 0 = if                \ get one more if asked for a zero len arr                 
+      1 + 
+   then
+   alloc_                   \ addr
+   dup r@ GMHEAPmask and GMHEAPtracedmask or swap ! \ addr
+   dup 4 + 0 swap ! \ clear out first word always (for 0 length arrs)
+   r> drop
+;
+
+\ ( context_len traced_size_in_word32 -- addr )
+\ aka alloc_traced_string
+: as
+   >r               \ context_len
+   r@ dup 2 * + 1 + \ context_len total_len_reqd
+   r@ 0 = if        \ get one more if asked for a zero len arr                 
+      1 + 
+   then
+   alloc_           \ addr
+   dup r@           \ addr addr traced_size_in_w32
+   GMHEAPmask and GMHEAPtracedmask or swap !
+   r@ 0 <> if
+      dup 4 + dup r@   \ addr addr+4 addr+4 traced_size_in_w32
+      4 *              \ addr addr+4 addr+4 s_bytes
+      +                \ addr addr+4 a+l+4
+      r>             
+      0
+      do               \ addr addr+4 a+l+4
+         2dup          \ addr addr+4 a+l+4 addr+4 a+l+4
+         i 8 * +       \ addr addr+4 a+l+4 addr+4 a+l+4+8i
+         dup 0 swap !  \ addr addr+4 a+l+4 addr+4 a+l+4+8i 
+         swap  
+         i 4 * + !
+      loop
+      drop drop
+   else
+      dup 4 + 0 swap ! \ clear out first word if zero length
+      r> drop
+   then
+;
+
+initializeHeap
+
+: c0_getc key ;
+
+\ end of runtime
+

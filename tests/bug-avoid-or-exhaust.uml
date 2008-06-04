@@ -1,0 +1,14 @@
+let 
+  fun list-zip (l1, l2) =
+    let 
+	fun f (x1::l1, x2::l2, acc) = f (l1, l2, (x1, x2)::acc)
+	  | f (nil, _, acc) = acc
+	  | f (_, nil, acc) = acc
+          (* Uncomment for compiler error 
+          | f (nil, nil, acc) = acc *)
+    in
+      f (l1, l2, nil)
+    end
+in
+  list-zip (nil, nil)
+end

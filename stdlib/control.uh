@@ -1,0 +1,209 @@
+
+val require-std = provide-std
+val require-list = provide-list
+val provide-control = ()
+
+(* memozied, infinite streams *)
+datatype a istream = Memo of a * istream
+                   | Fun of unit -> a
+
+(* zippered stream *)
+  (* previous elmts in reverse * rest of stream *)
+type a zip = a list * a istream
+
+type effect = unit -> unit
+type (a, b) control = (a zip * a zip cont * a zip cont * effect) -> (a zip * effect * b)
+
+fun cntrl-noop () = ()
+(* succeed : b -> (a, b) control
+  always succeed with the given result *)
+fun cntrl-succeed r (s, k, k0, e) = (s, e, r)
+(* val (a, b) cntrl-succeed : b -> (a, b) control = cntrl-succeed *)
+(* do : effect -> (a, unit) control
+  always succeed with the given effect *)
+fun cntrl-do e (s, k, k0, e') = (s, e o e', ())
+(* fail : (a, b) control
+ rollback the stream *)
+fun cntrl-fail (s, k, k0, e) = throw s to k
+
+(* -- : (a, b) control * (b -> (a, c) control) -> (a, c) control
+  sequential composition on success *)
+fun -- (c1, c2) (s, k, k0, e) =
+    let
+      val (s, e, r) = c1 (s, k, k0, e)
+    in
+      c2 r (s, k, k0, e)
+    end
+(* val (a,b,c) -- : (a, b) control * (b -> (a, c) control) -> (a, c) control = -- *)
+infix 2 --
+
+(* || : (a, b) control * (a, b) control -> (a, b) control
+  sequential composition on failure *)
+fun || (c1, c2) (s, k, k0, e) =
+    letcc sout in
+      let 
+        fun push (nil, s) = s
+          | push (h :: t, s) = push (t, (Memo (h, s)))
+        (* remember where we are *)
+        val (prev, t) = s
+
+        val (prev', t') = 
+              letcc fout in
+                throw let 
+                        val k0 = case prev
+                            of nil => fout (* nothing seen yet *)
+                             | _ => k0
+                        val ((prev', t'), e, r) = c1 ((nil, t), fout, k0, e)
+                      in
+                        (* Add old input back into cache on success *)
+                        ((prev' @ prev, t'), e, r)
+                      end
+                  to sout
+              end
+      in
+        (* Otherwise rollback any new input and continue *)
+        c2 ((prev, push (prev', t')), k, k0, e)
+      end
+    end
+(* val (a,b) || : (a, b) control * (a, b) control -> (a, b) control = || *)
+infix 1 ||
+
+(* !! : (a, b) control -> (a, b) control
+  cut!  prune backtracking before trying the given control *)
+fun !! c ((_, t), k, k0, e) =
+    let
+      do e ()
+      (* throw away anything that we've seen *)
+      val s = (nil, t)
+    in
+      c (s, k0, k0, cntrl-noop)
+    end
+(* val (a,b) !! : (a, b) control -> (a, b) control = !! *)
+
+(* ^^ : (a, b) control -> (a, b) control 
+  advance one "token" in the input stream 
+  and then try c *)
+fun ^^ c (s, k, k0, e) =
+    let
+      (* Advance the stream, keeping the old head, if any *)
+      val s = case s of 
+              (* if there is a memoized value, use it *)
+                (l, Memo (h, t)) => (h :: l, t)
+              (* otherwise, read a new value *)
+              | (l, Fun f) => ((f ()) :: l, Fun f)
+    in
+      c (s, k, k0, e)
+    end
+(* val (a,b) ^^ : (a, b) control -> (a, b) control = ^^ *)
+
+(* satisfy : (a -> bool) -> (a, a) control
+  apply the given predicate to the head
+  of the stream, succeed when true *)
+fun cntrl-satisfy p (s, k, k0, e) = 
+    let val (r, s) = case s of
+                     (* no current input, but we have a memoized one *)
+                       (nil, Memo (h, t)) => (h, (h :: nil, t))
+                     (* no current input, no memo -> read a new one *)
+                     | (nil, Fun f) => let val v = f () in
+                                          (v, (v :: nil, Fun f))
+                                        end
+                     (* use the current value *)
+                     | (v :: l, t) => (v, (v :: l, t))
+    in
+      if p r then (s, e, r) 
+      else throw s to k
+    end
+(* val (a) cntrl-satisfy : (a -> bool) -> (a, a) control = cntrl-satisfy *)
+
+val cntrl-any = cntrl-satisfy (fn _ => true)
+(* val  cntrl-any : (a,a) control = cntrl-any *)
+
+fun cntrl-wth (c, f) = c -- (fn r => cntrl-succeed (f r))
+(* val (a,b,c) cntrl-wth : (a,b) control * (b -> c) -> (a,c) control = cntrl-suchthat *)
+fun cntrl-suchthat (c, p) = c -- (fn r => if p r 
+                                          then cntrl-succeed r
+                                          else cntrl-fail)
+(* val (a,b) cntrl-suchthat : (a,b) control * (b -> bool) -> (a,b) control = cntrl-suchthat *)
+fun cntrl-return (c, r) = c -- (fn _ => cntrl-succeed r)
+(* val (a,b,c) cntrl-return : (a,b) control * c -> (a,c) control = cntrl-return *)
+
+fun cntrl-when (c, f) = 
+    c -- (fn x => case f x of SOME r => cntrl-succeed r
+                            | NONE => cntrl-fail)
+(* val (a,b,c) cntrl-when : (a,b) control * (b -> c option) -> (a,c) control = cntrl-when*)
+
+fun cntrl-maybe f = cntrl-when (cntrl-any, f)
+(* val cntrl-maybe : (a -> b option) -> (a, b) control = cntrl-maybe *)
+
+infix 2 cntrl-wth
+infix 2 cntrl-suchthat
+infix 2 cntrl-return
+infix 2 cntrl-when
+
+(* sequential composition WITHOUT commit *)
+fun && (c1, c2) = c1 -- (fn r1 => c2 -- (fn r2 => cntrl-succeed (r1, r2)))
+(* val (a,b,c) && : (a, b) control * (a, c) control -> (a, b * c) control = && *)
+infix 4 && (* was 3 *)
+
+(* sequential, then take the left/right *)
+fun << (c1, c2) = c1 -- (fn r => c2 cntrl-return r)
+fun >> (c1, c2) = c1 -- (fn _ => c2)
+infix 4 >>
+infix 4 <<
+
+(* sequential composition with commit *)
+fun ** (c1, c2) = c1 >> !! c2
+(* val (a,b,c) ** : (a,b) control * (a,c) control -> (a,c) control = ** *)
+infix 4 ** (* was 3 *)
+
+fun cntrl-fix f arg = f (cntrl-fix f) arg
+fun $ p arg = p () arg
+
+(* loop until failure (never succeeds) *)
+fun cntrl-forever c = cntrl-fix (fn loop => c >> loop)
+
+(* like "(mapPartial id) o repeat" *)
+fun cntrl-repeatpartial c = 
+    cntrl-fix (fn loop => c && loop cntrl-wth (fn (NONE, l) => l 
+                                                | (SOME x, l) => x :: l)
+                       || cntrl-succeed nil)
+(* loop until success, returning only that success *)
+fun cntrl-until c = cntrl-fix (fn loop => c || loop)
+
+(* loop a fixed number of times, unless there is a failure *)
+fun cntrl-repeatn n c =
+    let 
+      fun loop 0 () = cntrl-succeed ()
+        | loop n () = c >> $(loop (n - 1))
+    in
+      $(loop n)
+    end
+
+(* test c1 at each iteration of the loop, but don't return it's result *)
+(* fun cntrl-while c1 c2 = cntrl-repeat (c1 >> c2) *)
+
+fun cntrl-run f c = 
+    let
+      val (e, r) =
+        letcc sout in
+          let val s = 
+            letcc fout in
+              throw let val (s, e, r) = (c ((nil, Fun f), fout, 
+                                            fout, cntrl-noop))
+                    in
+                      (e, SOME r)
+                    end
+                to sout
+            end
+          in
+            (cntrl-noop, NONE)
+          end
+        end
+
+      (* Commit any remaining actions *)
+      do e ()
+    in
+      (* Return the result *)
+      r
+    end
+

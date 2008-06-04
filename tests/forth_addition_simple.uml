@@ -1,0 +1,5 @@
+let
+  val y = 1 + 5
+in
+  y
+end

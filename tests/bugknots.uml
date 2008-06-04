@@ -1,0 +1,60 @@
+let
+
+(*
+    val () =
+	letcc out
+	in
+	    letcc toplevel
+	    in
+		sethandler_ toplevel;
+		throw () to out
+	    end;
+
+	    putc ?!;
+
+	    halt ()
+	end
+*)
+
+    fun list-app (f, l) =
+	let
+	    fun a nil = halt ()
+	      | a (h :: _) = (f h; ())
+	in
+	    a l
+	end
+
+    val bi-zero = {sign = 999, digits = nil}
+
+    val { bi-fromint, bi-tostring } = 
+    let 
+
+      val bn-hsgnextmask = notb 0
+
+      fun bi-tostring ({sign, digits}) = ()
+
+      fun bi-fromint _ = bi-zero
+    in
+      { bi-tostring = bi-tostring, 
+	bi-fromint = bi-fromint }
+    end
+
+
+    val bk-sol-machines = 
+      {name = (), sol = {| (5555, 1111) |} } :: nil
+
+    val thePromotionScores = 
+	(* -- magic line -- *)
+	(bi-fromint ()) ::
+	nil
+	    
+    do 	list-app (fn {name=_,sol} => 
+		   let 
+		   in 
+		       length sol;
+		       () 
+		   end,  bk-sol-machines)
+in
+    list-app (fn _ => (), thePromotionScores);
+    halt ()
+end

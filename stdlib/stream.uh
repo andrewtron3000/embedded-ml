@@ -1,0 +1,56 @@
+
+val provide-stream = ()
+
+type a susp = unit -> a
+    
+datatype a front = Nil | Cons of a * front susp
+type a stream = a front susp
+
+fun stream-delay s =
+    let
+        val r = ref (fn () => raise Match)
+    in
+        r := (fn () => 
+              let val ss = s ()
+              in 
+		  r := (fn () => ss);
+		  ss
+              end);
+        (fn () => (!r) ())
+    end
+
+fun stream-force s = s ()
+
+(* SUSP workaround generalization/unification bug
+   (it's probably because  let fun f () = e
+                           in f end  isn't a value)
+ *)
+(* val stream-empty = (fn () => Nil) *)
+fun stream-empty () = Nil
+
+(* no memoization; there's no point *)
+fun stream-fromlist nil = stream-empty
+  | stream-fromlist (h :: t) = (fn () => Cons (h, stream-fromlist t))
+
+(* ditto. *)
+fun stream-fromstring s =
+    let
+	fun rs n () =
+	    if n chk length s 
+	    then Nil
+	    (* PERF sub_ *)
+	    else Cons(sub(s, n), rs (n + 1))
+    in
+	rs 0
+    end
+
+fun stream-app f =
+    let
+	fun sa s =
+	    case stream-force s of
+		Nil => ()
+	      | Cons (h, s') => (f h; sa s')
+    in
+	sa
+    end
+

@@ -1,0 +1,9 @@
+val provide-util = ()
+
+(* puzzles *)
+fun for lo hi f =
+    if lo > hi then ()
+    else (f lo; for (lo + 1) hi f)
+fun ford lo hi b f =
+    if lo > hi then b
+    else (ford (lo + 1) hi (f (lo, b)) f)

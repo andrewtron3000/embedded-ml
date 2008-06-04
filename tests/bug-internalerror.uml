@@ -1,0 +1,5 @@
+let
+    fun f (UNBOUND_CONSTRUCTOR _) = 222
+in
+    ()
+end

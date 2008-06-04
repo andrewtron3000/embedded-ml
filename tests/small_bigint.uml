@@ -1,0 +1,13 @@
+let 
+  import "std.uh"
+  import "string.uh"
+  import "int.uh"
+  import "list.uh" 
+  import "bigint.uh"
+
+  val x1 = bi-tostring (bi-subt (bi-fromint 10, bi-fromint 350) handle _ => ( (print "whoah nelly") ; (bi-fromint 667) )) handle Div => "got div exception" | _ => "got exception"
+
+in
+  print x1
+end
+

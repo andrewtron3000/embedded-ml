@@ -1,0 +1,23 @@
+\ Johns Hopkins University / Applied Physics Laboratory
+\ Eacker case structure.  This case structure is in common
+\ use and is standardized in the CORE Extensions Word Set of
+\ the ANS Forth standard.  (It is inferior to the case structure
+\ provided in my Forth!)
+\ Copied from Appendix A of ANS Forth standard.
+
+0 constant case immediate
+
+: of		\ ( #of -- orig #of+1 )
+   1+ >r				\ keep count of 'of's
+   postpone over postpone =
+   postpone if postpone drop		\ compile code to test argument
+   r>
+; immediate
+
+: endof		\ ( orig1 #of -- orig2 #of )
+   >r postpone else r> ; immediate
+
+: endcase	\ ( orig1..orign n -- )
+   postpone drop			\ compile drop if no match
+   ?dup if 0 do postpone then loop then	\ resolve all 'endof' branches
+; immediate

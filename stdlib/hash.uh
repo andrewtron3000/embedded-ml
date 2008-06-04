@@ -1,0 +1,73 @@
+val require-std = provide-std
+val require-list = provide-list
+val provide-hash = ()
+
+type (a,b) hash = ((a -> int) * ((a * a) -> bool) * ((a * b) list array))
+
+fun hash-new (hf, eq, size) =
+    let
+	      val ar = array (size, nil)
+    in
+	      (hf, eq, ar)
+    end
+
+fun hash-get ((hf, eq, h), key) =
+    let
+	      val idx = (hf key) mod (length h)
+	      fun heq (a,b) = eq (key, a)
+	      val pair = list-find heq (sub(h, idx))
+        (* do print ((int-tostring idx) ^ " g\n") *)
+    in
+	      case pair of SOME (a,b) => SOME b
+		               | NONE => NONE
+    end
+    
+fun hash-put ((hf, eq, h), key, value) =
+    let
+	      val idx = (hf key) mod (length h)
+	      fun hne (a,b) = not (eq (key, a))
+	      val newlist = list-filter hne (sub(h, idx))
+        (* do print ((int-tostring idx) ^ " p\n") *)
+    in
+	      update (h, idx, (key, value) :: newlist)
+    end
+
+fun string-hash a =
+    let
+	      val fnv32-init = 0x811c9dc5
+	      val fnv32-prime = 0x01000193
+	      fun fnv32 (octet : char, hval) =
+	          let
+		            val hval = (hval * fnv32-prime) xorb ord octet
+	          in
+		            hval
+	          end
+	      val hash = array-foldl fnv32 fnv32-init a
+	  (* do print (" hash " ^ a ^ " -> ") *)
+    in
+	      hash
+    end
+
+(* Robert Jenkins' 32-bit integer hash function.
+uint32_t hash( uint32_t a)
+{
+   a = (a+0x7ed55d16) + (a<<12);
+   a = (a^0xc761c23c) ^ (a>>19);
+   a = (a+0x165667b1) + (a<<5);
+   a = (a+0xd3a2646c) ^ (a<<9);
+   a = (a+0xfd7046c5) + (a<<3);
+   a = (a^0xb55a4f09) ^ (a>>16);
+   return a;
+} *)
+fun int-hash i = 
+    let
+        val a = (i + 0x7ed55d16) + (i shl 12)
+        val a = (a xorb 0xc761c23c) xorb (a shr 19)
+        val a = (a + 0x165667b1) + (a shl 5)
+        val a = (a + 0xd3a2646c) xorb (a shl 9)
+        val a = (a + 0xfd7046c5) + (a shl 3)
+        val a = (a xorb 0xb55a4f09) xorb (a shr 16)
+    in
+        a
+    end
+

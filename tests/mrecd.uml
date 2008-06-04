@@ -1,0 +1,23 @@
+(* test mutual recursion on datatypes *)
+let
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+
+    datatype even = 
+	Succ of odd
+      | Zero
+    and odd = Next of even
+	
+    fun counte (Succ d) = 1 + counto d
+      | counte (Zero) = 0
+	
+    and counto (Next e) = 1 + counte e
+	
+    val six = Succ (Next (Succ (Next (Succ (Next Zero)))))
+	
+in
+    print "Should be 6:\n";
+    print (int-tostring (counte six));
+    print "\n"
+end

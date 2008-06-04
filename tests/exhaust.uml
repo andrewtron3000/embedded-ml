@@ -1,0 +1,16 @@
+let
+    datatype t = A | B | C
+
+
+    fun inexhaustive A = (putc ?A; inexhaustive B)
+      | inexhaustive B = putc ?B
+in
+    (* exhaustive *)
+    (case B of
+	 A => putc ?a
+       | B => putc ?b
+       | C => putc ?c);
+
+    inexhaustive A;
+    inexhaustive B
+end

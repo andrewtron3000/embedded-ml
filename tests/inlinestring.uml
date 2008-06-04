@@ -1,0 +1,11 @@
+let
+    import "std.uh"
+    import "string.uh"
+
+    val s = "this is my cool string"
+
+    fun loop 0 = ()
+      | loop n = putc (sub_ (s, n))
+in
+    loop 10
+end

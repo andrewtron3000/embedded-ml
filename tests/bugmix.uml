@@ -1,0 +1,66 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+
+    type bignat = int list
+    datatype bi-sign = POS | NEG
+    datatype bigint = BI of {sign : bi-sign, digits : bignat}
+
+    exception Negative
+    exception DivideByZero
+
+    val bi-zero      = BI {sign = POS, digits = nil}
+
+    val { bi-fromint, bi-tostring } = 
+    let 
+
+    val bn-hmask       = 0x7FFF
+    val bn-hsgnextmask = notb bn-hmask
+
+    fun bi-tostring (BI {sign, digits}) = "hey"
+
+    fun bi-fromint _ = bi-zero
+    in
+      { bi-tostring = bi-tostring, 
+	bi-fromint = bi-fromint }
+    end
+
+
+    val bk-sol-machines = 
+      {name = "000",
+       sol = 
+       {| 
+	(3, 4),
+	(2, 3),
+	(1, 1) |} } ::
+
+      nil
+
+    fun bk-find-prob-by-width width =
+	list-find (fn {name=_,sol} => 
+		   let val n = length sol
+		   in 
+		       putc (chr (ord ?0 + n));
+		       putc ?\n;
+		       n = width
+		   end) bk-sol-machines
+
+    val thePromotionScores = 
+	(* -- magic line -- *)
+	(0, bi-fromint ()) ::
+	nil
+
+    fun assessPubs () : unit =
+	list-app (fn (r, s) => 
+			 print ( bi-tostring s ^ "\n"))
+		thePromotionScores
+	    
+    do (case bk-find-prob-by-width 3 of
+	    NONE => print "FIXME XXX no\n"
+	  | SOME _ => print "ok, found\n")
+
+in
+    ref (assessPubs ());
+    print "umix deleted sorry\n"
+end

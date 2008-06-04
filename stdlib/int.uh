@@ -1,0 +1,74 @@
+val provide-int = ()
+val require-string = provide-string
+
+fun int-tostring x = 
+    let	
+	fun digtos x = array(1, chr (ord ?0 + x))
+	fun pitos x = if x < 10
+		      then digtos x
+		      else pitos(x div 10) ^ digtos(x mod 10)
+    in
+	if x < 0 then "~" ^ pitos (0 - x) else pitos x
+    end
+
+fun int-compare (n, m) =
+    if n < m
+    then LESS
+    else if n > m then GREATER
+         else EQUAL
+
+val int-hexdigs = "0123456789abcdef"
+(* int-tohexstringx d n
+   convert 'n' to a d-digit string,
+   mod 2^(4 * d) *)
+fun int-tohexstringx nibbles x =
+    let
+	fun digtos x = array(1, sub (int-hexdigs, x))
+	fun pitos 0 _ = ""
+	  | pitos n x = pitos (n - 1) (x div 16) ^ digtos(x mod 16)
+    in
+	pitos nibbles x
+    end
+
+val int-tohexstring = int-tohexstringx 8
+
+(* note: only parses non-neg ints less than maximum *)
+val INT_FROMSTRING_MAX = 2147483647
+fun int-fromstring s =
+    letcc exit in
+    let
+	      fun loopy (acc, n) =
+		        if n chk length s
+		        then throw (SOME acc) to exit
+		        else
+		            let 
+                    val c = ord (sub(s, n))
+			              val next = acc * 10 + (c - ord ?0)
+		            in
+			              if c >= ord ?0
+			                 andalso c <= ord ?9
+			                 (* never get here if it's not 0-9 *)
+			                 andalso next < INT_FROMSTRING_MAX
+			              then loopy(next, n + 1)
+			              else throw NONE to exit
+		            end
+	  in
+	      loopy (0, 0)
+	  end
+end
+
+(* to big-endian 32 bit, as a string *)
+fun int-tobe32 n =
+    {| chr ((n shr 24) andb 0xFF),
+       chr ((n shr 16) andb 0xFF),
+       chr ((n shr 8) andb 0xFF),
+       chr (n andb 0xFF) |}
+
+fun int-frombe32 s =
+    (ord (sub(s, 0)) shl 24) + 
+    (ord (sub(s, 1)) shl 16) +
+    (ord (sub(s, 2)) shl 8) +
+    (ord (sub(s, 3)))
+
+fun int-max (x,y) = if x > y then x else y
+fun int-min (x,y) = if x < y then x else y

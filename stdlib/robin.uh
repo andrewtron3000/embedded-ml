@@ -1,0 +1,277 @@
+
+val require-s0 = provide-s0
+val require-list = provide-list
+val require-int = provide-int
+val require-array = provide-array
+val require-queues = provide-queues
+val require-tasks = provide-tasks
+val provide-robin = ()
+
+type robin-packet = 
+     {
+      dst : char,
+      src : char,
+      flags : char,
+      len : int,
+      data : char array
+     }
+
+exception Robin-error of string
+exception Robin-message of (int * char array)
+
+(* *)
+fun robin-compute-checksum pkt = 
+    let 
+        val d = ord (#dst/robin-packet pkt)
+        val s = ord (#src/robin-packet pkt)
+        val f = ord (#flags/robin-packet pkt)
+        val l = #len/robin-packet pkt
+        val hdr = d + s + f + l
+        val total = hdr + (array-foldl (fn (x,y) => (ord x) + y) 
+                                       0 
+                                       (#data/robin-packet pkt))
+    in
+        chr (total andb 0xff)
+    end
+
+(* *)
+fun robin-packet-tostring pkt =
+    let 
+        val dst = int-tohexstring (ord (#dst/robin-packet pkt))
+        val src = int-tohexstring (ord (#src/robin-packet pkt))
+        val flags = int-tohexstring (ord (#flags/robin-packet pkt))
+        val len = int-tohexstring (#len/robin-packet pkt)
+
+        val bytestring = array-foldl (fn (x,l) => l ^ (int-tohexstring (ord x))) 
+                                     [] 
+                                     (#data/robin-packet pkt)
+
+        val cksum = int-tohexstring (ord (robin-compute-checksum pkt))
+    in
+        [[dst] [src] [flags] [len] [bytestring] [cksum]]
+    end
+
+(* *)
+fun robin-checksum-valid pkt received = 
+    let
+        val computed = ord (robin-compute-checksum pkt)
+    in
+        computed = received
+    end
+
+
+val START_CHAR = chr 0xaa
+val LEADIN_CHAR = chr 0x99 
+val MAX_DATA_LEN = 59
+
+datatype receivestate = 
+         START 
+       | LEADIN
+       | DEST 
+       | SRC 
+       | FLAGS
+       | LEN 
+       | DATA of int
+       | CKSUM
+
+(* *)
+fun robin-send-packet pkt =
+    let 
+        do scip-settestpointbit 0 true
+        val () = putcs0 START_CHAR
+        val () = putcs0 LEADIN_CHAR
+        val () = putcs0 (#dst/robin-packet pkt)
+        val () = putcs0 (#src/robin-packet pkt)
+        val () = putcs0 (#flags/robin-packet pkt)
+        val () = putcs0 (chr (#len/robin-packet pkt))
+        val () = s0-output (#data/robin-packet pkt)
+        val () = putcs0 (robin-compute-checksum pkt)
+        do sleep 1
+        do scip-settestpointbit 0 false
+    in
+        ()
+    end
+
+(* *)
+fun robin-receive-packet () =
+    let
+        fun robin-receiver state =
+            let 
+                 val c = s0-getc ()
+             in
+                case state of 
+                    START => if (ord c) = (ord START_CHAR)
+                             then robin-receiver LEADIN
+                             else robin-receiver START
+                  | LEADIN => if (ord c) = (ord LEADIN_CHAR)
+                              then robin-receiver DEST
+                              else robin-receiver START
+                  | DEST => 
+                    let 
+                        val src = s0-getc ()
+                        val flags = s0-getc ()
+                        val len = ord (s0-getc ())
+                        val ds = s0-inputN len
+                        val cksum = s0-getc ()
+                        val pkt = { dst=c, src=src, flags=flags, len=len, data=ds }
+                    in
+                        if robin-checksum-valid pkt (ord cksum)
+                        then pkt
+                        else robin-receiver START
+                      end
+                  | _ => raise Robin-error "receiver confused"
+             end
+    in
+        robin-receiver START
+    end
+
+fun robin-check-sanity-phase-1 ds = 
+    let
+        val ds-len = length ds
+                     
+        fun count-starts i = if i < ds-len andalso ord (sub(ds, i)) = ord (START_CHAR) 
+                             then count-starts (i + 1)
+                             else i
+        
+        val n-starts = count-starts 0
+                       
+        val b = ( (n-starts > 0) andalso
+                  (ds-len > (n-starts + 5 + 1)) )
+    in
+        (b, n-starts)
+    end
+
+fun robin-check-sanity ds =
+    case robin-check-sanity-phase-1 ds of 
+        (true, i) =>
+        let
+            val pkt-idx = i + 1
+            val dst = sub(ds, pkt-idx)
+            val src = sub(ds, pkt-idx + 1)
+            val flags = sub(ds, pkt-idx + 2)
+            val len = ord (sub(ds, pkt-idx + 3))
+            val b = ( ( ord (sub(ds, i)) = ord (LEADIN_CHAR) ) andalso
+                      ( len <= MAX_DATA_LEN ) andalso
+                      ( len + 5 (* header len *) + i + 1 (* preamble len *) ) = ( length ds ) )
+        in
+            (b, pkt-idx)
+        end
+      | (false, _) => (false, 0)
+
+fun robin-decode-packet ds =
+    case robin-check-sanity ds of
+        (true, i) =>
+        let
+            val dst = sub(ds, i)
+            val src = sub(ds, i + 1)
+            val flags = sub(ds, i + 2)
+            val len = ord (sub(ds, i + 3))
+            val datas = array-tabulate len (fn j => sub(ds, i + j + 4)) 
+            val cksum = sub(ds, i + 4 + len)
+            val pkt = { dst=dst, src=src, flags=flags, len=len, data=datas }
+        in
+            ( if robin-checksum-valid pkt (ord cksum)
+              then SOME pkt
+              else NONE )
+        end
+      | (false, _) => NONE
+
+
+
+
+(*     let *)
+
+                                
+(*         fun get-header-fields i = *)
+(*             let *)
+(*                 val src = sub(ds, i) *)
+(*                 val flags = sub(ds, i + 1) *)
+(*                 val len = ord (sub(ds, i + 2)) *)
+(*             in *)
+(*                 (src, flags, len) *)
+(*             end *)
+
+
+(*         val pkt-start-idx = (num-starts 0) *)
+
+(*     in *)
+(*         ( if (sub(ds, 0) = START_CHAR) andalso *)
+(*              (sub(ds, 1) = LEADIN_CHAR) andalso *)
+(*              (len < MAX_DATA_LEN) *)
+(*           then *)
+(*               SOME { *)
+(*           else *)
+(*               NONE *)
+              
+(*     end *)
+
+fun robin-receiver getf availf targetq () = 
+    let
+        fun get-robin-char () =
+            let
+                val n = availf ()
+            in
+                if (n > 0) then getf () else ( yield () ; get-robin-char () )
+            end
+
+        fun get-robin-chars m = 
+              array-tabulate m (fn _ => get-robin-char ())
+
+        fun robin-receiver state =
+            let 
+                val c = get-robin-char ()
+             in
+                case state of 
+                    START => if (ord c) = (ord START_CHAR)
+                             then robin-receiver LEADIN
+                             else robin-receiver START
+                  | LEADIN => if (ord c) = (ord LEADIN_CHAR)
+                              then robin-receiver DEST
+                              else robin-receiver START
+                  | DEST => 
+                    let 
+                        val src = get-robin-char ()
+                        val flags = get-robin-char ()
+                        val len = ord (get-robin-char ())
+                        val ds = get-robin-chars len
+                        val cksum = get-robin-char ()
+                        val pkt = { dst=c, src=src, flags=flags, len=len, data=ds }
+                    in
+                        ( if robin-checksum-valid pkt (ord cksum)
+                          then queue-send targetq (Robin-message (ord src, ds))
+                          else () ;
+                          robin-receiver START )
+                      end
+                  | _ => raise Robin-error "receiver confused"
+             end
+    in
+        robin-receiver START
+    end
+
+fun robin-sender requires-ext-line putf (src-id : int) m =
+    let
+        fun send-robin-pkt pkt =
+            let
+                do ( if requires-ext-line then scip-settestpointbit 0 true else () )
+                do putf START_CHAR
+                do putf LEADIN_CHAR
+                do putf (#dst/robin-packet pkt)
+                do putf (#src/robin-packet pkt)
+                do putf (#flags/robin-packet pkt)
+                do putf (chr (#len/robin-packet pkt))
+                do array-app putf (#data/robin-packet pkt)
+                do putf (robin-compute-checksum pkt)
+                do ( if requires-ext-line then (sleep 1 ; scip-settestpointbit 0 false) else () )
+            in
+                ()
+            end
+    in
+        case m of Robin-message (dest, ds) =>
+                  let
+                      val pkt = { dst=chr dest, src=chr src-id, flags=chr 0, len=length ds, data=ds }
+                  in
+                      send-robin-pkt pkt
+                  end
+                | _ => () (* print "not a message in robin-sender" *)
+    end
+

@@ -1,0 +1,138 @@
+let
+    datatype a exp =
+      Int of int
+    | Plus of exp * exp
+    | Times of exp * exp
+    | Minus of exp * exp
+    | Fn of int * exp
+    | Fix of int * exp
+    | Var of int
+    | Pair of exp * exp
+    | Pi1 of exp
+    | Pi2 of exp
+    | App of exp * exp
+    | True
+    | False
+    | If of exp * exp * exp
+    | Less of exp * exp
+
+    exception Stuck
+
+    (* subst e1 v e
+       substitute closed e1 for v in e *)
+    fun subst e1 v =
+	let 
+	    fun f e =
+		case e of
+		    Var v' => if v = v' 
+			      then e1
+			      else e
+		  | Int _ => e
+		  | True => e
+		  | False => e
+
+		  | Plus (e1, e2) => Plus(f e1, f e2)
+		  | Minus (e1, e2) => Minus(f e1, f e2)
+		  | Times (e1, e2) => Times(f e1, f e2)
+		  | Less (e1, e2) => Less (f e1, f e2)
+		  | If (e1, e2, e3) => If(f e1, f e2, f e3)
+
+		  | Fn (i, ee) => if i = v
+				  then e
+				  else Fn (i, f ee)
+		  | Pair (e1, e2) => Pair(f e1, f e2)
+		  | Pi1 e => Pi1 (f e)
+		  | Pi2 e => Pi2 (f e)
+		  | Fix (i, ee) => if i = v
+				   then e
+				   else Fix(i, f ee)
+		  | App (e1, e2) => App(f e1, f e2)
+	in
+	    f
+	end
+
+    fun eval (Int i) = Int i
+      | eval True = True
+      | eval False = False
+
+      | eval (If (e, et, ef)) =
+	(case eval e of
+	     True => eval et
+	   | False => eval ef
+	   | _ => raise Stuck)
+
+      | eval (Less (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => (if i < j 
+				then True
+				else False)
+	   | _ => raise Stuck)
+
+      | eval (Plus (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => Int (i + j)
+	   | _ => raise Stuck)
+
+      | eval (Minus (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => Int (i - j)
+	   | _ => raise Stuck)
+
+      | eval (Times (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => Int (i * j)
+	   | _ => raise Stuck)
+
+      | eval (Fn (i, e)) = Fn (i, e)
+
+      (* should have been substituted away *)
+      | eval (Var i) = raise Stuck
+      | eval (Pair (e1, e2)) = 
+	     Pair (eval e1, eval e2)
+
+      | eval (Pi1 e) =
+	     (case eval e of
+		  Pair(v1, _) => v1
+		| _ => raise Stuck)
+
+      | eval (Pi2 e) =
+	     (case eval e of
+		  Pair (_, v2) => v2
+		| _ => raise Stuck)
+
+      | eval (App (f, arg)) =
+	     (case (eval f, eval arg) of
+		  (Fn (i, e), v) => eval (subst v i e)
+		| _ => raise Stuck)
+
+      | eval (ee as Fix (i, e)) = eval (subst ee i e)
+
+    val fv = 1
+    val nv = 2
+    val fact =
+	Fix (fv,
+	     Fn(nv,
+		If(Less(Var nv, Int 1),
+		   Int 1,
+		   Times(Var nv, App(Var fv, Minus(Var nv, Int 1))))))
+
+    val term =
+	Plus(Int (ord ?O - 720),
+	     App(fact, Int 6))
+	
+in
+    (* urg, I really need strings *)
+    putc ?s; putc ?h; putc ?o; putc ?u; putc ?l; putc ?d; putc ? ;
+    putc ?b; putc ?e; putc ? ; putc ?'; putc ?O; putc ?'; putc ?:; putc ? ;
+
+    let in
+	(case eval term of
+	     Int j => putc (chr_ j)
+	   | _     => putc ?X);
+	putc ?\n
+    end handle _ =>
+	let in
+	    putc ?a; putc ?b; putc ?o; putc ?r; putc ?t;
+	    putc ?\n
+	end
+end

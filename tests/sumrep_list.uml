@@ -1,0 +1,7 @@
+let
+    import "std.uh"
+    import "list.uh"
+in
+    list-app putc (?H :: ?E :: ?L :: ?L :: ?O :: ?  ::
+		   ?W :: ?H :: ?I :: ?R :: ?L :: ?E :: ?D :: ?\n :: nil)
+end

@@ -1,0 +1,122 @@
+
+val require-std = provide-std
+val provide-array = ()
+
+fun array-app f a =
+    let
+	fun p n =
+	    if n chk length a
+	    then ()
+	    else (f(sub_(a, n));
+		  p (n + 1))
+    in
+	p 0
+    end
+
+fun array-appi f a =
+    let
+	fun p n =
+	    if n chk length a
+	    then ()
+	    else (f(n, sub_(a, n));
+		  p (n + 1))
+    in
+	p 0
+    end
+
+fun array-map f a =
+    case length a of
+	0 => array0 ()
+      | l => 
+	    let
+		(* intialize everything to first
+		   element *)
+		val na = array(l, f(sub_(a, 0)))
+
+		fun init n =
+		    if n chk l
+		    then ()
+		    else
+			(update_(na, n, f(sub_(a, n)));
+			 init (n + 1))
+	    in
+		init 1;
+		na
+	    end
+
+fun array-mapi f a =
+    case length a of
+	0 => array0 ()
+      | l => 
+	    let
+		(* intialize everything to first
+		   element *)
+		val na = array(l, f(0,sub_(a, 0)))
+
+		fun init n =
+		    if n chk l
+		    then ()
+		    else
+			(update_(na, n, f(n,sub_(a, n)));
+			 init (n + 1))
+	    in
+		init 1;
+		na
+	    end
+
+fun array-findfrom n f a =
+    let
+	fun aff i =
+	    (* PERF sub_ *)
+	    if i chk length a
+	    then NONE
+	    else if f (sub(a, i))
+		 then SOME i
+		 else aff (i + 1)
+    in
+	aff n
+    end
+
+fun array-find f a = array-findfrom 0 f a
+
+fun array-exists f a =
+    let
+	fun ae i =
+	    if i = length a
+	    then false
+		(* PERF sub_ *)
+	    else if f(sub(a, i))
+		 then true
+		 else ae (i + 1)
+    in
+	ae 0
+    end
+
+fun array-foldl f i a =
+    let
+	val l = length a
+	fun looper i idx =
+	    if idx = l
+	    then i
+	    else
+		looper (f (sub (a, idx), i)) (idx + 1)
+    in
+	looper i 0
+    end
+
+fun array-tabulate 0 _ = array0 ()
+  | array-tabulate i f = 
+    let val v = array (i, f 0)
+        fun loop n = if n = i then v
+                     else (update_ (v, n, f n);
+                           loop (n + 1))
+    in
+      loop 1
+    end
+
+fun array-xor-checksum ds = 
+    let
+        val total = array-foldl (fn (x, y) => (ord x) + y) 0 ds
+    in
+        total andb 0xff
+    end

@@ -1,0 +1,7 @@
+let
+  fun f x = x + 1
+  val a = f 5
+  val b = f 3
+in
+  array (a, ? )
+end

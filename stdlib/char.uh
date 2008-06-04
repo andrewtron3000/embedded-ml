@@ -1,0 +1,89 @@
+val provide-char = ()
+
+(* most significant byte is c1 *)
+fun four-chars-to-int (c1, c2, c3, c4) = 
+    ( (ord c4) orb 
+      ((ord c3) shl 8) orb
+      ((ord c2) shl 16) orb
+      ((ord c1) shl 24) )
+    
+fun int-to-four-chars i = 
+    let
+        val c1 = i shr 24
+        val c2 = (i shr 16) andb 0xff
+        val c3 = (i shr 8) andb 0xff
+        val c4 = i andb 0xff
+    in
+        (chr c1, chr c2, chr c3, chr c4)
+    end
+
+(* most significant byte is c1 *)
+fun two-chars-to-int (c1, c2) = 
+    ( (ord c2) orb 
+      ((ord c1) shl 8) )
+
+fun int-to-two-chars i =
+    let
+        val c1 = (i shr 8) andb 0xff
+        val c2 = i andb 0xff
+    in
+        (chr c1, chr c2)
+    end
+    
+fun bool-to-char b =
+    if b then (chr 1) else (chr 0)
+                           
+fun char-to-bool c =
+    if (ord c) > 0 then true else false
+
+fun chars-tohexstring ds =
+    let
+        fun f c = (int-tohexstringx 2) (ord c)
+    in
+        array-foldl (fn (x, y) => y ^ [[f x] ]) "" ds
+    end
+
+(*    {| 0xdeadbeef, 0x12345678 |} -> char {| 0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78 |}*)
+fun ints-tochars is =
+    let
+        val len = length is
+        val s = array (len shl 2, chr 0)
+
+        fun loop i = if i = len then ()
+                     else 
+                         let
+                             val (c1, c2, c3, c4) = int-to-four-chars (sub (is, i))
+                             val idx = i shl 2
+                         in
+                             ( update (s, idx, c1) ;
+                               update (s, idx + 1, c2) ; 
+                               update (s, idx + 2, c3) ; 
+                               update (s, idx + 3, c4) ;
+                               loop (i + 1) )
+                         end 
+    in
+        ( loop 0 ;
+          s )
+    end
+
+(* char {| 0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78 |} -> {| 0xdeadbeef, 0x12345678 |} *)
+fun ints-fromchars cs =
+    let
+        val len = (length cs) shr 2
+        val is = array ( len, 0 )
+
+        fun loop i = if i = len then () 
+                     else
+                         let
+                             val z = four-chars-to-int ( sub(cs, (i shl 2)),
+                                                         sub(cs, (i shl 2) + 1),
+                                                         sub(cs, (i shl 2) + 2),
+                                                         sub(cs, (i shl 2) + 3) )
+                         in
+                             ( update (is, i, z) ;
+                               loop (i + 1) )
+                         end
+    in
+        ( loop 0 ;
+          is )
+    end

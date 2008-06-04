@@ -1,0 +1,283 @@
+
+(* WARNING !! CRITICAL TRADE SECRET !! EYES ONLY !! *)
+
+(* Publications system.
+   This generates tokens, called publications, that are
+   submitted to our server to rack up points.
+
+   Each token contains the following information:
+
+   1. Problem id, as a 5-letter string   ("conference")
+   2. Problem task, as a 3-letter string ("track")
+   3. Problem score, as an arbitrary-precision integer 
+   4. Team id, as an integer
+   5. Checksum of 1-4, plus team secret (8 bytes)
+
+   Since the algorithm to compute the checksum must
+   be part of the binary, we can't rely on normal
+   cryptographic techniques to be secure; we have to
+   rely on obfuscation to deter reverse-engineering.
+   The checksum, a 124-bit number, thus comes from
+   two places. 64 bits come from a hash function based 
+   on 'tried and true' techniques (merkle-damgard, 3DES).
+   This is cryptographically strong, but easier to
+   reverse-engineer because it is easier to recognize.
+   60 bits come from a proprietary hash function
+   whose aim is to be as odd as possible.
+
+*)
+
+val require-bigint = provide-bigint
+val require-int = provide-int
+val require-string = provide-string
+val require-des = provide-des
+val require-list = provide-list
+
+val provide-publications = ()
+
+val { sigmoid-score, gen-publication, read-publication, read-publication-ex } =
+let
+    fun byteword w =
+	((w shr 24) andb 255,
+	 (w shr 16) andb 255,
+	 (w shr 8)  andb 255,
+	 w          andb 255)
+	
+    (* WARNING! deep magic -- don't adjust these constants! *)
+    val TEAM-ID =
+	let
+	    val ti = (* dynamic_ 0 *) 1
+	    val (a, b, c, d) = byteword ti
+	in
+	    ((a - ord ?A) * 58 * 58 * 58) +
+	    ((b - ord ?A) * 58 * 58) +
+	    ((c - ord ?A) * 58) +
+	    (d - ord ?A)
+	end
+
+    (* ditto! *)
+    val TEAM-SECRET =
+	let
+	    val w2 = (* dynamic_ 1 *) 2
+	    val w3 = (* dynamic_ 2 *) 3
+	    val (a, b, c, d) = byteword w2
+	    val (e, f, g, h) = byteword w3
+	in
+	    {| chr a, chr b, chr c, chr d, 
+	       chr e, chr f, chr g, chr h |}
+	end 
+
+    val DHASH-KEY1 = des-key (0xa968ee46, 0x2dec4013)
+    val DHASH-KEY2 = des-key (0xedd1653d, 0x57869d21)
+    val DHASH-KEY3 = des-key (0x860637dc, 0xd22c8e04)
+	
+    val DHASH-IV   = (0x882d9996, 0xbddcb534)
+	
+	
+    val PHASH-KEY1 = (0x4fbdab13, 0xa10b0d59)
+    val PHASH-KEY2 = (0x58558f28, 0x1f94c855)
+    val PHASH-KEY3 = (0x77982c52, 0x5418ca10)
+	
+    val PHASH-IV   = (0x30c54644, 0xd3108d96)
+
+    (* pad to a multiple of 64 bits 
+       (with supplied character), 
+       always including some padding, and then 
+       append 64-bit length. *)
+    fun merkle-damgard-pad c s =
+	let
+	    val n = length s
+	in
+	    (* pad with 0xFF *)
+	    s ^ array(8 - (n mod 8), c) ^
+
+	    (* length can't exceed 32 bits *)
+	    array(4, chr 0x0) ^
+	    (* 32 bits *)
+	    int-tobe32 n
+	end
+
+    (* Using 3DES under hash-key, hash the string s
+       to a 64-bit quantity. *)
+    fun hash-with-des s =
+	let
+	    val s = merkle-damgard-pad (chr 0xFF) s
+
+	    fun hashb ((iva, ivb), start) =
+		if start = length s
+		then (iva, ivb)
+		else
+		    let
+			val wl = int-frombe32 (substring (s, start, 4))
+			val wr = int-frombe32 (substring (s, start + 4, 4))
+		    in
+			hashb 
+			(des-encrypt3 (DHASH-KEY1, DHASH-KEY2, DHASH-KEY3) (wl xorb iva,
+									    wr xorb ivb),
+			 start + 8)
+		    end
+	in
+	    hashb (DHASH-IV, 0)
+	end
+
+    (* ENH make even more proprietary! *)
+    fun proprietary-hash s =
+	let
+	    val s = merkle-damgard-pad (?s) s
+
+	    (* ENH prepass to jumble characters *)
+
+	    (* ENH more combs *)
+	    fun c1 (a, b) = op xorb (des-encrypt (des-key (a, b)) (0x0, 0x0))
+	    val c2 = op xorb
+	    val c3 = op +
+	    fun c4 (x, y) = x * 9990001 + y
+	    (* ENH vote *)
+
+	    val cs = {| c1, c2, c3, c4 |}
+	    val cc = ref 0
+	    fun getc a =
+		let
+		    val f = sub(cs, !cc)
+		in
+		    cc := (!cc + a) mod (length cs);
+		    f
+		end
+
+	    (* ENH more mods *)
+	    fun m1 n = op xorb (des-decrypt (des-key (0x0, n)) (0x77777777, 0xFFFFFFFF))
+	    fun m2 n = (n shl 27) orb (n shr (32 - 27))
+	    fun m3 n = n xorb 0x12345678
+	    fun m4 n = 0xABCDEF01 + (n * 509203)
+	    fun m5 n = (n shl 11) orb (n shr (32 - 11))
+
+	    val ms = {| m1, m2, m3, m4, m5 |}
+	    val mc = ref 0
+	    fun getm a =
+		let
+		    val f = sub(ms, !mc)
+		in
+		    mc := (!mc + a) mod (length ms);
+		    f
+		end
+
+	    fun modify a = (getm a a)
+
+	    (* combine words a, b, c, d into outputs e, f *)
+	    fun combine (a, b, c, d) =
+		(getc d (c, b),
+		 getc c (a, d))
+
+	    fun hashb ((iva, ivb), start) =
+		if start = length s
+		then (iva, ivb)
+		else
+		    let
+			val wl = int-frombe32 (substring (s, start, 4))
+			val wr = int-frombe32 (substring (s, start + 4, 4))
+		    in
+			hashb
+			(combine (modify iva, modify ivb, modify wl, modify wr),
+			 start + 8)
+		    end
+	in
+	    hashb (PHASH-IV, 0)
+	end
+
+    (* generate a publication string.
+       the team id and secret are embedded in the
+       binary, so they are read by primitives. *)
+    fun gen-publication-ex { teamid, secret } { problem,
+						task,
+						score } =
+	let
+	    (* try to hide a copy of the pieces to prevent tampering *)
+	    val rproblem = ref problem
+	    val rtask = ref task
+	    val rscore = ref score
+
+
+	    val front = problem ^ "." ^ (task ^ "=") ^ 
+			bi-tostring score ^ ("@" ^ int-tostring teamid)
+	    val hashme = front ^ secret
+
+	    val (ha, hb) = hash-with-des hashme
+	    val (pa, pb) = proprietary-hash (bi-tostring (!rscore) ^ 
+					     !rtask ^ !rproblem ^ secret ^
+					     int-tohexstring teamid)
+	in
+	    front ^ "|" ^ 
+	    int-tohexstring ha ^ 
+	    (* toss one hex digit to be confusing *)
+	    int-tohexstringx 7 pb ^ 
+	    int-tohexstring hb ^
+	    int-tohexstringx 8 pa
+	end
+
+    fun gen-publication r = gen-publication-ex { teamid = TEAM-ID,
+						 secret = TEAM-SECRET } r
+
+    fun read-publication-ex { teamid = check-teamid, secret = check-secret } s =
+	(* okay to tokenize this way; we check the generated publication against
+	   the actual string *)
+	case string-fields (fn ?| => true | ?. => true | ?@ => true
+			     | ?= => true | _ => false) s of
+	    (prob :: task :: 
+	     ((bi-fromstring) (SOME score)) :: 
+	     ((int-fromstring) (SOME teamnum)) :: 
+	     checksum :: nil) =>
+	    let
+		val p = gen-publication-ex { teamid = check-teamid,
+					     secret = check-secret }
+					     { problem = prob,
+					      task = task,
+					      score = score }
+	    in
+		if teamnum = check-teamid andalso p seq s
+		then SOME { problem = prob, task = task, score = score }
+		else NONE (* wrong team id, or bad checksum *)
+	    end
+	  | _ => NONE
+
+    fun read-publication s = read-publication-ex { teamid = TEAM-ID, secret = TEAM-SECRET } s	
+
+    fun sigmoid-score { min-score,
+			par-score,
+			max-score,
+			
+			(* threshold for correct, but not
+			   competitive entries
+			   (gets min-score) *)
+			correct,
+			(* score after which returns
+			   become diminishing *)
+			par,
+			(* best conceivable score
+			   (gets max-score) *)
+			hole-in-one } value =
+        (* interpolates f(value) for f defined by these two points *)
+        let fun linear ((x1, y1), (x2, y2)) =
+                bi-add (#1/2 (bi-divmod (bi-mult (bi-subt (y2, y1), 
+                                                   bi-subt (value, x1)),
+                                          bi-subt (x2, x1))),
+                         y1)
+        in
+          case bi-cmp (value, correct) of
+           GREATER => min-score
+         | EQUAL => min-score
+         | _ => (case bi-cmp (value, hole-in-one) of
+                   LESS => max-score
+                 | EQUAL => max-score
+                 | _ => (case bi-cmp (value, par) of
+                           LESS => linear ((par, par-score),
+                                           (hole-in-one, max-score))
+                         | _ => linear ((correct, min-score),
+                                        (par, par-score))))
+        end
+
+in
+    { sigmoid-score = sigmoid-score, 
+      gen-publication = gen-publication, 
+      read-publication = read-publication,
+      read-publication-ex = read-publication-ex }
+end

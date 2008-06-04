@@ -1,0 +1,50 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "des.uh"
+    import "bigint.uh"
+(*    import "publications.uh" *)
+    import "random.uh"
+    import "growarray.uh"
+    import "io.uh"
+    import "util.uh"
+
+    val keys = 
+{|
+des-key (0xa07c632a, 0xd14ecf73),
+des-key (0x0380e70d, 0x16e1c73e),
+des-key (0x55e1b670, 0x450127b9)
+|}
+    (* run the encryption loop for N cycles *)
+    val N = 16
+
+    do print [ == FASTmark 19106 beginning stress test / benchmark.. ==\n]
+
+    val kr = ref 0
+
+    fun getkey () = 
+	      let in
+	          kr := !kr + 1;
+	          if !kr >= length keys
+	          then kr := 1
+	          else ();
+	          sub(keys, 0)
+	      end
+
+    fun pwp (w1, w2) = [[int-tohexstring w1].[int-tohexstring w2]]
+
+    fun loop () =
+	      ford 0 N (0x12345678, 0x09ABCDEF)
+	           (fn (i, ws) =>
+	               (if i mod 2 = 0 
+	                then print ([[string-pad(4, [[int-tostring ((N - i) div 2)].])] [pwp ws]\n])
+	                else ();
+	                des-encrypt3(getkey (), getkey (), getkey ()) ws))
+        
+    val ws = loop ()
+in
+    print [FASTmark complete.\n]
+end

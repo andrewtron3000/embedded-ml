@@ -1,0 +1,12 @@
+let
+    import "std.uh"
+    import "string.uh"
+    import "des.uh"
+    import "growarray.uh"
+    import "io.uh"
+in
+    print "****************** DECOMPRESSION!!!!!! is awesome **********\n";
+
+    putc ?Y; putc ?O; putc ?U; putc ? ;
+    putc ?W; putc ?I; putc ?N; putc ?\n
+end

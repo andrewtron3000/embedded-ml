@@ -1,0 +1,23 @@
+let
+    fun @ r =
+	(putc ?@; showval_ r;
+	 case r of
+	     (h::t, l2) => h :: @(t, l2)
+	   | (nil, l2) => (showval_ 10000; showval_ l2; l2))
+
+    infixr @
+
+    fun FFF a = (showval_ 12345; showval_ a; (*length "";*) a)
+
+in
+    showval_
+	(
+	 (FFF ?O :: nil) @
+	
+	 (nil @
+	  
+	  (FFF ?X :: nil)
+	 )
+	)
+
+end

@@ -1,0 +1,10 @@
+let
+
+    val c = getc_ ()
+
+in
+    putc (chr_
+    (if c > 999
+     then 5555
+     else 6666))
+end

@@ -1,0 +1,152 @@
+val require-int = provide-int
+val require-array = provide-array
+val provide-base64 = ()
+
+fun base64-decode zs =
+    let
+        fun base64d c =
+            let 
+                val i = ord c 
+            in
+                if i = (ord ?+) then 62
+                else if i = (ord ?/) then 63
+                else if i >= (ord ?0) andalso i <= (ord ?9) then i - (ord ?0) + 52
+                else if i >= (ord ?a) andalso i <= (ord ?z) then i - (ord ?a) + 26
+                else if i >= (ord ?A) andalso i <= (ord ?Z) then i - (ord ?A)
+                else raise Match
+            end
+            
+        fun base64dec (d1, d2, d3, d4) =
+            let
+                val c1 = (d1 shl 2) orb ((d2 andb 0x30) shr 4)
+                val c2 = ((d2 andb 0xf) shl 4) orb ((d3 andb 0x3c) shr 2)
+                val c3 = ((d3 andb 0x3) shl 6) orb d4
+            in
+                (chr c1, chr c2, chr c3)
+            end
+
+        val (len, decoded-len) = case (sub(zs, (length zs) - 1), sub(zs, (length zs) - 2)) of 
+                                     (?=, ?=) => ((length zs) - 2, ((length zs) shr 2) * 3 - 2)
+                                   | (?=, _) => ((length zs) - 1, ((length zs) shr 2) * 3 - 1)
+                                   | (_, _) => (length zs, ((length zs) shr 2) * 3)
+
+        val xs = array (decoded-len, chr 0)
+
+        fun decoder ci di =
+            case (len - di) of 
+                0 => xs
+              | 2 => 
+                ( let
+                     val i1 = base64d (sub(zs, di))
+                     val i2 = base64d (sub(zs, di + 1))
+                     val c1 = (i1 shl 2) orb ((i2 andb 0x30) shr 4)
+                 in
+                     ( update (xs, ci, chr c1) ;
+                       xs )
+                 end )
+              | 3 => 
+                ( let
+                     val i1 = base64d (sub(zs, di))
+                     val i2 = base64d (sub(zs, di + 1))
+                     val i3 = base64d (sub(zs, di + 2))
+                     val c1 = (i1 shl 2) orb ((i2 andb 0x30) shr 4)
+                     val c2 = ((i2 andb 0xf) shl 4) orb ((i3 andb 0x3c) shr 2)
+                 in
+                     ( update (xs, ci, chr c1) ;
+                       update (xs, ci + 1, chr c2) ;
+                       xs )
+                 end )
+              | _ => 
+                ( let
+                     val i1 = base64d (sub(zs, di))
+                     val i2 = base64d (sub(zs, di + 1))
+                     val i3 = base64d (sub(zs, di + 2))
+                     val i4 = base64d (sub(zs, di + 3))
+                     val (c1, c2, c3) = base64dec (i1, i2, i3, i4)
+                 in
+                     ( update (xs, ci, c1) ;
+                       update (xs, ci + 1, c2) ;
+                       update (xs, ci + 2, c3) ;
+                       decoder (ci + 3) (di + 4) )
+                 end )
+
+        fun verify-base64 xs = ( array-app (fn x => base64d x) xs ;
+                                 true ) handle Match => false
+    in
+        if verify-base64 zs then SOME (decoder 0 0) else NONE
+    end
+
+
+val base64chars = {| ?A, ?B, ?C, ?D, ?E, ?F, ?G, ?H, ?I, ?J, ?K, ?L, ?M, ?N, ?O, ?P, ?Q, ?R, ?S, ?T, ?U, ?V, ?W, ?X, ?Y, ?Z, ?a, ?b, ?c, ?d, ?e, ?f, ?g, ?h, ?i, ?j, ?k, ?l, ?m, ?n, ?o, ?p, ?q, ?r, ?s, ?t, ?u, ?v, ?w, ?x, ?y, ?z, ?0, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?+, ?/ |}
+
+fun base64-encode xs =
+    let
+        val len = length xs
+        val iters = if (len mod 3) = 0 
+                    then len divs 3
+                    else len divs 3 + 1
+        val encoded-len = iters shl 2
+        val zs = array (encoded-len, chr 0)
+
+        fun base64enc (c1, c2, c3) =
+            let
+                val d1 = chr ((c1 andb 0xfc) shr 2)
+                val d2 = chr ( ((c1 andb 0x03) shl 4) orb ((c2 andb 0xf0) shr 4) )
+                val d3 = chr ( ((c2 andb 0x0f) shl 2) orb ((c3 andb 0xc0) shr 6) )
+                val d4 = chr (c3 andb 0x3f)
+            in
+                (d1, d2, d3, d4)
+            end
+
+        fun update-z (d, di) = update(zs, di, sub(base64chars, ord d))
+
+        fun encoder ci di =
+            ( case (len - ci) of 
+                  0 => zs
+                | 1 => 
+                  ( let 
+                       val c1 = ord (sub(xs, ci))
+                       val d1 = chr ((c1 andb 0xfc) shr 2)
+                       val d2 = chr ((c1 andb 0x3) shl 4)
+                       val d3 = ?=
+                       val d4 = ?=
+                   in
+                       ( update-z (d1, di) ;
+                         update-z (d2, di + 1) ;
+                         update(zs, di + 2, ?=) ;
+                         update(zs, di + 3, ?=) ;
+                         zs )
+                   end )
+                | 2 => 
+                  ( let 
+                       val c1 = ord (sub(xs, ci))
+                       val c2 = ord (sub(xs, ci + 1))
+                       val d1 = chr ((c1 andb 0xfc) shr 2)
+                       val d2 = chr ( ((c1 andb 0x03) shl 4) orb ((c2 andb 0xf0) shr 4) )
+                       val d3 = chr ( ((c2 andb 0x0f) shl 2) )
+                       val d4 = ?=
+                   in
+                       ( update-z (d1, di) ;
+                         update-z (d2, di + 1) ;
+                         update-z (d3, di + 2) ;
+                         update(zs, di + 3, ?=) ;
+                         zs )
+                   end )
+                | _ => 
+                  let
+                      val c1 = ord (sub(xs, ci))
+                      val c2 = ord (sub(xs, ci + 1))
+                      val c3 = ord (sub(xs, ci + 2))
+                      val (d1, d2, d3, d4) = base64enc (c1, c2, c3)
+                  in
+                      ( update-z (d1, di) ;
+                        update-z (d2, di + 1) ;
+                        update-z (d3, di + 2) ;
+                        update-z (d4, di + 3) ;
+                        encoder (ci + 3) (di + 4) )
+                  end )
+    in
+        encoder 0 0
+    end
+
+

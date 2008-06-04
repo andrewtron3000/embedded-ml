@@ -1,0 +1,22 @@
+
+let
+    datatype a opt =
+	Some of a
+      | None
+ 
+    datatype a lis =
+	Cons of a * lis
+      | Nil
+
+    fun pr x =
+	(case x of
+	     None => putc ?X
+	   | Some Nil => putc ?O
+	   | Some (Cons(c, l)) => (putc c; pr (Some l)))
+
+in
+   putc ?X; putc ?=; putc ?f; putc ?a; putc ?i; putc ?l; putc ?\n;
+
+   pr (Some Nil); putc ?\n;
+   pr (Some (Cons (?A, Cons (?B, Cons (?C, Nil))))); putc ?\n
+end

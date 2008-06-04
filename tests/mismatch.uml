@@ -1,0 +1,17 @@
+
+let
+
+    datatype file =
+	Text of string
+      | Directory of (string * int * file) list ref
+
+    fun search ((!) l) = 0
+
+(*
+    fun f x =
+	case x of
+	    Text x => 999
+*)
+in
+    0
+end

@@ -1,0 +1,30 @@
+let
+   import "std.uh"
+   import "list.uh"
+   import "string.uh"
+   import "int.uh"
+   import "array.uh"
+   import "char.uh" 
+   import "sha.uh"
+
+   val ds1 = {| |}
+   (* ds2 = "dead" sha1 = 5eb965dd8c804a3a2833ac61fe1d1f6b1960735a *)
+   val ds2 = {| 0x64656164 |}
+   (* ds3 = "dead men dont eat meats!" sha1 = aedf5ca68b1ed191db7520d1ba7a99048c8b3746 *)
+   val ds3 = {| 0x64656164, 0x206d656e, 0x20646f6e, 0x74206561, 0x74206d65, 0x61747321 |}
+
+   val s = "dead men dont eat meats!"
+   val s1 = ints-fromchars s
+
+   fun printer ds = array-app (fn x => ( print [[x]] )) (array-map int-tohexstring ds)
+
+   (* k should be 49cc1301b06653144e3203afdbbbe917f3a76445 *)
+   val k = "But the scientific cast of mind examines the world critically as if many alternative worlds might exist, as if other things might be here which are not. Then we are forced to ask why what we see is present and not something else. Why are the Sun and the Moon and the planets spheres? Why not pyramids, or cubes, or dodecahedra? Why not irregular, jumbly shapes? Why so symmetrical worlds? If you spend any time spinning hypotheses, checking to see whether they make sense, whether they conform to what else we know, thinking of tests you can pose to substantiate or deflate your hypotheses, you will find yourself doing science."
+   val k' = ints-fromchars k
+
+in
+    ( (* printer ( sha-hash ds1 ) ; print [\n\r] ;
+      printer ( sha-hash ds2 ) ; print [\n\r] ;
+      printer ( sha-hash ds3 ) ; print [\n\r] ; *)
+      printer ( sha-hash k' ) ; print [\n\r] )
+end

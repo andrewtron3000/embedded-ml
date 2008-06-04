@@ -1,0 +1,32 @@
+
+let
+  val x = [this is my awesome text.
+           it shouldn't have any space before each line.
+             well, except this line. but I put that there.
+           okay see you!]
+
+  val y = [here's another test. It has ["embedded text"]!
+           but it should still work as above.]
+
+  val z = [there should be a warning if you use
+           tab characters to indent.]
+
+  val a = [also there should be a warning
+      if you have text in the indentation.]
+
+  val b = [this text should have a newline in it,
+
+           but that shouldn't be a warning, even though
+           the blank line is not indented. right?]
+
+  val c = [this text does NOT have a newline in, though\
+           it spans several lines.\   
+           right?]
+in
+  print x;
+  print y;
+  print z;
+  print a;
+  print b;
+  print c
+end

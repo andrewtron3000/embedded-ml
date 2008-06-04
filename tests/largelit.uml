@@ -1,0 +1,9 @@
+
+let
+    val x = 0xf0f0f0f
+in
+    putc (chr_ ((x shr 24) andb 255));
+    putc (chr_ ((x shr 16) andb 255));
+    putc (chr_ ((x shr 8)  andb 255));
+    putc (chr_ (x andb 255))
+end

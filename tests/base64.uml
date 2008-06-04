@@ -1,0 +1,25 @@
+let
+   import "std.uh"
+   import "list.uh"
+   import "string.uh"
+   import "int.uh"
+   import "array.uh"
+   import "char.uh" 
+   import "base64.uh"
+
+   fun tos ars = array-map chr ars
+
+   val s = "hello world!"
+   val s1 = base64-encode s
+                         
+   val s2 = valOf (base64-decode s1)
+
+   val corrupted = "aGVsbG8gd29yb)Qh"
+   val s3 = base64-decode corrupted
+in
+    print [[s1]\n\r] ;
+    print [[s2]\n\r] ;
+    case s3 of 
+        NONE => print [corruption test successful\n\r]
+      | SOME s => print [corruption test FAILED.  actually got [s]\n\r]
+end

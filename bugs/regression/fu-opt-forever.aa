@@ -1,0 +1,8 @@
+let
+    fun dodirs x = dodirs x
+   
+    val cdirs = dodirs 1
+(*    val xx = dodirs (nil()) *)
+in
+    0
+end

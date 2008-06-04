@@ -1,0 +1,33 @@
+let
+
+    datatype ex =
+	A of int
+      | NA of (int -> int)
+
+    val ans =
+	letcc u 
+        in
+	    NA (fn x => throw A x to u)
+	end
+in
+    (case ans of
+	 NA f =>
+	     (putc ?O;
+	      putc ?K;
+	      putc ?1;
+	      putc ?\n;
+	      f 1000;
+	      ())
+       | A i =>
+	     if i = 1000
+	     then
+		 (putc ?O;
+		  putc ?K;
+		  putc ?2;
+		  putc ?\n)
+	     else
+		 (putc ?N;
+		  putc ?O;
+		  putc ?!;
+		  putc ?\n))
+end

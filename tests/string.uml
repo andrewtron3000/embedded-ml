@@ -1,0 +1,9 @@
+(* tests string constants and the string library *)
+let
+    import "std.uh"
+    import "string.uh"
+in
+    print ("hello, " ^ "world!\n");
+
+    putc (chr_ (65 + (length "AWESOME coolies ;-)")))
+end

@@ -1,0 +1,23 @@
+
+let
+
+    datatype dt = A | B | C | D | E | F | G | H | I | J | K
+
+    fun pr A = putc ?A
+      | pr B = putc ?B
+(*      | pr C = putc ?C*)
+      | pr D = putc ?D
+      | pr E = putc ?E
+      | pr F = putc ?F
+(*      | pr G = putc ?G *)
+      | pr H = putc ?H
+(*      | pr I = putc ?I *)
+      | pr J = putc ?J
+      | pr K = putc ?K
+      | pr _ = putc ?X
+
+in
+    pr F; pr E; pr E; pr D;
+    putc ?\n;
+    pr C; pr C; pr C
+end

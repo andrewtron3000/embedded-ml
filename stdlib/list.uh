@@ -1,0 +1,253 @@
+val provide-list = ()
+val require-std = provide-std
+
+exception List
+exception UnequalLengths
+
+fun @ (h::t, l2) = h :: @(t, l2)
+  | @ (nil, l2) = l2
+
+infixr @
+
+fun list-eq _ (nil, nil) = true
+  | list-eq f (a :: at, b :: bt) = 
+    if f (a, b)
+    then list-eq f (at, bt)
+    else false
+  | list-eq _ _ = false
+
+fun list-map f =
+    let
+	fun m nil = nil
+	  | m (h::t) = f h :: m t
+    in
+	m
+    end
+
+
+fun list-mapi f l =
+    let
+	fun m (_, nil) = nil
+	  | m (i, h :: t) = 
+	    f (h, i) :: m (i + 1, t)
+    in
+	m (0, l)
+    end
+
+fun list-app f =
+    let
+	fun a nil = ()
+	  | a (h::t) = (f h; a t)
+    in
+	a
+    end
+
+fun list-appi f l =
+    let
+	fun m (_, nil) = ()
+	  | m (i, h :: t) = 
+	    (f (h, i); m (i + 1, t))
+    in
+	m (0, l)
+    end
+
+
+fun list-concat nil = nil
+  | list-concat (l::t) = l @ list-concat t
+
+fun list-rev l =
+    let
+        fun go (nil, acc) = acc
+          | go (h::t, acc) = go(t, h::acc)
+    in
+        go (l, nil)
+    end
+
+fun list-tabulate (i, f) =
+    let
+        fun go n =
+            if n < i
+            then f n :: go (n + 1)
+            else nil
+    in
+        go 0
+    end
+
+fun list-empty nil = true
+  | list-empty _ = false
+
+fun list-nth _ nil = raise List
+  | list-nth 0 (h :: _) = h
+  | list-nth n (_ :: t) = list-nth (n - 1) t
+
+(* PERF should be optimized to do less consing. (split mainly) *)
+fun list-sort cmp l =
+    let
+        fun split l =
+            let fun s (a1, a2, nil) = (a1, a2)
+                  | s (a1, a2, (h::t)) = s (a2, h::a1, t)
+            in s (nil, nil, l)
+            end
+
+        fun merge (a, nil) = a
+          | merge (nil, b) = b
+          | merge (aa as (a :: ta), bb as (b :: tb)) =
+            case cmp (a, b) of
+                EQUAL => (a :: b :: merge (ta, tb))
+              | LESS => (a :: merge (ta, bb))
+              | GREATER => (b :: merge (aa, tb))
+
+        fun ms nil = nil
+          | ms (l as (s :: nil)) = l
+          | ms (a :: b :: nil) = merge (a :: nil, b :: nil)
+          | ms ll = 
+            let val (a,b) = split ll
+            in merge (ms a, ms b)
+            end
+    in ms l
+    end
+
+(* partition into (trues, falses) *)
+fun list-partition f l =
+    let
+	fun pa (ta, fa, nil) = (list-rev ta, list-rev fa)
+	  | pa (ta, fa, h :: t) =
+	    if f h
+	    then pa (h :: ta, fa, t)
+	    else pa (ta, h :: fa, t)
+    in
+	pa (nil, nil, l)
+    end
+
+fun list-find _ nil = NONE
+  | list-find f (h :: t) = if f h then SOME h 
+                           else list-find f t
+
+fun list-filter _ nil = nil
+  | list-filter f (h :: t) = if f h then h :: (list-filter f t)
+                             else list-filter f t
+
+fun list-exists _ nil = false
+  | list-exists f (h :: t) = if f h then true
+                             else list-exists f t
+
+fun list-length l =
+  let
+    fun ll (acc, nil) = acc
+      | ll (acc, h :: t) = ll (1 + acc, t)
+  in
+    ll (0, l)
+  end
+
+fun list-head (h :: t) = h
+  | list-head nil = raise List
+
+fun list-tail (h :: t) = t
+  | list-tail nil = raise List
+
+fun list-toarray nil = array0()
+  | list-toarray l = 
+  let
+    val a = array(list-length l, list-head l)
+  in
+    (* PERF update_ *)
+    list-appi (fn (x, i) =>
+                  update(a, i, x)) l;
+    a
+  end
+
+(* PERF update_ ? *)
+fun list-fromarray ar = 
+    let 
+        val n = length ar
+        fun looper a x acc = 
+            if x = 0 then acc
+            else ( looper a (x - 1) (sub (a, x - 1) :: acc) )
+    in
+        looper ar n nil
+    end  
+
+fun list-take (xs, i) =
+    let fun lt (xs, 0) = nil
+          | lt (nil, i) = raise Subscript
+          | lt (x::xs, i) = x :: (list-take (xs, i - 1))
+    in
+      if i < 0 then raise Subscript else lt (xs, i)
+    end
+
+(* PERF slow to recognize case where one drops more than length of list *)
+fun list-drop (xs, i) =
+      if i < 0 then raise Subscript 
+      else if i = 0 then xs
+      else ( case xs of
+                 (z::zs) => list-drop (zs, i - 1)
+               | nil => raise Subscript )
+
+fun list-last nil = raise List
+  | list-last (x::nil) = x
+  | list-last (x::xs) = list-last xs
+
+fun list-foldl f b nil = b
+  | list-foldl f b (x::xs) = list-foldl f (f (x, b)) xs
+
+fun list-foldr f b l =
+    let
+	fun fr nil = b
+	  | fr (h :: t) = f(h, fr t)
+    in
+	fr l
+    end
+
+
+fun list-subset f nil xs2 = true
+  | list-subset f (x1::xs1) xs2 = (list-exists (fn x2 => f (x1, x2)) xs2) 
+                                  andalso (list-subset f xs1 xs2)
+
+fun list-zip (l1, l2) =
+    let 
+	fun f (x1::l1, x2::l2, acc) = f (l1, l2, (x1, x2)::acc)
+	  | f (nil, _, acc) = acc
+	  | f (_, nil, acc) = acc
+    in
+      f (l1, l2, nil)
+    end
+
+fun list-zipEq (l1, l2) =
+    let fun f (x1::l1, x2::l2, acc) = f (l1, l2, (x1, x2)::acc)
+	  | f (nil, nil, acc) = acc
+	  | f _ = raise UnequalLengths
+    in
+      f (l1, l2, nil)
+    end
+
+fun list-alist-find eq a l =
+    let
+	fun f nil = NONE
+	  | f ((a', x) :: rest) = 
+	    if eq(a, a') then SOME x
+	    else f rest
+    in
+	f l
+    end
+
+fun list-lex-list-order oi (nil, nil) = EQUAL
+  | list-lex-list-order oi (nil, _ :: _) = LESS
+  | list-lex-list-order oi (_ :: _, nil) = GREATER
+  | list-lex-list-order oi (a :: al, b :: bl) =
+  (case oi (a, b) of
+     EQUAL => list-lex-list-order oi (al, bl)
+   | neq => neq)
+
+fun list-lex-order oa ob ((a, b), (aa, bb)) =
+  (case oa (a, aa) of
+     LESS => LESS
+   | GREATER => GREATER
+   | EQUAL => ob (b, bb))
+
+fun list-idxof f l = 
+    let fun loop nil _ = NONE
+          | loop (y::ys) i = if f y then SOME i
+                             else loop ys (i + 1)
+    in
+      loop l 0
+    end

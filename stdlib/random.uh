@@ -1,0 +1,28 @@
+
+(* NOTE! this must go AFTER std.uh
+   but BEFORE any other header that
+   might call getc_ *)
+
+val provide-random = ()
+
+(* old 
+val random-seed = ref 0xDEADBEEF
+*)
+val random-seed = ref 0x12345679
+
+fun random-getc () =
+    case getc_ () of
+	~1 => ~1
+      | c =>
+	let
+	in
+	    random-seed := (!random-seed * 31337 + 0x1717 xorb c);
+	    c
+	end
+    
+fun random-int () =
+    let
+    in
+	random-seed := ((!random-seed * 10007) xorb 0xDEADBEEF);
+	!random-seed
+    end

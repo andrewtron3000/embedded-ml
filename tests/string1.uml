@@ -1,0 +1,9 @@
+let
+   import "std.uh"
+   import "string.uh"
+
+    fun f 1 = ""
+      | f _ = "z"
+in
+    (print (f 0), print (f 1))
+end

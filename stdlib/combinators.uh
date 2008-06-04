@@ -1,0 +1,6 @@
+
+fun K x y = x
+fun I x = x
+
+infix o
+fun o(f, g) = fn x => f(g(x))

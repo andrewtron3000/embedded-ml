@@ -1,0 +1,114 @@
+
+let
+(* minimal list library *)
+
+(*  datatype a list = Nil of unit | :: of a * list *)
+
+  infixr ::
+
+
+  fun list-rev l =
+      let
+          fun revv (nil (), acc) = acc
+            | revv (h::t, acc) = revv (t, h::acc)
+      in
+          revv (l, nil ())
+      end
+
+(*
+  fun @ (h::t, l2) = h :: @(t, l2)
+    | @ (nil, l2) = l2
+
+  infixr @
+
+  fun list-eq _ (nil (), nil ()) = true ()
+    | list-eq f (a :: at, b :: bt) = 
+      if f (a, b)
+      then list-eq f (at, bt)
+      else false()
+    | list-eq _ _ = false ()
+*)
+
+  fun list-map f (nil ()) = nil ()
+    | list-map f (h :: t) = f h :: list-map f t
+
+(*
+  fun list-length l =
+      let
+          fun ll (nil (), acc) = acc
+            | ll (_ :: t, acc) = ll (t, acc + 1)
+      in
+          ll (l, 0)
+      end
+*)
+(*
+  fun list-foldr f b =
+      let
+          fun fr (h::t) = f(h, fr t)
+            | fr (nil ()) = b
+      in
+          fr
+      end
+
+  fun list-foldl f b l =
+      let
+          fun fl (x, nil ()) = x
+            | fl (x, h :: t) = fl(f(h, x), t)
+      in
+          fl (b, l)
+      end
+
+  fun list-concat ll = list-foldr op@ (nil ()) ll
+
+  fun list-filter f =
+      let
+          fun fi (nil ()) = nil ()
+            | fi (h :: t) = if f h 
+                            then f :: fi t
+                            else fi t
+      in
+          fi
+      end
+
+  fun list-exists f =
+      let
+          fun ex (nil ()) = false ()
+            | ex (h :: t) = if f h 
+                            then true ()
+                            else ex t
+      in
+          ex
+      end
+
+  fun list-all f =
+      let
+          fun al (nil ()) = true ()
+            | al (h :: t) = if f h
+                            then al t
+                            else false ()
+      in
+          al
+      end
+
+  fun list-tabulate (i, f) =
+      let
+          fun go n =
+              if n < i
+              then f n :: go (n + 1)
+              else nil ()
+      in
+          go 0
+      end
+*)
+(*
+  val length = list-length
+  val rev = list-rev
+  val map = list-map
+  val foldr = list-foldr
+  val foldl = list-foldl
+*)
+in
+
+ list-map (fn x => (print x; print "\n"))
+   (list-rev ("world"::"hello"::nil ()))
+end

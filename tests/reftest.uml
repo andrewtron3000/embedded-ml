@@ -1,0 +1,11 @@
+let
+
+    val x = ref ?N
+    val y = ref ?O
+    do x := ?O
+    do y := ?K 
+in
+    putc (! x);
+    putc (! y);
+    putc ?\n
+end

@@ -1,0 +1,144 @@
+
+val require-std = provide-std
+val require-string = provide-string (* implode *)
+val require-growarray = provide-growarray
+val require-random = provide-random 
+
+val provide-io = ()
+
+(* SUSP: everything is responsible for handling \r as whitespace *)
+
+exception IO
+
+fun getc () =
+    case getc_ () of
+	~1 => raise IO (* EOF *)
+      | n => chr n
+
+fun random-getc-exn () = 
+    case random-getc () of
+	~1 => raise IO
+      | n => 
+	(* SUSP: if the input char is not in range,
+	   mods it *)
+	chr_ (n andb 255)
+
+fun getco () =
+    case getc_ () of
+	~1 => NONE
+      | n => SOME (chr n)
+
+(* read a line (terminated by \n) from
+   stdin, and return it as a string *)
+(* PERF use growarray *)
+fun getline () =
+    let 
+	fun gl () =
+	    case getc_ () of
+		~1 => raise IO (* EOF *)
+	      | 10 => nil
+	      | 13 => gl ()
+	      | n => chr n :: gl ()
+    in
+	implode (gl ())
+    end
+
+fun allinput () =
+    let
+	val ga = growarray-new ?_
+	    
+	fun pushc c = growarray-push (ga, c)
+
+	fun rd () =
+	    case getco () of
+		NONE => ()
+	      | SOME c => (pushc c; rd ())
+
+	val () = rd ()
+    in
+	growarray-subarray (ga, 0, growarray-length ga)
+    end
+
+(* obsolete
+(* return an array of all of the lines (terminated by
+   the EOF character) in the input, ignoring carriage
+   returns *)
+fun all-lines () =
+    let
+	val ga = growarray-new ""
+	fun pushl l = growarray-push (ga, l)
+
+	fun rd () =
+	    let in
+		growarray-push(ga, getline ());
+		rd ()
+	    end
+    in
+	(rd ()) handle IO => ();
+	growarray-subarray (ga, 0, growarray-length ga)
+    end
+*)
+
+(* gigabyte *)
+(* val IO-MAX-SIZE = 1073741824 *)
+(* SUSP make it smaller for NJ *)
+val IO-MAX-SIZE = 1073741823
+
+
+(* Read in large strings efficiently.  Reads until "eof" occurs.
+   Will occationally call "progress" with an integer indicating
+   how many characters have been read so far. *)
+fun all-lines-progress eof progress =
+    letcc exit in
+      let val sz = length eof
+	  val ga = growarray-new ?_
+
+	  fun pushc c = growarray-push (ga, c)
+
+	  (* does the ga end with EOF? *)
+	  fun saw-eof () = 
+	      growarray-length ga chk sz
+	      andalso
+	      let
+		  val l = growarray-length ga
+		  val () = if l > IO-MAX-SIZE
+			   then throw NONE to exit
+			   else ()
+
+		(* location that the string should
+		   start in ga *)
+		val gas = l - sz
+
+		fun check n =
+		    if n = sz then true
+		    else
+		      if ord (sub(eof, n)) =
+			 ord (growarray-sub(ga, gas + n))
+		      then check (n + 1)
+		      else false
+
+	      in
+		check 0
+	      end
+
+	  fun rd () =
+	      let in
+		  (* seed random number generator on input 
+		     for everyone who calls this *)
+		pushc ( random-getc-exn () 
+		       (* getc () *)
+		       );
+		if (* SUSP  ...........  mod 512 .... *)
+		   (growarray-length ga andb 511) = 0
+		then progress (growarray-length ga)
+		else ();
+		if saw-eof ()
+		then ()
+		else rd () 
+	      end
+
+	  val () = rd ()
+      in
+	  SOME (growarray-subarray (ga, 0, growarray-length ga - sz))
+      end
+    end

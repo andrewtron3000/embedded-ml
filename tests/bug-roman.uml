@@ -1,0 +1,57 @@
+let
+(* WARNING! *)
+
+    val () =
+	letcc out
+	in
+	    letcc toplevel
+	    in
+		sethandler_ toplevel;
+		throw () to out
+	    end;
+
+	    putc ?!; putc ?\n;
+
+	    halt ()
+	end
+
+    infix 2 parse-wth 
+    fun parse-succeed x () = x
+    fun parse-wth (p, f) () = f (p ())
+
+(* ******************* this is it ******************** *)
+
+    datatype a lis = YES of a * unit | NO
+
+    do YES ((length "("; ()), ())
+
+    datatype exp1 = A | B
+    datatype exp = APPLY of unit * exp1 lis
+
+    fun qbasic-etos e =
+	 let 
+	     (* this is apparently what fails--
+		the jump is way out of bounds,
+		because the value passed to qbe is NULL!
+		*)
+	     fun qbe A = putc ?#
+               | qbe B = halt ()
+
+	     fun la (YES (h, _)) = (putc ?:; qbe h; halt ())
+	       | la NO = halt () 
+	 in
+	     putc ?W;
+	     (case e of
+		  APPLY ((), el) => la el);
+	     halt ()
+	 end
+
+    val exp =
+	 (parse-succeed ( ( B, ()))
+	  parse-wth op YES)
+	  parse-wth (fn el => APPLY((), el))
+	  
+in
+    qbasic-etos (exp ())
+    halt
+end

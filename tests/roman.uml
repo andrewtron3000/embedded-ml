@@ -1,0 +1,260 @@
+let 
+import "std.uh"
+import "string.uh"
+import "list.uh"
+
+exception Roman of string
+exception HackBasic of string
+
+in let
+(* convert a number to roman numerals, for n > 0 *)
+fun int-toroman n =
+    let
+	val ones = n mod 10
+	val tens = (n div 10) mod 10
+	val hundreds = (n div 100) mod 10
+	val thousands = (n div 1000) mod 10
+
+	val ons = ("I", "V", "X")
+	val tes = ("X", "L", "C")
+	val hus = ("C", "D", "M")
+	val ths = ("M", "?", "?")
+
+	fun cvt (n, (c1, c2, c3)) =
+	    (case n of
+		 0 => ""
+	       | 1 => c1
+	       | 2 => c1 ^ c1
+	       | 3 => c1 ^ c1 ^ c1
+	       | 4 => c1 ^ c2
+	       | 5 => c2
+	       | 6 => c2 ^ c1
+	       | 7 => c2 ^ c1 ^ c1
+	       | 8 => c2 ^ c1 ^ c1 ^ c1
+	       | 9 => c1 ^ c3
+	       | _ => raise Roman "impossible")
+
+    in
+	if n >= 4000 orelse n <= 0
+	then raise Roman "too big"
+	else
+	    cvt (thousands, ths) ^
+	    cvt (hundreds, hus) ^ 
+	    cvt (tens, tes) ^
+	    cvt (ones, ons)
+    end
+
+
+val linefactor = 5
+
+fun mkprog n acc blocks =
+    (case blocks of
+        nil => string-concat (list-rev acc)
+      | (linenum, lines) :: rest =>
+           if linenum <> n then
+              raise (HackBasic "line numbers do not match")
+           else
+              let 
+                 fun doblock i acc blklines =
+                     (case blklines of
+                         nil =>
+                            mkprog i acc rest
+                       | line :: blkrest =>
+                            let
+                               val r = int-toroman (i * linefactor)
+                               val r = string-pad (8, r) ^ " "
+                            in
+                               doblock (i+1) ((r ^ line ^ "\n") :: acc) blkrest
+                            end)
+              in
+                 doblock n acc lines
+              end)
+
+(* password list thinned to make it
+   more manageable *)
+
+val passwords = 
+(*       "abcdefg" :: *)
+(*        "administrator" :: *)
+       "airplane" ::
+       "alphabet" ::
+(*       "atmosphere" :: *)
+       "aviator" ::
+(*       "awesome" :: *)
+(*       "blizzard" :: *)
+(*       "blowfish" :: *)
+(*       "bridge" :: *)
+       "bidirectional" ::       (* important! *)
+(*       "cactus" :: *)
+       "changeme" ::
+(*       "chicken" :: *)
+       "creosote" ::
+       "cyclone" ::
+(*       "database" :: *)
+       "december" ::
+       "dolphin" ::
+(*       "dragon" :: *)
+(*       "electric" :: *)
+       "elephant" ::
+       "ersatz" ::
+(*       "flower" :: *)
+       "falderal" ::            (* important! *)
+       "functional" ::
+       "future" ::
+(*       "galaxy" :: *)
+(*       "garlic" :: *)
+       "guitar" ::
+       "gymnast" ::
+(*       "hamster" :: *)
+       "hello" ::
+(*       "helpme" :: *)
+       "imbroglio" ::
+(*       "insane" :: *)
+(*       "ironman" :: *)
+       "january" ::
+       "joshua" ::
+(*       "jupiter" :: *)
+       "kernel" ::
+       "kingfish" ::
+(*       "letter" :: *)
+(*       "logical" :: *)
+(*       "magic" :: *)
+       "(\\b.bb)(\\v.vv)" ::
+(*       "memory" :: *)
+(*       "metal" :: *)
+       "millennium" ::
+       "monday" ::
+(*       "muffin" :: *)
+       "nemesis" ::
+(*       "nutrition" :: *)
+       "oatmeal" ::
+       "october" ::
+(*       "orange" :: *)
+(*       "packard" :: *)
+       "paladin" ::
+       "pass" ::
+       "password" ::
+(*       "penelope" :: *)
+       "penguin" ::
+(*       "pickle" :: *)
+       "polynomial" ::
+       "popcorn" ::
+(*       "puppet" :: *)
+       "qwerty" ::
+(*       "rascal" :: *)
+(*       "rugby" :: *)
+       "sailor" ::
+(*       "snowball" :: *)
+(*       "spider" :: *)
+(*       "stealth" :: *)
+       "swordfish" ::
+(*       "symbol" :: *)
+       "symmetry" ::
+       "system" ::
+       "tattoo" ::
+(*       "tennis" :: *)
+       "thursday" ::
+       "tinman" ::
+       "topography" ::
+(*       "tractor" :: *)
+(*       "trivial" :: *)
+(*       "turtle" :: *)
+       "unicorn" ::
+       "vader" ::
+       "vampire" ::
+(*       "victor" :: *)
+(*       "violet" :: *)
+       "viper" ::
+       "warez" ::
+(*       "warrior" :: *)
+(*       "welcome" :: *)
+(*       "wisdom" :: *)
+       "xanadu" ::
+       "xyzzy"  ::               (* important! *)
+(*       "yellow" :: *)
+       "zephyr" ::
+       "zeppelin" ::
+(*       "zombie" :: *)
+       "zxcvbnm" :: nil
+
+val npass = list-length passwords
+
+val load-passwords = 17
+val after-passwords = 8 + npass + load-passwords
+val main-loop = 4 + after-passwords
+val succeeded = 4 + main-loop
+val failed = 3 + succeeded
+
+val hack-bas =
+    mkprog 1 nil
+    (
+     (1,
+      (
+      "REM  +------------------------------------------------+" ::
+      "REM  | HACK.BAS      (c) 19100   fr33 v4r14bl3z       |" ::
+      "REM  |                                                |" ::
+      "REM  | Brute-forces passwords on UM vIX.0 systems.    |" ::
+      "REM  | Compile with Qvickbasic VII.0 or later:        |" ::
+      "REM  |    /bin/qbasic hack.bas                        |" ::
+      "REM  | Then run:                                      |" ::
+      "REM  |   ./hack.exe username                          |" ::
+      "REM  |                                                |" ::
+      "REM  | This program is for educational purposes only! |" ::
+      "REM  +------------------------------------------------+" ::
+      "REM" ::
+      ("IF ARGS() > I THEN GOTO " ^ int-toroman (load-passwords * linefactor)) ::
+      "PRINT \"usage: ./hack.exe username\"" ::
+      ("PRINT CHR(" ^ int-toroman 10 ^ ")") ::
+      "END" ::
+      nil
+      )) ::
+
+     (load-passwords,
+      (
+      "REM" ::
+      "REM  get username from command line" ::
+      "DIM username AS STRING" ::
+      "username = ARG(II)" ::
+
+      "REM  common words used in passwords" ::
+      "DIM pwdcount AS INTEGER" ::
+      ("pwdcount = " ^ int-toroman npass) ::
+
+      ("DIM words(pwdcount) AS STRING") ::
+      (list-mapi (fn (word, n) =>
+                        "words(" ^ int-toroman (n + 1) ^ ") = \"" ^
+                        word ^ "\"")
+       passwords)
+      )) ::
+            
+     (after-passwords,
+      (
+      "REM try each password" ::
+      ("PRINT \"attempting hack with \" + pwdcount + \" passwords \" + CHR(" ^ int-toroman 10 ^ ")") ::
+      "DIM i AS INTEGER" ::
+      "i = I" ::
+      nil
+      )) ::
+
+     (main-loop,
+      (
+      (* for each word, try w *)
+      ("IF CHECKPASS(username, words(i)) THEN GOTO " ^ 
+                                  int-toroman (succeeded * linefactor)) ::
+      "i = i + I" ::
+      ("IF i > pwdcount THEN GOTO " ^ 
+                                  int-toroman (failed * linefactor)) ::
+      ("GOTO " ^ int-toroman (main-loop * linefactor)) ::
+      nil
+      )) ::
+
+     nil)
+
+in
+  ()
+end
+
+  handle HackBasic s => print [HackBasic: [s]]
+       | Roman s => print [Roman: [s]]
+end
+

@@ -1,0 +1,29 @@
+val provide-listpair = ()
+val require-list = provide-list
+
+fun listpair-app f =
+    let fun a (nil, nil) = ()
+          | a (h1::t1, h2::t2) = (f (h1, h2); a (t1, t2))
+          | a (_, _) = raise UnequalLengths
+    in
+      a
+    end
+
+fun listpair-foldl f =
+    let fun a b (nil, nil) = b
+          | a b (x1::xs1, x2::xs2) = a (f (x1, x2, b)) (xs1, xs2)
+          | a _ (_, _) = raise UnequalLengths
+    in 
+      a
+    end
+
+fun listpair-foldr f =
+    let fun a b (nil, nil) = b
+          | a b (x1::xs1, x2::xs2) = f (x1, x2, a b (xs1, xs2))
+          | a _ (_, _) = raise UnequalLengths 
+    in
+      a
+    end
+
+fun listpair-all f (l1, l2) = listpair-foldl (fn (x1, x2, r) => r andalso f (x1, x2)) 
+                                             true (l1, l2)

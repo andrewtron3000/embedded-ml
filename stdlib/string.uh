@@ -1,0 +1,322 @@
+
+val provide-string = ()
+
+(*  ^ is a primitive now  *)
+
+fun string-concat l =
+    let
+	fun count (acc, nil) = acc
+	  | count (acc, s :: t) = count (acc + length s, t)
+	val sz = count (0, l)
+	
+	val s = array(sz, ?~)
+
+	fun init (idx, nil) = s
+	  | init (idx, h :: t) =
+	    let
+		val max = length h
+		fun i x =
+		    if x chk max
+		    then init(idx + x, t)
+		    else (update_(s, idx + x, sub_(h, x));
+			  i ( x + 1 ))
+	    in
+		i 0
+	    end
+    in
+	init (0, l)
+    end
+
+(* PERF *)
+fun string-delimit s nil = ""
+  | string-delimit s (h::nil) = h
+  | string-delimit s (h1::t) = h1 ^ s ^ string-delimit s t
+
+fun print s =
+    let
+	val sl = length s
+	fun pr n =
+	    if n < sl
+	    then (putc (sub_(s, n));
+		  pr (n + 1))
+	    else ()
+    in
+	pr 0
+    end
+
+(* PERF!!! quadratic like this *)
+fun implode nil = ""
+  | implode (h :: t) = array(1, h) ^ implode t
+
+fun explode s = 
+    let
+	fun ex (acc, n) =
+	    case n of
+		0 => acc
+	      | _ => let val nm = n - 1
+		     in
+			 ex (sub_(s, nm) :: acc, nm)
+		     end
+    in
+	ex(nil, length s)
+    end
+
+fun string-equals (x, y) =
+    let fun loop i =
+            if i = (length x) then true
+            else if (ord (sub_ (x, i))) <> (ord (sub_ (y, i))) then false 
+            else loop (i + 1)
+    in
+      (length x) = (length y) andalso loop 0
+    end
+
+val seq = string-equals
+infix seq
+fun sis s s' = if s seq s' then () else raise Match
+
+(* is x a prefix of y? *)
+fun string-prefix (x, y) =
+    let fun loop i =
+            if i = (length x) then true
+            else if (ord (sub (x, i))) <> (ord (sub (y, i))) then false 
+            else loop (i + 1)
+    in
+      (length x) <= (length y) andalso loop 0
+    end
+
+(* return len characters of x starting at offset off *)
+fun substring (x, off, len) =
+    if (* off > length x
+       orelse *) off < 0
+       orelse (off + len) > length x
+       orelse len < 0
+    then raise Subscript
+    else
+	let
+	    val ns = array(len, ?&)
+	    fun init 0 = ()
+	      | init n =
+		let val nm = n - 1
+		in
+		    (* PERF if the above checks are correct,
+		       then these can be update_ and sub_ *)
+		    update(ns, nm, sub (x, off + nm));
+		    init nm
+		end
+	in
+	    init len;
+	    ns
+	end
+
+fun substring' (x, off) =
+    let val len = (length x) - off
+    in
+      substring (x, off, len)
+    end
+
+(* PERF sub_ *)
+fun string-all f s =
+    let
+	fun look 0 = true
+	  | look n =
+	    let val nm = n - 1
+	    in
+		f (sub(s, nm)) andalso look nm
+	    end
+    in
+	look (length s)
+    end
+
+(* PERF sub_ *)
+fun string-fields f s =
+    let
+	fun look (lo, cur) =
+	    if cur chk length s
+	    then substring' (s, lo) :: nil
+	    else
+		if f (sub (s, cur))
+		then substring (s, lo, cur - lo) :: look (cur + 1, cur + 1)
+		else look (lo, cur + 1)
+    in
+	look (0, 0)
+    end
+
+(* PERF could use sub_ if we're sure this code is correct *)
+fun string-tokens f s =
+    let
+	(* accumulate chars onto nonempty token.
+	   cur > lo, and s[lo..cur] does not pass f. *)
+	fun accum (lo, cur) =
+	    if cur chk length s
+	       (* rest of string is the last token *)
+	    then (substring' (s, lo) :: nil)
+	    else
+		if f (sub_(s, cur))
+		then substring(s, lo, cur - lo) :: look (cur + 1)
+		else accum (lo, cur + 1)
+
+	and look cur =
+	    if cur chk length s
+	       (* no non-separator chars *)
+	    then nil
+	    else
+		if f (sub_ (s, cur))
+		then look (cur + 1)
+		else accum (cur, cur + 1)
+    in
+	look 0
+    end
+
+fun string-str c = array(1,c)
+
+
+fun string-pad (n, s) =
+    let
+	fun string-padright (n, s) =
+	    if length s < n
+	    then s ^ array(n - length s, ? )
+	    else s
+
+	fun string-padleft (n, s) =
+	    if length s < n
+	    then array(n - length s, ? ) ^ s
+	    else s
+
+    in
+	if n < 0 
+	then string-padleft (0 - n, s)
+	else string-padright (n, s)
+    end
+
+fun string-map f s =
+    let
+	val ns = array(length s, ?@)
+	fun go n =
+	    if n chk length s
+	    then ()
+	    else (update_(ns, n, f (sub_(s, n)));
+		  go (n + 1))
+    in
+	go 0;
+	ns
+    end
+
+fun string-lcase s =
+    let
+	fun lc a =
+	    if ord a >= ord ?A
+	       andalso ord a <= ord ?Z
+	    then chr (ord ?a +
+		      (ord a - ord ?A))
+	    else a
+    in
+	string-map lc s
+    end
+
+(* note: consecutive spaces aren't preserved 
+
+SUSP: how should this deal with \r? 
+
+*)
+fun string-wordwrap linelen s =
+    let
+	(* preserve existing linebreaks. *)
+	val chunks = string-fields (fn ?\n => true | _ => false) s
+
+	fun ww-them (l :: more) =
+	    let
+		val wmore = (case more of
+				 nil => nil
+			       | _ => "\n" :: ww-them more)
+
+		fun ww-line (charsleft, nil) = wmore
+		  | ww-line (charsleft, h :: rest) =
+                    (* Check if there is enough room remaining on the line, including the
+                       inter-word space.  (This is safe even if we are at the beginning of
+                       the line and aren't going to print an inter-word space.  In that case
+                       the long-line exception will fire anyway.) *)
+		    if length h < charsleft
+		    then (if charsleft < linelen
+			  then (" " ^ h) :: ww-line (charsleft - length h - 1, rest)
+			  else h :: ww-line (charsleft - length h, rest))
+		    (* no room *)
+		    else (if charsleft = linelen
+			  then (* long word: can't make more room. *)
+			      (h ^ "\n") :: ww-line (linelen, rest)
+			  else "\n" :: ww-line (linelen, h :: rest))
+	    in
+		ww-line (linelen, 
+			 string-fields
+			 (fn ?  => true | _ => false) l)
+	    end
+	  | ww-them nil = nil
+
+	val all = ww-them chunks
+    in
+	string-concat all
+    end
+
+(* escapes quote characters *)
+fun string-tostring s =
+    let
+	fun count (a, n) =
+	    if n chk length s then a
+	    else 
+		count 
+		((* PERF sub_ *)
+		 ( (* putc (sub(s, n)); *)
+		    case sub(s, n) of
+			?\" => a + 1 (* " *)
+		      | _ => a), n + 1)
+
+        val s' = array(length s + count(0, 0), ?%)
+
+	(* do (putc ?! ; putc ?! ) *)
+
+	fun fill (n, m) =
+	    if n chk length s then ()
+	    else
+		let 
+		    val c = sub(s, n)
+		    val m = 
+			(case c of
+			     ?\" => (update(s', m, ?\\);
+			             m + 1) (* " *)
+                            | _ => m)
+		in
+		    update (s', m, c);
+		    fill(n + 1, m + 1)
+		end
+    in
+	fill (0, 0);
+	s'
+    end
+
+fun string-compare (s, t) =
+    let 
+	fun int-compare (n, m) =
+	    if n < m
+	    then LESS
+	    else if n > m then GREATER
+		 else EQUAL
+
+	val ls = length s
+	val lt = length t
+
+	fun a i = if i = ls
+                  then (* both are done *)
+		       (if i = lt then EQUAL else LESS)
+                  else
+		      (* a has chars *)
+		      (if i = lt 
+		       (* out of chars for t, but not s*)
+		       then GREATER
+		       else
+			   (* both have chars *)
+			   (case int-compare (ord (sub (s, i)),
+					      ord (sub (t, i)))
+				of EQUAL => a (i+1)
+			      | r => r))
+    in
+      a 0
+    end

@@ -1,0 +1,8 @@
+let
+    import "std.uh"
+    import "string.uh"
+in
+    
+    print (string-wordwrap 20 "Well, this is a piece of text that I would like to be word-wrapped. That means breaking it such that it fits across several lines in an aesthetic way, with no line exceeding the specified character length, unless it is impossible to fit a word because it is longer than the line length. An example of such a word would be QWERTYUIOPASDFGHJKLZXCVBNM, which means \"keyboard\". We aren't doing anything fancy about layout like with tex's dynamic programming algorithm or something like that. But at least we shouldn't screw up when the input contains newlines, like\nthese\nshould\nbe\non\nseparate\nlines.\nRight? And here's some text that comes after those words to see if word-wrap is messed up by their presence, but it won't be because this is an excellent implementation of word-wrap.\n")
+
+end

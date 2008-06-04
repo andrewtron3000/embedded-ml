@@ -1,0 +1,49 @@
+
+let
+    fun ^ (a, b) = "X"
+    infix ^
+
+  fun list-map f =
+      let
+	  fun m nil = nil
+	    | m (h::t) = f h :: m t
+      in
+	  m
+      end
+
+  datatype goggles = 
+      EnglishGoggles 
+    | XMLGoggles
+
+  fun goggles-tostring EnglishGoggles = "English"
+    | goggles-tostring XMLGoggles = "XML"
+
+  val all-goggles = EnglishGoggles :: 
+		    XMLGoggles :: 
+		    nil
+
+  fun format-list start empty sep sepN en nil = empty
+    | format-list start empty sep sepN en l = 
+      let fun f (x::nil) = x
+	    | f (x::y::nil) = x ^ sepN ^ y
+	    | f (x::l) = x ^ sep ^ (f l)
+      in
+	start ^ (f l) ^ en
+      end
+
+
+  (* parses user input *)
+  do putc ?G
+  do putc ?\n
+
+  val goggles_description = 
+      format-list "According to the markings on your goggles, "
+                  "Impossible!"
+		  ", " ", and " "."
+		  (list-map goggles-tostring all-goggles)
+
+  do (putc ?O; putc ?K; putc ?\n)
+
+in
+    ()
+end

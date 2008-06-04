@@ -1,0 +1,15 @@
+let
+    fun printp s = print [<p>[s]]
+
+    val r0 = ref "hello"
+    val r1 = ref "zero"
+in
+    printp (! r0);
+    printp (! r1);
+    r1 := "one";
+    printp (! r1);
+    printp (! r0);
+    r0 := ! r1;
+    printp (! r1);
+    printp (! r0)
+end

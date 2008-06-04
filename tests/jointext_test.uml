@@ -1,0 +1,21 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "des.uh"
+    import "bigint.uh"
+(*    import "publications.uh" *)
+    import "random.uh"
+    import "growarray.uh"
+    import "io.uh"
+    import "util.uh"
+
+    fun pwp (w1, w2) = [[int-tohexstring w1].[int-tohexstring w2]]
+    val N = 2
+    val i = 1
+    val ws = (0x12345678, 0x09ABCDEF)
+in
+    print ([[string-pad(4, [[int-tostring ((N - i) div 100)].])] [pwp ws]\n])
+end

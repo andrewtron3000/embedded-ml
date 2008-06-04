@@ -1,0 +1,4 @@
+(* yes, this should be a legal function that always raises match *)
+
+  ( fn )
+

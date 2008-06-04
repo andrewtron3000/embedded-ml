@@ -1,0 +1,26 @@
+
+let 
+    fun my () = 2
+	
+    fun not true = false
+      | not false = true
+in
+
+    if (putc ?a; my () < (my () + 1))
+    then
+	let in
+	    putc ?\n;
+	    putc ?o; putc ?k; 
+	    putc ?!;
+	    ()
+	end
+    else
+	let in
+	    putc ?\n;
+	    putc ?n; putc ?o; 
+	    putc ?!;
+	    ()
+	end;
+
+    putc ?\n
+end

@@ -1,0 +1,24 @@
+let
+    import "std.uh"
+    import "des.uh"
+    import "string.uh"
+    import "int.uh"
+    import "growarray.uh"
+
+    fun test (k as (ka, kb)) (p as (pa, pb)) = 
+	let
+	    val key = des-key k
+	    val (a, b) = des-encrypt key p
+	in
+	    int-tohexstring ka ^ "/" ^ int-tohexstring kb ^ "   " ^
+	    int-tohexstring pa ^ "/" ^ int-tohexstring pb ^ "   =   " ^
+	    int-tohexstring a ^ "/" ^ int-tohexstring b 
+	end
+in
+    (* a few nist test vectors... 
+       http://www.skepticfiles.org/faq/testdes.htm
+       *)
+    print (test (0, 0) (0, 0) ^ "\n");
+    print (test (0x11111111, 0x11111111)
+	        (0x01234567, 0x89ABCDEF) ^ "\n")
+end

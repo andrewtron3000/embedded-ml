@@ -1,0 +1,8 @@
+let
+  fun g x = x + 1
+  val a = g 3
+  val b = g 4
+  do putc (chr_ (a + b))
+in
+  ()
+end

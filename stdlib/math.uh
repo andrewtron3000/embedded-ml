@@ -1,0 +1,173 @@
+
+(*
+
+   Useful mathematical routines.  Sixteen bit fixed point arithmetic.
+
+*)
+
+val provide-math = ()
+
+exception FP-exn of string
+
+val fp-wordlength = 16
+
+(* The format of fixed point numbers is FP (frac, int16)
+   where frac is the number of bits allocated to the fractional
+   part of the number and int16 is the actual number.
+   FPdouble is similar, except uses 32 bits; this is only useful
+   for intermediate computations. *)
+datatype fp-value = FP of (int * int) 
+                  | FPdouble of (int * int)
+
+fun fp_to_string (FP (xb, xv)) = "('single', " ^ int-tostring(xb) ^ ", '" ^ int-tohexstring(xv) ^ "')"
+  | fp_to_string (FPdouble (xb, xv)) = "('double', " ^ int-tostring(xb) ^ ", '" ^ int-tohexstring(xv) ^ "')"
+
+val fp-min = (1 shl (fp-wordlength - 1)) + 1
+val fp-max = (1 shl (fp-wordlength - 1)) - 1
+val fp-sign-bit = 1 shl (fp-wordlength - 1)
+val fp-all-bits = (1 shl fp-wordlength) - 1
+
+fun fp_is_negative (FP (xb, xv)) = (xv andb fp-sign-bit) > 0
+
+fun fp_equiv_scale (FP (mb,mv), FP (nb,nv)) =
+    let
+        fun compute_new_val (FP(xb, xv), yb) = 
+            let
+                val num_bits = xb - yb
+                val m = (2 * num_bits) - 1
+                val mask = m shl (fp-wordlength - num_bits)
+            in
+                if fp_is_negative (FP (xb, xv))
+                then (xv shr num_bits) orb mask
+                else (xv shr num_bits)
+            end
+    in
+        if (mb = nb) then (FP (mb,mv), FP (nb,nv))
+        else if mb > nb then 
+            let 
+                val new_val = compute_new_val((FP (mb, mv)), nb) 
+            in
+                (FP (nb, new_val), FP (nb,nv))
+            end
+        else
+            let 
+                val new_val = compute_new_val((FP (nb, nv)), mb)
+            in
+                (FP (mb, mv), FP (mb, new_val))
+            end
+    end
+
+fun fp_overflow_check (wordlength, x, y, v) =
+    let
+        val x_sign = x shr (wordlength - 1)
+        val y_sign = y shr (wordlength - 1)
+        val v_sign = v shr (wordlength - 1)
+        val result = v andb ((1 shl wordlength) - 1)
+    in
+        if (x_sign = 0) andalso (y_sign = 0) then
+            if v_sign = 1 then (raise FP-exn "overflow") else result
+        else if (x_sign = 1) andalso (y_sign = 1) then 
+            if v_sign = 0 then (raise FP-exn "underflow") else result
+        else result
+    end
+
+
+fun fp_add (x, y) =
+    let 
+        val (x', y') = fp_equiv_scale (x, y)
+
+        fun adder (FP (xb, xv), FP (yb, yv)) =
+            FP (xb, fp_overflow_check (fp-wordlength, xv, yv, xv + yv) )
+    in
+        adder (x', y')
+    end
+infix 6 fp_add
+
+fun fp_negate (FP (xb, xv)) = 
+    let
+        val new_v =  if fp_is_negative(FP (xb, xv)) 
+                     then (notb xv) + 1
+                     else notb (xv - 1)
+    in
+        FP (xb, new_v andb fp-all-bits)
+    end
+
+fun fp_abs (FP (xb, xv)) = 
+    let
+        val new_v =  if fp_is_negative(FP (xb, xv)) 
+                     then (notb xv) + 1
+                     else xv
+    in
+        FP (xb, new_v andb fp-all-bits)
+    end
+
+fun fp_subtract (x, y) = x fp_add (fp_negate (y))
+infix 6 fp_subtract
+
+fun fp_to_single (FPdouble (xb, xv)) =
+    let 
+        val x_sign = xv andb (1 shl (fp-wordlength * 2 - 1))
+        val result_sign = x_sign shr fp-wordlength
+        val xa = (fp-wordlength * 2) - xb - 1
+        fun find_int_part (FPdouble (jb, jv)) = fp_abs (FP (fp-wordlength - 1, jv shr jb))
+        fun l2 (FP (wb, wv), acc) = if wv = 0 then acc else l2 (FP (wb, (wv shr 1)), acc+1) (* represents log_2 *)
+        val w = find_int_part (FPdouble (xb, xv))
+        val result_a = l2 (w, 0)
+        val result_b = fp-wordlength - result_a - 1
+        val l_shift = xa - result_a + 1
+        val r_shift = l_shift + xb - result_b
+    in
+        if xa > (fp-wordlength - 1) then
+            if result_a > (fp-wordlength - 1) then raise (FP-exn "fp_to_single overflow") 
+            else FP (result_b, ((xv shl l_shift) shr r_shift) orb result_sign)
+        else (* xb > (fp-wordlength - 1) *)
+            let 
+                val v = xv shl (xa + 1)
+                val significant_part = v andb (fp-max shl (fp-wordlength + 1))
+            in
+                if significant_part = 0 then raise (FP-exn "fp_to_single underflow") 
+                else FP (result_b, ((xv shl l_shift) shr r_shift) orb result_sign)
+            end
+    end
+
+fun fp_to_double (FP (xb, xv)) =
+    let 
+        val za = fp-wordlength - xb - 1
+        val zb = (fp-wordlength * 2) - za - 1
+    in
+        FPdouble (zb, xv shl fp-wordlength)
+    end
+
+fun fp_sign_extend (FP (ab, av)) = 
+    let 
+        val extension_mask = fp-all-bits shl fp-wordlength
+    in
+        if fp_is_negative (FP (ab, av)) 
+        then av orb extension_mask 
+        else av
+    end
+
+fun fp_multiply (FP (xb, xv), FP (yb, yv)) =
+    let
+        val zb = xb + yb
+        val xv_extended = fp_sign_extend (FP (xb, xv))
+        val yv_extended = fp_sign_extend (FP (yb, yv))
+        val extended_product = xv_extended * yv_extended
+    in
+        fp_to_single (FPdouble (zb, extended_product))
+    end
+infix 6 fp_multiply
+
+fun fp_divide (FP (xb, xv), FP (yb, yv)) =
+    let
+        val xv_extended = fp_sign_extend (FP (xb, xv))
+        val yv_extended = fp_sign_extend (FP (yb, yv))
+        val da = (fp-wordlength - yb - 1)
+        val zb = da + xb 
+        val nv = xv_extended shl (yb + da)
+        val extended_quotient = nv divs yv_extended
+    in
+        fp_to_single (FPdouble (zb, extended_quotient))
+    end
+infix 6 fp_divide
+

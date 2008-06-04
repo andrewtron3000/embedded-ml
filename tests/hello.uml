@@ -1,0 +1,16 @@
+let in
+    putc ?h;
+    putc ?e;
+    putc ?l;
+    putc ?l;
+    putc ?o;
+    putc ? ;
+    putc ?w;
+    putc ?o;
+    putc ?r;
+    putc ?l;
+    putc ?d;
+    putc ?\n;
+    
+    ()
+end

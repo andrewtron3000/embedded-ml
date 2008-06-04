@@ -1,0 +1,24 @@
+val provide-threads = ()
+
+val threads = ref nil
+
+fun yield () =
+    letcc k
+    in
+       case !threads
+        of nil => ()
+         | t::rest => ( threads := rest @ ((fn () => throw () to k ) :: nil) ;
+                        t () )
+    end
+
+fun resched () =
+    case !threads of nil => ()
+                   | t :: rest => ( threads := rest ; 
+                                    t () )
+
+fun fork t = 
+    let
+        fun harness () = ( t () ; resched () )
+    in
+        threads := (harness :: !threads)
+    end

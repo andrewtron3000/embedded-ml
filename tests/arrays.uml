@@ -1,0 +1,87 @@
+
+(* Test the checked (poly)array primitives
+   from the standard library. *)
+let
+    import "std.uh"
+
+    val n = 6
+
+    val _ = (putc ?0; putc ?\n)
+
+    val a = array(n, ?a)
+
+    val _ = (putc ?1; putc ?\n)
+
+    val _ = (putc ?l; putc ?e; putc ?n;
+	     putc ?:; putc ? ;
+	     putc (chr (ord ?0 + length a));
+	     putc ?\n)
+
+    val _ = (if length a = n
+	     then (putc ?O; putc ?K; putc ?!;
+		   putc ? ; putc ?@; putc ?\n)
+	     else (putc ?N; putc ?O; putc ?!;
+		   putc ? ; putc ?@; putc ?\n))
+
+    val _ = (putc ?2; putc ?\n)
+
+    fun oob_hi () =
+	(sub(a, n);
+	 putc ?N;
+	 putc ?O;
+	 putc ?!;
+	 putc ?\n)
+	handle Subscript =>
+	    (putc ?O;
+	     putc ?K;
+	     putc ?!;
+	     putc ?\n)
+
+    fun oob_low () =  
+	(sub(a, 0 - 1);
+	 putc ?N;
+	 putc ?O;
+	 putc ?!;
+	 putc ? ;
+	 putc ?*;
+	 putc ?\n)
+	handle Subscript =>
+	    (putc ?O;
+	     putc ?K;
+	     putc ?!;
+	     putc ? ;
+	     putc ?*;
+	     putc ?\n)
+
+    fun go m = 
+	if m = n then ()
+	else
+	let in
+	    update(a, m, chr (2 + m + ord (sub(a, m))));
+	    go (m + 1)
+	end
+
+    fun pr m =
+        if m = n then ()
+	else
+	let in
+	    putc (sub(a, m));
+	    pr (m + 1)
+	end
+in
+    oob_hi ();
+    (putc ?3; putc ?\n);
+    oob_low ();
+    (putc ?4; putc ?\n);
+    go 0;
+    (putc ?5; putc ?\n);
+    (putc ?s; putc ?h; putc ?o; putc ?u; putc ?l; putc ?d; putc ? ; 
+     putc ?s; putc ?e; putc ?e; putc ? ; 
+     putc ?c; putc ?d; putc ?e; putc ?f; putc ?g; putc ?h; putc ?:;
+     putc ?\n);
+    pr 0;
+    putc ?\n
+end handle _ =>
+let in
+    putc ?e; putc ?x; putc ?n; putc ?\n
+end

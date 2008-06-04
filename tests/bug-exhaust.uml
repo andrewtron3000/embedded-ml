@@ -1,0 +1,29 @@
+let
+    datatype a exp =
+      Int of int
+    | Plus of exp * exp
+    | Times of exp * exp
+    | Minus of exp * exp
+    | Fn of string * string list * exp
+    | Var of string
+    | Pair of exp * exp
+    | Pi1 of exp
+    | Pi2 of exp
+    | App of exp * exp list
+    | True
+    | False
+    | If of exp * exp * exp
+    | Less of exp * exp
+    | Case of exp * string * exp * exp
+    | Inl of exp
+    | Inr of exp
+    | Unit
+    | Let of string * exp * exp
+
+
+    (* obviously not exhaustive; why no warning? *)
+    fun minml-eval (Int i) = Int i
+      | minml-eval (Inl e) = Inl (minml-eval e)
+in
+    0
+end

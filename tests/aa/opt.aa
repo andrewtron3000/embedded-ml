@@ -1,0 +1,12 @@
+
+let
+
+    val a = 3
+    val b = 4
+
+    val c = 1 + 2
+    val d = c
+in
+   (* itos (a + b) ^ "hello" ^ *) itos d ^ itos d ^ itos d
+
+end

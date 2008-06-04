@@ -1,0 +1,18 @@
+(* test mutual recursion *)
+
+let
+
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+
+  fun counte 0 = 0
+    | counte n = (print (int-tostring n);
+		  print "\n";
+		  counto (n - 1, n div 2))
+
+  and counto (a, b) = counte ((a + b) div 2)
+
+in
+    counte 1111
+end

@@ -1,0 +1,9 @@
+
+let
+    datatype optional = A of int | B
+
+    fun swippy (A i) = B
+      | swippy B = A 5
+in
+    swippy (A 2)
+end

@@ -1,0 +1,13 @@
+val provide-tasks = ()
+val require-threads = provide-threads
+val require-queues = provide-queues
+
+fun task-create q f = 
+    let
+        fun looper () = 
+            ( f (queue-receive q) ;
+              yield () ;
+              looper () )
+    in
+        fork looper
+    end

@@ -1,0 +1,23 @@
+let in
+  if true then
+     (if false then
+	  let in
+	      putc ?n;
+	      putc ?o;
+	      ()
+	  end
+      else
+	  let in
+	      putc ?o;
+	      putc ?k;
+	      ()
+	  end)
+  else 
+    let in
+	putc ?n;
+	putc ?o;
+	()
+    end;
+
+    putc ?\n
+end

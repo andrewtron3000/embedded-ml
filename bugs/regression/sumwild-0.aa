@@ -1,0 +1,7 @@
+
+let
+    fun lookup-dir cdirs 0 = 9999
+      | lookup-dir nil _ = 5555
+in
+    lookup-dir
+end

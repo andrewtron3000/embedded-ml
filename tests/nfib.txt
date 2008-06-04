@@ -1,0 +1,61 @@
+NFIB NFIB NFIB NFIB
+
+#### C version #############################################
+#include <stdio.h>
+
+int nfib( int n )
+{
+        if (n <= 1)
+        {
+                return 1;
+        }
+        else
+        {
+                return 1 + nfib(n-1) + nfib(n-2);
+        }
+}
+
+int main(int argc, char **argv)
+{
+        nfib(32);
+        return (0);
+}
+
+#### python version ########################################
+def nfib(n):
+        if (n <= 1):
+                return 1
+        else:
+                return 1 + nfib(n-1) + nfib(n-2)
+
+nfib(32)
+
+#### uml version ###########################################
+let 
+  import "std.uh"
+  import "string.uh"
+  import "int.uh"
+
+        fun nfib n = 
+      if (n <= 1) 
+      then 1
+      else 1 + (nfib (n - 1)) + (nfib (n - 2))
+in
+    nfib 32
+end
+
+
+nfib(32) value is 7049155
+
+c time is .110 seconds
+uml time is 1.7 seconds
+python time is 3.5 seconds
+
+C calls per second = 7049155/.110 = 64083227
+uml calls per second = 7049155/1.7 = 4146561
+python calls per second = 7049155/3.5 = 2014044
+
+performance relative to uml 
+C = 15
+uml = 1
+python = 0.49

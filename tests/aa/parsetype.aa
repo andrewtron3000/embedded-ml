@@ -1,0 +1,11 @@
+let
+    datatype a thing = Yes of a
+    datatype b funny = No of b
+    datatype (a, b) zoo = Zoo of a * b
+
+    fun f(x : (int, int) zoo thing funny,
+	  z : int funny thing
+	  ) = x
+in
+    f (No (Yes( Zoo(0, 0))), Yes(No(1)))
+end

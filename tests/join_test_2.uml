@@ -1,0 +1,21 @@
+
+let
+    import "std.uh"
+    import "string.uh"
+
+val int-hexdigs = "0123456789abcdef"
+
+fun int-tohexstringx nibbles x =
+    let
+        fun digtos x = array(1, sub (int-hexdigs, x))
+        fun pitos 0 _ = ""
+          | pitos n x = pitos (n - 1) (x div 16) ^ digtos(x mod 16)
+    in
+        pitos nibbles x
+    end
+    
+val int-tohexstring = int-tohexstringx 8
+
+in
+    print [[int-tohexstring 0x12345678].[int-tohexstring 0xabababab]]
+end

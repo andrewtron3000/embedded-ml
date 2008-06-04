@@ -1,0 +1,15 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "bigint.uh"
+    import "des.uh"
+    import "publications.uh"
+in
+    print (gen-publication { problem = "TESTX",
+			     task    = "ONE",
+			     (* hi-score!! *)
+			     score   = bi-fromint 1000000 } ^ "\n")
+end

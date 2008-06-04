@@ -1,0 +1,2 @@
+(* Build a tuple and print out the second component *)
+putc (chr_ (#2/6 (65, 110, 100, 114, 101, 119)))

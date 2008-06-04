@@ -1,0 +1,12 @@
+let
+    import "std.uh"
+    import "string.uh"
+
+    val g = "hey"
+
+    val s = "first-" ^ g ^ "second" ^ g ^ "-third"
+in
+    putc ?!;
+    print s;
+    putc ?\n
+end

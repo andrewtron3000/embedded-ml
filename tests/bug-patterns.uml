@@ -1,0 +1,20 @@
+
+let
+    import "std.uh"
+
+    datatype t =
+	A of { a : t, b : char }
+      | B
+
+    val x =
+	A { a = A { b = ?e, a = A { b = ?s, a = B } }, b = ?y }
+
+
+    fun pr y =
+	(case y of
+	     A { a, b = c } => (putc c; pr a)
+	   | A { a = B, b } => (putc b; putc ?!; putc ?\n)
+	   | B => (putc ?n; putc ?o))
+in
+    pr x
+end

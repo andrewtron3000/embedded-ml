@@ -1,0 +1,36 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "io.uh"
+
+    (* matcher for values within
+       the range lo-hi, inclusive *)
+    fun -- (lo, hi) x = if ord x >= ord lo andalso ord x <= ord hi then x
+			else raise Match
+
+    infix --
+
+    fun test n =
+	case n of
+	    ((?A -- ?Z) x) => chr (ord x - ord ?A + ord ?a)
+	  | ((?a -- ?z) y) => y
+	  | v => ?-
+
+    do
+	let in
+    print ("*******************************************************\n");
+    print ("This is a test of WHEN patterns in Humlock.\n" ^
+	   "To play, enter a string with capital and lowercase\n" ^
+	   "letters and press enter. The string will be made\n" ^
+	   "lowercase and any other characters will be rewritten\n" ^
+	   "to the dash character.\n");
+    print ("*******************************************************\n")
+	end
+
+    val l = getline ()
+    val l = explode l
+in
+    print (implode ((list-map test) l))
+end

@@ -1,0 +1,18 @@
+
+let 
+    import "std.uh"
+    import "string.uh"
+    import "array.uh"
+    import "des.uh"
+    import "obfuscate.uh"
+
+    val s = ObsString{"encrypted string--cool!\n"}
+
+(*    val s = obs-fromstring (42, 100) "HELLO WORLD !!!" *)
+
+    val () = obs-update (s, 1, ?X)
+	
+    val s' = obs-tostring s
+in
+    print s'
+end

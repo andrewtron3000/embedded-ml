@@ -1,0 +1,125 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "bigint.uh"
+    import "des.uh"
+    import "publications.uh"
+in
+    print (gen-publication { problem = "TESTX",
+			     task    = "ONE",
+			     (* hi-score!! *)
+			     score   = bi-fromint 1000000 } ^ "\n");
+    print (gen-publication { problem = "TESTX",
+			     task    = "ONE",
+			     (* hi-score!! *)
+			     score   = bi-fromint 1000001 } ^ "\n");
+    print (gen-publication { problem = "TESTX",
+			     task    = "ONF",
+			     (* hi-score!! *)
+			     score   = bi-fromint 1000000 } ^ "\n");
+    print (gen-publication { problem = "TESTY",
+			     task    = "ONE",
+			     (* hi-score!! *)
+			     score   = bi-fromint 1000000 } ^ "\n");
+
+    print 
+       [Score: \ 
+         [(bi-tostring
+                  (sigmoid-score
+                     { min-score = bi-fromint 30,
+                       par-score = bi-fromint 150,
+                       max-score = bi-fromint 175,
+                       correct= bi-fromint 1000,
+                       par=bi-fromint 350,
+                       hole-in-one= bi-fromint 10}
+                     (bi-fromint 1100)
+          ))]
+        ];
+
+    print 
+       [Score: \ 
+         [(bi-tostring
+                  (sigmoid-score
+                     { min-score = bi-fromint 30,
+                       par-score = bi-fromint 150,
+                       max-score = bi-fromint 175,
+                       correct= bi-fromint 1000,
+                       par=bi-fromint 350,
+                       hole-in-one= bi-fromint 10}
+                     (bi-fromint 1000)
+          ))]
+        ];
+
+    print 
+       [Score: \ 
+         [(bi-tostring
+                  (sigmoid-score
+                     { min-score = bi-fromint 30,
+                       par-score = bi-fromint 150,
+                       max-score = bi-fromint 175,
+                       correct= bi-fromint 1000,
+                       par=bi-fromint 350,
+                       hole-in-one= bi-fromint 10}
+                     (bi-fromint 500)
+          ))]
+        ];
+
+    print 
+       [Score: \ 
+         [(bi-tostring
+                  (sigmoid-score
+                     { min-score = bi-fromint 30,
+                       par-score = bi-fromint 150,
+                       max-score = bi-fromint 175,
+                       correct= bi-fromint 1000,
+                       par=bi-fromint 350,
+                       hole-in-one= bi-fromint 10}
+                     (bi-fromint 350)
+          ))]
+        ];
+
+    print 
+       [Score: \ 
+         [(bi-tostring
+                  (sigmoid-score
+                     { min-score = bi-fromint 30,
+                       par-score = bi-fromint 150,
+                       max-score = bi-fromint 175,
+                       correct= bi-fromint 1000,
+                       par=bi-fromint 350,
+                       hole-in-one= bi-fromint 10}
+                     (bi-fromint 200)
+          ))]
+        ];
+
+    print 
+       [Score: \ 
+         [(bi-tostring
+                  (sigmoid-score
+                     { min-score = bi-fromint 30,
+                       par-score = bi-fromint 150,
+                       max-score = bi-fromint 175,
+                       correct= bi-fromint 1000,
+                       par=bi-fromint 350,
+                       hole-in-one= bi-fromint 10}
+                     (bi-fromint 10)
+          ))]
+        ];
+
+    print 
+       [Score: \ 
+         [(bi-tostring
+                  (sigmoid-score
+                     { min-score = bi-fromint 30,
+                       par-score = bi-fromint 150,
+                       max-score = bi-fromint 175,
+                       correct= bi-fromint 1000,
+                       par=bi-fromint 350,
+                       hole-in-one= bi-fromint 10}
+                     (bi-fromint 5)
+          ))]
+        ]
+end

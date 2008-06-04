@@ -1,0 +1,30 @@
+PHalt -- tested
+PSet -- tested
+PGet -- tested
+PRef -- tested
+PNewtag -- tested
+PGethandler -- tested
+PSethandler -- tested
+PArray -- tested
+PArray0
+PJointext -- tested
+PSub -- tested
+PUpdate -- tested
+PArraylength
+App -- tested
+Sumswitch -- tested
+PBind -- tested
+PGetc -- tested
+PPutc -- tested
+PNull -- tested
+Binary comparison -- tested 
+PNotb -- tested
+Binary operation -- tested 
+Project -- tested
+Alloc STRING -- tested
+Alloc INT -- tested
+Alloc TUPLE0 -- tested
+Alloc TUPLEn -- tested
+Alloc CODE -- tested
+Alloc INT_T t -- 
+Alloc INT_T nil -- tested

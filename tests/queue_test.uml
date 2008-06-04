@@ -1,0 +1,28 @@
+let 
+  import "std.uh"
+  import "list.uh"
+  import "string.uh"
+  import "threads.uh"
+  import "queues.uh"
+  import "tasks.uh"
+
+  exception Raw of string
+
+  val a-queue = queue-create ()
+
+  fun task-a-hook v = case v of Raw s => print [message is: [s]\n]
+                              | _ => print "unknown message" 
+
+  fun pr s () = 
+      (print [[s]\n];
+       queue-send-noyield a-queue (Raw "greetings");
+       queue-send-noyield a-queue (Raw "my name is andrew");
+       queue-send-noyield a-queue (Raw "what is yours?");
+       queue-send a-queue (Raw "how are you");
+(*       yield (); *)
+       pr s ())
+
+in
+    task-create a-queue task-a-hook ; 
+    pr "A" ()
+end

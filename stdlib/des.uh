@@ -1,0 +1,415 @@
+
+(* Data Encryption Standard (FIPS-46) 
+
+   Based on my sml-lib code.
+
+
+   call des-key on a pair of 32-bit words to
+   generate the key.
+   
+   then call des-encrypt key (w1, w2) 
+   and des-decrypt key (w1, w2)
+   to encrypt and ecrypt blocks.
+
+   *)
+
+val provide-des = ()
+
+(* 32 words *)
+type des-key = int array
+
+(* ------------ ignore between here --------------- *)
+
+(* S boxes, permuted with P and rotated one bit to the left *)  
+val des-sbox1 =
+  {| 0x01010400, 0x00000000, 0x00010000, 0x01010404, 
+     0x01010004, 0x00010404, 0x00000004, 0x00010000,
+     0x00000400, 0x01010400, 0x01010404, 0x00000400, 
+     0x01000404, 0x01010004, 0x01000000, 0x00000004,
+     0x00000404, 0x01000400, 0x01000400, 0x00010400, 
+     0x00010400, 0x01010000, 0x01010000, 0x01000404,
+     0x00010004, 0x01000004, 0x01000004, 0x00010004, 
+     0x00000000, 0x00000404, 0x00010404, 0x01000000,
+     0x00010000, 0x01010404, 0x00000004, 0x01010000, 
+     0x01010400, 0x01000000, 0x01000000, 0x00000400,
+     0x01010004, 0x00010000, 0x00010400, 0x01000004, 
+     0x00000400, 0x00000004, 0x01000404, 0x00010404,
+     0x01010404, 0x00010004, 0x01010000, 0x01000404, 
+     0x01000004, 0x00000404, 0x00010404, 0x01010400,
+     0x00000404, 0x01000400, 0x01000400, 0x00000000, 
+     0x00010004, 0x00010400, 0x00000000, 0x01010004 |}
+
+val des-sbox2 =
+  {| 0x80108020, 0x80008000, 0x00008000, 0x00108020, 
+     0x00100000, 0x00000020, 0x80100020, 0x80008020,
+     0x80000020, 0x80108020, 0x80108000, 0x80000000, 
+     0x80008000, 0x00100000, 0x00000020, 0x80100020,
+     0x00108000, 0x00100020, 0x80008020, 0x00000000, 
+     0x80000000, 0x00008000, 0x00108020, 0x80100000,
+     0x00100020, 0x80000020, 0x00000000, 0x00108000, 
+     0x00008020, 0x80108000, 0x80100000, 0x00008020,
+     0x00000000, 0x00108020, 0x80100020, 0x00100000, 
+     0x80008020, 0x80100000, 0x80108000, 0x00008000,
+     0x80100000, 0x80008000, 0x00000020, 0x80108020, 
+     0x00108020, 0x00000020, 0x00008000, 0x80000000,
+     0x00008020, 0x80108000, 0x00100000, 0x80000020, 
+     0x00100020, 0x80008020, 0x80000020, 0x00100020,
+     0x00108000, 0x00000000, 0x80008000, 0x00008020, 
+     0x80000000, 0x80100020, 0x80108020, 0x00108000 |}
+
+val des-sbox3 =
+  {| 0x00000208, 0x08020200, 0x00000000, 0x08020008, 
+     0x08000200, 0x00000000, 0x00020208, 0x08000200,
+     0x00020008, 0x08000008, 0x08000008, 0x00020000, 
+     0x08020208, 0x00020008, 0x08020000, 0x00000208,
+     0x08000000, 0x00000008, 0x08020200, 0x00000200, 
+     0x00020200, 0x08020000, 0x08020008, 0x00020208,
+     0x08000208, 0x00020200, 0x00020000, 0x08000208, 
+     0x00000008, 0x08020208, 0x00000200, 0x08000000,
+     0x08020200, 0x08000000, 0x00020008, 0x00000208, 
+     0x00020000, 0x08020200, 0x08000200, 0x00000000,
+     0x00000200, 0x00020008, 0x08020208, 0x08000200, 
+     0x08000008, 0x00000200, 0x00000000, 0x08020008,
+     0x08000208, 0x00020000, 0x08000000, 0x08020208, 
+     0x00000008, 0x00020208, 0x00020200, 0x08000008,
+     0x08020000, 0x08000208, 0x00000208, 0x08020000, 
+     0x00020208, 0x00000008, 0x08020008, 0x00020200 |}
+
+val des-sbox4 =
+  {| 0x00802001, 0x00002081, 0x00002081, 0x00000080, 
+     0x00802080, 0x00800081, 0x00800001, 0x00002001,
+     0x00000000, 0x00802000, 0x00802000, 0x00802081, 
+     0x00000081, 0x00000000, 0x00800080, 0x00800001,
+     0x00000001, 0x00002000, 0x00800000, 0x00802001, 
+     0x00000080, 0x00800000, 0x00002001, 0x00002080,
+     0x00800081, 0x00000001, 0x00002080, 0x00800080, 
+     0x00002000, 0x00802080, 0x00802081, 0x00000081,
+     0x00800080, 0x00800001, 0x00802000, 0x00802081, 
+     0x00000081, 0x00000000, 0x00000000, 0x00802000,
+     0x00002080, 0x00800080, 0x00800081, 0x00000001, 
+     0x00802001, 0x00002081, 0x00002081, 0x00000080,
+     0x00802081, 0x00000081, 0x00000001, 0x00002000, 
+     0x00800001, 0x00002001, 0x00802080, 0x00800081,
+     0x00002001, 0x00002080, 0x00800000, 0x00802001, 
+     0x00000080, 0x00800000, 0x00002000, 0x00802080 |}
+
+val des-sbox5 =
+  {| 0x00000100, 0x02080100, 0x02080000, 0x42000100, 
+     0x00080000, 0x00000100, 0x40000000, 0x02080000,
+     0x40080100, 0x00080000, 0x02000100, 0x40080100, 
+     0x42000100, 0x42080000, 0x00080100, 0x40000000,
+     0x02000000, 0x40080000, 0x40080000, 0x00000000, 
+     0x40000100, 0x42080100, 0x42080100, 0x02000100,
+     0x42080000, 0x40000100, 0x00000000, 0x42000000, 
+     0x02080100, 0x02000000, 0x42000000, 0x00080100,
+     0x00080000, 0x42000100, 0x00000100, 0x02000000, 
+     0x40000000, 0x02080000, 0x42000100, 0x40080100,
+     0x02000100, 0x40000000, 0x42080000, 0x02080100, 
+     0x40080100, 0x00000100, 0x02000000, 0x42080000,
+     0x42080100, 0x00080100, 0x42000000, 0x42080100, 
+     0x02080000, 0x00000000, 0x40080000, 0x42000000,
+     0x00080100, 0x02000100, 0x40000100, 0x00080000, 
+     0x00000000, 0x40080000, 0x02080100, 0x40000100 |}
+
+val des-sbox6 = 
+  {| 0x20000010, 0x20400000, 0x00004000, 0x20404010, 
+     0x20400000, 0x00000010, 0x20404010, 0x00400000,
+     0x20004000, 0x00404010, 0x00400000, 0x20000010, 
+     0x00400010, 0x20004000, 0x20000000, 0x00004010,
+     0x00000000, 0x00400010, 0x20004010, 0x00004000, 
+     0x00404000, 0x20004010, 0x00000010, 0x20400010,
+     0x20400010, 0x00000000, 0x00404010, 0x20404000, 
+     0x00004010, 0x00404000, 0x20404000, 0x20000000,
+     0x20004000, 0x00000010, 0x20400010, 0x00404000, 
+     0x20404010, 0x00400000, 0x00004010, 0x20000010,
+     0x00400000, 0x20004000, 0x20000000, 0x00004010, 
+     0x20000010, 0x20404010, 0x00404000, 0x20400000,
+     0x00404010, 0x20404000, 0x00000000, 0x20400010, 
+     0x00000010, 0x00004000, 0x20400000, 0x00404010,
+     0x00004000, 0x00400010, 0x20004010, 0x00000000, 
+     0x20404000, 0x20000000, 0x00400010, 0x20004010 |}
+
+val des-sbox7 =
+  {| 0x00200000, 0x04200002, 0x04000802, 0x00000000, 
+     0x00000800, 0x04000802, 0x00200802, 0x04200800,
+     0x04200802, 0x00200000, 0x00000000, 0x04000002, 
+     0x00000002, 0x04000000, 0x04200002, 0x00000802,
+     0x04000800, 0x00200802, 0x00200002, 0x04000800, 
+     0x04000002, 0x04200000, 0x04200800, 0x00200002,
+     0x04200000, 0x00000800, 0x00000802, 0x04200802, 
+     0x00200800, 0x00000002, 0x04000000, 0x00200800,
+     0x04000000, 0x00200800, 0x00200000, 0x04000802, 
+     0x04000802, 0x04200002, 0x04200002, 0x00000002,
+     0x00200002, 0x04000000, 0x04000800, 0x00200000, 
+     0x04200800, 0x00000802, 0x00200802, 0x04200800,
+     0x00000802, 0x04000002, 0x04200802, 0x04200000, 
+     0x00200800, 0x00000000, 0x00000002, 0x04200802,
+     0x00000000, 0x00200802, 0x04200000, 0x00000800, 
+     0x04000002, 0x04000800, 0x00000800, 0x00200002 |}
+
+val des-sbox8 =
+  {| 0x10001040, 0x00001000, 0x00040000, 0x10041040, 
+     0x10000000, 0x10001040, 0x00000040, 0x10000000,
+     0x00040040, 0x10040000, 0x10041040, 0x00041000, 
+     0x10041000, 0x00041040, 0x00001000, 0x00000040,
+     0x10040000, 0x10000040, 0x10001000, 0x00001040, 
+     0x00041000, 0x00040040, 0x10040040, 0x10041000,
+     0x00001040, 0x00000000, 0x00000000, 0x10040040, 
+     0x10000040, 0x10001000, 0x00041040, 0x00040000,
+     0x00041040, 0x00040000, 0x10041000, 0x00001000, 
+     0x00000040, 0x10040040, 0x00001000, 0x00041040,
+     0x10001000, 0x00000040, 0x10000040, 0x10040000, 
+     0x10040040, 0x10000000, 0x00040000, 0x10001040,
+     0x00000000, 0x10041040, 0x00040040, 0x10000040, 
+     0x10040000, 0x10001000, 0x10001040, 0x00000000,
+     0x10041040, 0x00041000, 0x00041000, 0x00001040, 
+     0x00001040, 0x00040040, 0x10000000, 0x10041000 |}
+
+val des-leftkey_swap =
+  {| 0x00000000, 0x00000001, 0x00000100, 0x00000101,
+     0x00010000, 0x00010001, 0x00010100, 0x00010101,
+     0x01000000, 0x01000001, 0x01000100, 0x01000101,
+     0x01010000, 0x01010001, 0x01010100, 0x01010101 |}
+
+val des-rightkey_swap =
+  {| 0x00000000, 0x01000000, 0x00010000, 0x01010000,
+     0x00000100, 0x01000100, 0x00010100, 0x01010100,
+     0x00000001, 0x01000001, 0x00010001, 0x01010001,
+     0x00000101, 0x01000101, 0x00010101, 0x01010101 |}
+
+val des-encrypt_rotate_tab =
+  {| 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1 |}
+
+(* functions to access these tables *)
+val des-sbox1 = fn x => sub(des-sbox1, x)
+val des-sbox2 = fn x => sub(des-sbox2, x)
+val des-sbox3 = fn x => sub(des-sbox3, x)
+val des-sbox4 = fn x => sub(des-sbox4, x)
+val des-sbox5 = fn x => sub(des-sbox5, x)
+val des-sbox6 = fn x => sub(des-sbox6, x)
+val des-sbox7 = fn x => sub(des-sbox7, x)
+val des-sbox8 = fn x => sub(des-sbox8, x)
+
+val des-leftkey_swap  =      fn x => sub(des-leftkey_swap,  x)
+val des-rightkey_swap =      fn x => sub(des-rightkey_swap, x)
+val des-encrypt_rotate_tab = fn x => sub(des-encrypt_rotate_tab, x)
+
+(* ENH doesn't bother checking for weak keys now; they are extremely rare *)
+
+
+fun do_permutation (a, b, offset, mask) =
+  let
+    val temp = ((a shr offset) xorb b) andb mask
+    val b = b xorb temp
+    val a = a xorb (temp shl offset)
+  in
+    (a, b)
+  end
+
+
+fun initial_permutation(left, right) =
+  let
+    val (left, right) = do_permutation(left, right, 4, 0x0f0f0f0f)
+    val (left, right) = do_permutation(left, right, 16, 0x0000ffff)
+    val (right, left) = do_permutation(right, left, 2, 0x33333333)
+    val (right, left) = do_permutation(right, left, 8, 0x00ff00ff)
+    val right = (right shl 1) orb (right shr 31)
+    val temp  = (left xorb right) andb 0xaaaaaaaa
+    val right = temp xorb right
+    val left  = temp xorb left
+    val left  = (left shl 1) orb (left shr 31)
+  in
+    (left, right)
+  end
+
+(* inverse of initial *)
+fun final_permutation(left, right) =
+  let
+    val left  = (left shl 31) orb (left shr 1)
+    val temp  = (left xorb right) andb 0xaaaaaaaa
+    val left  = temp xorb left
+    val right = temp xorb right
+    val right = (right shl 31) orb (right shr 1)
+    val (right, left) = do_permutation(right, left, 8, 0x00ff00ff)
+    val (right, left) = do_permutation(right, left, 2, 0x33333333)
+    val (left, right) = do_permutation(left, right, 16, 0x0000ffff)
+    val (left, right) = do_permutation(left, right, 4, 0x0f0f0f0f)
+  in
+    (left, right)
+  end
+
+(* reference code calls this with subkey; a pointer which
+   is incremented. Instead, pass in the key array and current
+   index. (the index should increase by 2 each time) *)
+fun des_round(fr, t, keys, k) =
+  let
+    val work = fr xorb (keys k)
+    val t = t xorb des-sbox8(  work          andb 0x3f )
+    val t = t xorb des-sbox6( (work shr 8)  andb 0x3f )
+    val t = t xorb des-sbox4( (work shr 16) andb 0x3f )
+    val t = t xorb des-sbox2( (work shr 24) andb 0x3f )
+
+    val work = ((fr shl 28) orb (fr shr 4)) xorb (keys (k + 1))
+    val t = t xorb des-sbox7(  work          andb 0x3f )
+    val t = t xorb des-sbox5( (work shr 8)  andb 0x3f )
+    val t = t xorb des-sbox3( (work shr 16) andb 0x3f )
+    val t = t xorb des-sbox1( (work shr 24) andb 0x3f )
+  in
+    t
+  end
+
+(* set up key vector for 16 encryption rounds *)
+
+
+fun des_key_schedule key =
+  let
+    (* two successive subkeys per round *)
+    val subkeys = array (32, 0x0)
+
+    val (left, right) = key
+
+    val (right, left) = do_permutation(right, left, 4, 0x0f0f0f0f)
+    val (right, left) = do_permutation(right, left, 0, 0x10101010)
+
+    val left = 
+      (des-leftkey_swap((left shr 0) andb 0xf) shl 3) orb 
+      (des-leftkey_swap((left shr 8) andb 0xf) shl 2) orb 
+      (des-leftkey_swap((left shr 16) andb 0xf) shl 1) orb
+      (des-leftkey_swap((left shr 24) andb 0xf)) orb 
+      (des-leftkey_swap((left shr 5) andb 0xf) shl 7) orb 
+      (des-leftkey_swap((left shr 13) andb 0xf) shl 6) orb
+      (des-leftkey_swap((left shr 21) andb 0xf) shl 5) orb
+      (des-leftkey_swap((left shr 29) andb 0xf) shl 4)
+
+    val left = left andb 0x0fffffff
+
+    val right = 
+      (des-rightkey_swap((right shr 1) andb 0xf) shl 3) orb
+      (des-rightkey_swap((right shr 9) andb 0xf) shl 2) orb
+      (des-rightkey_swap((right shr 17) andb 0xf) shl 1) orb
+      (des-rightkey_swap((right shr 25) andb 0xf)) orb 
+      (des-rightkey_swap((right shr 4) andb 0xf) shl 7) orb
+      (des-rightkey_swap((right shr 12) andb 0xf) shl 6) orb
+      (des-rightkey_swap((right shr 20) andb 0xf) shl 5) orb 
+      (des-rightkey_swap((right shr 28) andb 0xf) shl 4)
+
+    val right = right andb 0x0fffffff
+
+    fun loop 16 _ = ()
+      | loop round (left, right) =
+      let
+	val left  = ((left shl des-encrypt_rotate_tab(round)) orb 
+		     (left shr (28 - des-encrypt_rotate_tab(round)))) 
+		    andb 0x0fffffff
+
+	val right = ((right shl des-encrypt_rotate_tab(round)) orb 
+		     (right shr (28 - des-encrypt_rotate_tab(round)))) 
+		    andb 0x0fffffff
+      in
+	update(subkeys, 2 * round,
+	       (    (left shl 4)  andb 0x24000000)
+	       orb ((left shl 28) andb 0x10000000)
+	       orb ((left shl 14) andb 0x08000000)
+	       orb ((left shl 18) andb 0x02080000)
+	       orb ((left shl 6) andb 0x01000000)
+	       orb ((left shl 9) andb 0x00200000)
+	       orb ((left shr 1) andb 0x00100000)
+	       orb ((left shl 10) andb 0x00040000)
+	       orb ((left shl 2) andb 0x00020000)
+	       orb ((left shr 10) andb 0x00010000)
+	       orb ((right shr 13) andb 0x00002000)
+	       orb ((right shr 4) andb 0x00001000)
+	       orb ((right shl 6) andb 0x00000800)
+	       orb ((right shr 1) andb 0x00000400)
+	       orb ((right shr 14) andb 0x00000200)
+	       orb (right        andb 0x00000100)
+	       orb ((right shr 5) andb 0x00000020)
+	       orb ((right shr 10) andb 0x00000010)
+	       orb ((right shr 3) andb 0x00000008)
+	       orb ((right shr 18) andb 0x00000004)
+	       orb ((right shr 26) andb 0x00000002)
+	       orb ((right shr 24) andb 0x00000001));
+
+	update(subkeys, 2 * round + 1,
+	       (    (left shl 15) andb 0x20000000)
+	       orb ((left shl 17) andb 0x10000000)
+	       orb ((left shl 10) andb 0x08000000)
+	       orb ((left shl 22) andb 0x04000000)
+	       orb ((left shr 2) andb 0x02000000)
+	       orb ((left shl 1) andb 0x01000000)
+	       orb ((left shl 16) andb 0x00200000)
+	       orb ((left shl 11) andb 0x00100000)
+	       orb ((left shl 3) andb 0x00080000)
+	       orb ((left shr 6) andb 0x00040000)
+	       orb ((left shl 15) andb 0x00020000)
+	       orb ((left shr 4) andb 0x00010000)
+	       orb ((right shr 2) andb 0x00002000)
+	       orb ((right shl 8) andb 0x00001000)
+	       orb ((right shr 14) andb 0x00000808)
+	       orb ((right shr 9) andb 0x00000400)
+	       orb ( right          andb 0x00000200)
+	       orb ((right shl 7) andb 0x00000100)
+	       orb ((right shr 7) andb 0x00000020)
+	       orb ((right shr 3) andb 0x00000011)
+	       orb ((right shl 2) andb 0x00000004)
+	       orb ((right shr 21) andb 0x00000002));
+
+	loop (round + 1) (left, right)
+      end
+  in
+    loop 0 (left, right);
+    subkeys
+  end
+
+fun crypt ks (left, right) =
+  let
+    val (left, right) = initial_permutation(left, right)
+			     (* swap back! *)
+    fun loop 16 (left, right) = (right, left)
+      | loop round (left, right) =
+      let
+	val left = des_round(right, left, ks, round * 2)
+      in
+	loop (round + 1) (right, left)
+      end
+
+    val (left, right) = loop 0 (left, right)
+    val (left, right) = final_permutation (left, right)
+  in
+    (left, right)
+  end
+
+(* ------------    and here         --------------- *)
+
+fun des-key k = 
+  let 
+    val keys = des_key_schedule k
+  in
+    keys
+  end
+
+fun des-encrypt keys =
+    crypt (fn x => sub(keys, x))
+    
+fun des-decrypt keys =
+    crypt (fn x => sub(keys, if x mod 2 = 0
+			     then 30 - x
+			     else 32 - x))
+
+fun des-encrypt3 (k1, k2, k3) msg =
+    let
+	val c = des-encrypt k1 msg
+	val c = des-decrypt k2 c
+	val c = des-encrypt k3 c
+    in
+	c
+    end
+
+fun des-decrypt3 (k1, k2, k3) msg =
+    let
+	val p = des-decrypt k3 msg
+	val p = des-encrypt k2 p
+	val p = des-decrypt k1 p
+    in
+	p
+    end

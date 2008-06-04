@@ -1,0 +1,164 @@
+val provide-sha = ()
+val require-array = provide-array
+
+(* operates on an array of 32bit integers *)
+(*    val ds1 = {| |} *)
+(*    val ds2 = {| 0x12345678 |} *)
+(*    val ds3 = {| 0xdeadbeef, 0x12345678 |} *)
+fun sha-hash ds =
+    let
+        val msglenwords = length ds
+        val msglenbytes = msglenwords shl 2
+        val msglenbits = msglenbytes shl 3
+        
+        val h0 = ref 0x67452301
+        val h1 = ref 0xEFCDAB89
+        val h2 = ref 0x98BADCFE
+        val h3 = ref 0x10325476
+        val h4 = ref 0xC3D2E1F0
+
+        fun leftrotate x 0 = x
+          | leftrotate x by =
+            let
+                val mask1 = ((2 shl by) - 1) shl (32 - by)
+                val goodies = (x andb mask1) shr (32 - by)
+                val temp = x shl by
+            in
+                temp orb goodies
+            end
+
+        fun preprocess ds = 
+            let
+                (* l is the 10000000... that we add to pad to 512
+                bits, taking into account 64 bits reserved for the
+                message len *)
+                val lbits = 512 - (msglenbits + 64) mod 512
+                val lbytes = lbits shr 3
+                val lwords = lbytes shr 2
+                             
+                val totaladdwords = lwords + 2
+                                    
+                val newds = array-tabulate (msglenwords + totaladdwords) 
+                                           (fn i => if i >= msglenwords then 0 else sub (ds, i))
+            in
+                if lwords > 0 
+                then
+                    ( let
+                         fun loopy i = if i = 1
+                                       then update( newds, msglenwords, 0x80000000 )
+                                       else ( update( newds, msglenwords + i - 1, 0 ) ; 
+                                              loopy (i - 1) )
+                         val () = loopy lwords
+                                  
+                         val () = update( newds, msglenwords + lwords, 0 )
+                         val () = update( newds, msglenwords + lwords + 1, msglenbits )
+                     in
+                         newds
+                     end
+                    )
+                else 
+                    ( let
+                         val () = update( newds, msglenwords, 0 )
+                         val () = update( newds, msglenwords + 1, msglenbits )
+                     in
+                         newds
+                     end )
+            end
+
+        val newds = preprocess ds
+
+        fun process-chunk c =
+            let
+                fun extender i = if i < 16 then sub (c, i) else 0
+
+                val extended-chunk = array-tabulate 80 extender
+
+                fun filler i = if i < 16 then filler (i + 1)
+                               else if i <= 79 then
+                                   ( let
+                                        val v = ( (sub (extended-chunk, i - 3)) xorb 
+                                                  (sub (extended-chunk, i - 8)) xorb 
+                                                  (sub (extended-chunk, i - 14)) xorb 
+                                                  (sub (extended-chunk, i - 16)) )
+                                    in
+                                        ( update( extended-chunk, i, leftrotate v 1 ) ;
+                                          filler (i + 1) )
+                                    end )
+                               else ()
+
+                val () = filler 0
+                                     
+                val a = ref (!h0)
+                val b = ref (!h1)
+                val c = ref (!h2)
+                val d = ref (!h3)
+                val e = ref (!h4)
+
+                val f = ref 0
+                val k = ref 0
+                val temp = ref 0        
+
+                fun loop i = 
+                    let
+                        fun update i = 
+                            ( temp := (leftrotate (!a) 5) + (!f) + (!e) + (!k) + (sub (extended-chunk, i)) ;
+                              e := (!d) ;
+                              d := (!c) ;
+                              c := leftrotate (!b) 30 ;
+                              b := (!a) ;
+                              a := (!temp) ;
+                              loop (i + 1) )
+                    in
+                        ( if (i >= 0) andalso (i <= 19) then
+                              ( f := ((!b) andb (!c)) orb ((notb (!b)) andb (!d)) ;
+                                k := 0x5A827999 ;
+                                update i )
+                          else if (i >= 20) andalso (i <= 39) then 
+                              ( f := (!b) xorb (!c) xorb (!d) ;
+                                k := 0x6ED9EBA1 ;
+                                update i )
+                          else if (i >= 40) andalso (i <= 59) then
+                              ( f := ((!b) andb (!c)) orb ((!b) andb (!d)) orb ((!c) andb (!d)) ;
+                                k := 0x8F1BBCDC ;
+                                update i )
+                          else if (i >= 60) andalso (i <= 79) then
+                              ( f := (!b) xorb (!c) xorb (!d) ;
+                                k := 0xCA62C1D6 ;
+                                update i )
+                          else () )
+                    end
+        
+                fun add-chunk-hash () = 
+                    ( h0 := (!h0) + (!a) ;
+                      h1 := (!h1) + (!b) ;
+                      h2 := (!h2) + (!c) ;
+                      h3 := (!h3) + (!d) ;
+                      h4 := (!h4) + (!e) )
+            in
+                ( loop 0 ; 
+                  add-chunk-hash () )
+            end
+
+        val chunks = array-tabulate ((length newds) shr 4) 
+                                    ( fn i => 
+                                         let
+                                             val arr = array ( 16, 0 )
+                                             fun loop j = if j = 16 then ()
+                                                          else ( update (arr, j, sub (newds, (i shl 4) + j)) ;
+                                                                 loop (j + 1) )
+                                             val () = loop 0
+                                         in
+                                             arr
+                                         end )
+
+        val () = array-app process-chunk chunks
+
+        val digest = array-tabulate 5 (fn i => case i of 0 => (!h0)
+                                                       | 1 => (!h1)
+                                                       | 2 => (!h2)
+                                                       | 3 => (!h3)
+                                                       | 4 => (!h4)
+                                                       | _ => 0) 
+    in
+        digest
+    end

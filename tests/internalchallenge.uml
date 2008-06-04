@@ -1,0 +1,189 @@
+let
+    import "std.uh"
+    (* accept keystrokes until enter *)
+    exception Oops
+    fun getpass () =
+	let
+	    val a = getc_ ()
+	in
+	    if a = (0 - 1) 
+	    then raise Oops
+	    else if a = ord ?\r
+		 then nil
+		 else a :: getpass ()
+	end
+
+    fun list-eq nil nil = true
+      | list-eq (h1 :: t1) (h2 :: t2) = h1 = h2 andalso list-eq t1 t2
+      | list-eq _ _ = false
+
+    fun list-map f nil = nil
+      | list-map f (h :: t) = (f h) :: list-map f t
+
+    fun checkpass () =
+	list-eq (list-map ord (?C :: ?M :: ?U :: ?! :: nil)) (getpass ())
+
+    datatype a exp =
+      Int of int
+    | Plus of exp * exp
+    | Times of exp * exp
+    | Minus of exp * exp
+    | Fn of int * exp
+    | Fix of int * exp
+    | Var of int
+    | Pair of exp * exp
+    | Pi1 of exp
+    | Pi2 of exp
+    | App of exp * exp
+    | True
+    | False
+    | If of exp * exp * exp
+    | Less of exp * exp
+
+    exception Stuck
+
+    (* subst e1 v e
+       substitute closed e1 for v in e *)
+    fun subst e1 v =
+	let 
+	    fun f e =
+		case e of
+		    Var v' => if v = v' 
+			      then e1
+			      else e
+		  | Int _ => e
+		  | True => e
+		  | False => e
+
+		  | Plus (e1, e2) => Plus(f e1, f e2)
+		  | Minus (e1, e2) => Minus(f e1, f e2)
+		  | Times (e1, e2) => Times(f e1, f e2)
+		  | Less (e1, e2) => Less (f e1, f e2)
+		  | If (e1, e2, e3) => If(f e1, f e2, f e3)
+
+		  | Fn (i, ee) => if i = v
+				  then e
+				  else Fn (i, f ee)
+		  | Pair (e1, e2) => Pair(f e1, f e2)
+		  | Pi1 e => Pi1 (f e)
+		  | Pi2 e => Pi2 (f e)
+		  | Fix (i, ee) => if i = v
+				   then e
+				   else Fix(i, f ee)
+		  | App (e1, e2) => App(f e1, f e2)
+	in
+	    f
+	end
+
+    fun eval (Int i) = Int i
+      | eval True = True
+      | eval False = False
+
+      | eval (If (e, et, ef)) =
+	(case eval e of
+	     True => eval et
+	   | False => eval ef
+	   | _ => raise Stuck)
+
+      | eval (Less (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => (if i < j 
+				then True
+				else False)
+	   | _ => raise Stuck)
+
+      | eval (Plus (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => Int (i + j)
+	   | _ => raise Stuck)
+
+      | eval (Minus (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => Int (i - j)
+	   | _ => raise Stuck)
+
+      | eval (Times (e1, e2)) =
+	(case (eval e1, eval e2) of
+	     (Int i, Int j) => Int (i * j)
+	   | _ => raise Stuck)
+
+      | eval (Fn (i, e)) = Fn (i, e)
+
+      (* should have been substituted away *)
+      | eval (Var i) = raise Stuck
+      | eval (Pair (e1, e2)) = 
+	     Pair (eval e1, eval e2)
+
+      | eval (Pi1 e) =
+	     (case eval e of
+		  Pair(v1, _) => v1
+		| _ => raise Stuck)
+
+      | eval (Pi2 e) =
+	     (case eval e of
+		  Pair (_, v2) => v2
+		| _ => raise Stuck)
+
+      | eval (App (f, arg)) =
+	     (case (eval f, eval arg) of
+		  (Fn (i, e), v) => eval (subst v i e)
+		| _ => raise Stuck)
+
+      | eval (ee as Fix (i, e)) = eval (subst ee i e)
+
+    val fv = 1
+    val nv = 2
+    val fact =
+	Fix (fv,
+	     Fn(nv,
+		If(Less(Var nv, Int 1),
+		   Int 1,
+		   Times(Var nv, App(Var fv, Minus(Var nv, Int 1))))))
+
+    val term =
+	Plus(Int (ord ?O - 720),
+	     App(fact, Int 6))
+
+    fun printl nil = ()
+      | printl (c :: rest) = (putc c; printl rest)
+	
+    fun tf c = 
+	let in
+	    printl (?t :: ?e :: ?s :: ?t :: ? :: c :: ?  :: ?f :: ?a :: ?i :: ?l :: ?e :: ?d :: ?\n :: nil);
+	    raise Match
+	end
+
+    val five = (case Int 5 of
+		    Int x => x 
+		  | _ => tf ?1)
+in
+    if (five div ~1) = 0
+    then printl (?o :: ?k :: ?( :: ?1 :: ?) :: ?\n :: nil)
+    else 
+	let in
+	    printl (?d :: ?i :: ?v :: ?  :: ?e :: ?r :: ?r :: ?\n :: nil);
+	    raise Match
+	end;
+    
+    (case eval term of
+        Int n => if n = ord ?O
+		 then printl (?o :: ?k :: ?( :: ?2 :: ?) :: ?\n :: nil)
+		 else tf ?2
+      | _ => tf ?3);
+
+    printl (?p :: ?l :: ?e :: ?a :: ?s :: ?e :: ?  :: ?e :: ?n :: ?t :: ?e :: ?r :: 
+	    ?  ::
+	    ?t :: ?h :: ?e :: ?  :: ?p :: ?a :: ?s :: ?s :: ?w :: ?o :: ?r :: ?d :: 
+	    ?: :: ?  :: nil);
+
+    if checkpass ()
+    then printl (?t :: ?h :: ?e :: ?  :: ?a :: ?n :: ?s :: ?w :: ?e :: ?r :: ?  :: ?i :: ?s :: ?  :: ?C :: ?O :: ?B :: ?R :: ?A :: ?  :: ?C :: ?O :: ?M :: ?M :: ?A :: ?N :: ?D :: ?O :: ?\n :: nil)
+    else printl (?\n :: ?A :: ?C :: ?C :: ?E :: ?S :: ?S :: 
+		 ?   :: ?D :: ?E :: ?N :: ?I :: ?E :: ?D :: ?\n :: nil)
+end
+handle _ =>
+	let in
+	    putc ?\n;
+	    putc ?a; putc ?b; putc ?o; putc ?r; putc ?t;
+	    putc ?\n
+	end

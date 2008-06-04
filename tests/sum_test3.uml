@@ -1,0 +1,13 @@
+let
+  datatype d = A of int | B of int | C
+
+  fun g (A x) = putc (chr_ x)
+    | g (B y) = putc ?B
+    | g (C)   = putc ?C
+
+  val _ = g (B 10)
+  val _ = g (A 120)
+  val _ = g (C)
+in
+  ()
+end

@@ -1,0 +1,71 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+
+    val tests = 0x00000000 :: 0xFFFFFFFF ::
+		0xFF00FF00 :: 0x00FF00FF ::
+		0xF0F0F0F0 :: 0x0F0F0F0F :: nil
+
+    fun horiz () =
+	let
+	in
+	    print "          ";
+	    list-app (fn x =>
+		      (print (int-tohexstring x);
+		       print " ")) tests;
+	    print "\n";
+	    print "          ";
+	    list-app (fn _ =>
+		      print "-------- ") tests;
+	    print "\n"
+	end
+	    
+
+    fun testbin (s, f) =
+	let
+	in
+	    print ("\n" ^ s ^ ":\n");
+	    horiz ();
+	    list-app (fn x =>
+		      (print (int-tohexstring x);
+		       print ": ";
+		       list-app (fn y =>
+				 (print (int-tohexstring (f(x, y)));
+				  print " ")) tests;
+		       print "\n")) tests
+	end
+
+    fun testmono (s, f) =
+	let
+	    val s = s ^ ":"
+	in
+	    print s;
+	    print (array(10 - length s, ? ));
+	    list-app (fn x => 
+		      (print (int-tohexstring (f x));
+		       print " ")) tests;
+	    print "\n"
+	end
+
+in
+    list-app testbin (("and", op andb) ::
+		      ("or",  op orb)  ::
+		      ("xor", op xorb) :: nil);
+    print "\n";
+    horiz ();
+    list-app testmono (("not", notb) :: 
+		       ("shl 8", fn x => x shl 8) ::
+		       ("shr 8", fn x => x shr 8) ::
+		       ("shl 32", fn x => x shl 32) ::
+		       ("shl 32", fn x => x shr 32) ::
+		       ("shl 0", fn x => x shl 0) ::
+		       ("shl 0", fn x => x shr 0) ::
+		       ("shl 4", fn x => x shl 4) ::
+		       ("shr 4", fn x => x shr 4) ::
+		       nil);
+
+    ()
+end

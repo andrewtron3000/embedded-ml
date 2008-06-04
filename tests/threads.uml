@@ -1,0 +1,22 @@
+
+let
+  import "std.uh"
+  import "list.uh"
+  import "string.uh"
+  import "threads.uh"
+
+  fun pr s () = 
+      (print [[s]\n];
+       yield ();
+       pr s ())
+
+  fun prt s () = 
+      (print [[s]\n];
+       yield ())
+
+  do fork (pr "D")
+  do fork (pr "C")
+  do fork (prt "B")
+in
+  pr "A" ()
+end

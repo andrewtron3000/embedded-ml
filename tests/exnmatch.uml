@@ -1,0 +1,12 @@
+
+let
+    exception Y
+    exception X
+in
+    putc ?g; putc ?o; putc ?:; putc ? ;
+    ((raise X) 
+	  handle Y => (putc ?n; putc ?o; putc ? ; putc ?1) 
+	       | X => (putc ?o; putc ?k) 
+	       | _ => (putc ?n; putc ?o; putc ? ; putc ?2));
+    putc ?.; putc ?\n
+end

@@ -1,0 +1,9 @@
+
+let
+    datatype nat = 
+	Succ of nat
+      | Zero
+
+in
+    Succ Zero : nat
+end

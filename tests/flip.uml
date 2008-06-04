@@ -1,0 +1,11 @@
+let
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+
+    fun f a b = print [got [int-tostring a] then [int-tostring b]\n\r]
+
+    val () = flip f 7 10
+in
+    ()
+end

@@ -1,0 +1,16 @@
+let
+
+    datatype zool = A | B
+
+    datatype mytype =
+	Constructor1 of unit
+      | Constructor2 of { 1 : int } * int
+      | SomethingElse
+      | Whatever of { 0 : int , food : int -> int }
+    and notthis = Avoid of unit
+	
+in
+
+    A : unit -> unit
+
+end

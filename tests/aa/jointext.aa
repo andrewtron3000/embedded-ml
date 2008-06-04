@@ -1,0 +1,8 @@
+
+let
+    fun a () = [hello[[ ]]world]
+    fun b () = [] ^ [well, oh well[[]]]
+    fun c x = [first[x], then [[[x]this[x]]] that]
+in
+    (itos 100 ^ (a () ^ "" ^ b () ^ c [hello]) ^ "")
+end

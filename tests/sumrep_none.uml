@@ -1,0 +1,8 @@
+
+let
+    datatype t = A of int * int
+    
+    fun swap (A (a, b)) = A (b, a)
+in
+    swap (swap (A (1, 2)))
+end

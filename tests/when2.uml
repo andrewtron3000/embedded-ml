@@ -1,0 +1,22 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "io.uh"
+
+    fun prefix s x =
+	if string-prefix (s, x)
+	then substring' (x, length s)
+	else raise Match
+
+    fun take thing = print ("You got the " ^ thing ^ "\n")
+
+    fun parse ((prefix "take ") s) = take s
+      | parse ((prefix "get ")  s) = take s
+      | parse (other) = print ("I don't know how to " ^ other ^ "\n")
+
+    do print "What do you want to do? "
+    val l = getline ()
+in
+    parse l
+end

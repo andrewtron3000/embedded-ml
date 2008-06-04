@@ -1,0 +1,8 @@
+let
+    import "std.uh"
+    import "string.uh"
+    import "growarray.uh"
+    import "io.uh"
+in
+    print "okay!\n"
+end

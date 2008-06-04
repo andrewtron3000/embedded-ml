@@ -1,0 +1,15 @@
+let
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+    import "list.uh"
+    import "array.uh"
+    import "hash.uh"
+
+    val h1 = (int-tohexstring o int-hash) 0xdeadbeef
+    val h2 = (int-tohexstring o int-hash) 0x00000001
+    val h3 = (int-tohexstring o int-hash) 0x00000130
+ 
+in
+   print [Hash results are: [h1], [h2], [h3]]
+end

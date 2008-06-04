@@ -1,0 +1,28 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "bigint.uh"
+    import "des.uh"
+    import "publications.uh"
+in
+
+    let 
+	val f = sigmoid-score { min-score = bi-fromint 30,
+				par-score = bi-fromint 150,
+				max-score = bi-fromint 175,
+				correct= bi-fromint 1000,
+				par= bi-fromint 360,
+				hole-in-one= bi-fromint 100}
+	    
+	    in
+
+		list-app (fn (x,y) => print [[bi-tostring x] [bi-tostring y]\n])
+		(list-tabulate (1100,
+				fn x => (bi-fromint x, f (bi-fromint x))))
+    end
+		
+	
+end

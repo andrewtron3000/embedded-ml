@@ -1,0 +1,30 @@
+let 
+  import "std.uh"
+  import "string.uh"
+  import "int.uh"
+  import "list.uh"
+  import "bigint.uh"
+
+  val y2 = bi-fromint 175
+  val y1 = bi-fromint 150
+  val x2 = bi-fromint 10
+  val x1 = bi-fromint 350
+
+  val value = bi-fromint 280
+
+  do print [[bi-tostring (bi-subt (y2, y1))]
+            ]
+
+  do print [[bi-tostring (bi-subt (x2, x1))]
+            ]
+
+  do print [[bi-tostring (bi-mult (bi-subt (y2, y1), value))]
+            ]
+
+  do print [[bi-tostring (#1/2 bi-divmod (bi-mult (bi-subt (y2, y1), value),
+                                          bi-subt (x2, x1)))]
+            ]
+in
+  ()
+end
+

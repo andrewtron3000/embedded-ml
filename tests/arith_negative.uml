@@ -1,0 +1,20 @@
+let 
+  import "std.uh"
+  import "string.uh"
+  import "int.uh"
+
+  val x = 63
+  val y = 1000
+
+  val () = if 5 > (0-10) then (print "correct") else (print "incorrect")
+  val () = if (0-2) > (0-30)  then (print "correct") else (print "incorrect")
+
+in
+    (print (int-tostring (x - y))) 
+    handle Subscript => print "subscript"
+         | Match => print "match"
+         | Div => print "div"
+         | Radix => print "radix"
+         | _ => print "something else"
+end
+

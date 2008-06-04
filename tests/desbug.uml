@@ -1,0 +1,17 @@
+let
+    val subkeys = array (32, 0x0)
+	
+    fun loop (9999, _) = ()
+      | loop (round, left) = 
+	let
+	in
+	    update_(subkeys, 
+		    0,
+		    left + 0
+		    (*left shl 4 *));
+	    
+	    loop (round + 1, left)
+	end
+in
+    loop (0, 0)
+end

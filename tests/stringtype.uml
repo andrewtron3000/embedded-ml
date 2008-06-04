@@ -1,0 +1,6 @@
+
+let
+    import "std.uh"
+in
+    "hello" : string
+end

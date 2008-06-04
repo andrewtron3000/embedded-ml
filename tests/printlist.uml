@@ -1,0 +1,10 @@
+let
+    val l = ?h :: ?e :: ?l :: ?l :: ?o :: ?  :: ?w :: ?o :: ?r :: ?l :: ?d :: ?\n :: nil
+
+    fun pl nil = ()
+      | pl (c :: rest) =
+	(putc c;
+	 pl rest)
+in
+    pl l
+end

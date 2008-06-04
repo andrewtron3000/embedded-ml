@@ -1,0 +1,34 @@
+
+let
+    (*
+    import "std.uh"
+    import "string.uh"
+    *)
+
+    fun iis i i' = i = i'
+
+    fun mkabsolute () =
+	let
+	    val parts = 999 :: nil
+
+	    fun readpath (p, nil) = ?X
+		(* attempting to ascend above root. pretend root is parent of root *)
+	      | readpath (nil, ((iis 999) _) :: more) = ?r
+		(* pop off one level *)
+	      | readpath (h :: rest, ((iis 999) _) :: more) = ?.
+	      | readpath (_, h :: t) = ?Q
+
+	in
+	    putc (readpath (0xFEEF :: nil, parts))
+	end handle Match =>
+	    let in
+		putc ?x; putc ?\n;
+		halt ()
+	    end
+
+
+in
+    mkabsolute ();
+
+    putc ?o; putc ?k; putc ?\n
+end

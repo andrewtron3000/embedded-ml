@@ -1,0 +1,12 @@
+
+let
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+    import "list.uh"
+    import "array.uh"
+in
+    print "Should be 0: ";
+    print (int-tostring (length (array0 ())));
+    print "\n"
+end

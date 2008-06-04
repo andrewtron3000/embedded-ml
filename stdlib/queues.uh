@@ -1,0 +1,60 @@
+val provide-queues = ()
+val require-list = provide-list
+val require-threads = provide-threads
+
+type queue = (exn list ref * exn list ref)
+
+fun queue-create () = (ref nil, ref nil)
+
+fun queue-normalize (backr, frontr) = 
+    let
+        val b = !backr
+        val f = !frontr
+    in
+        case (b, f) of (nil, nil) => ()
+                     | (xs, nil) => ( backr := nil ; frontr := list-rev xs )
+                     | _ => ()
+    end
+
+(* queue-send q m -- send a message m to a queue q *)
+fun queue-send (backr, frontr) m = 
+    let
+        do backr := m :: !backr
+    in
+        ( queue-normalize (backr, frontr) ; yield () )
+    end
+
+fun queue-send-noyield (backr, frontr) m = 
+    let
+        do backr := m :: !backr
+    in
+        queue-normalize (backr, frontr) 
+    end
+
+(* queue-receive q -- remove a message from a queue q *)
+fun queue-receive (backr, frontr) = 
+    let
+        val b = !backr
+        val f = !frontr
+    in 
+        case (b, f) of (nil, nil) => ( yield () ; queue-receive (backr, frontr) ) 
+                     | (xs, nil) => ( queue-normalize (backr, frontr) ;
+                                      queue-receive (backr, frontr) )
+                     | (_, y :: ys) => ( frontr := ys ; y )
+    end
+
+(* queue-purge q -- delete all the elements from a queue q *)
+fun queue-purge (backr, frontr) = (ref nil, ref nil)
+
+(* queue-length q -- return the number of elements in a queue q *)
+fun queue-length (backr, frontr) = 
+    let 
+        val f = list-length (!frontr)
+        val b = list-length (!backr)
+    in
+        f + b
+    end 
+
+(* queue-empty q -- returns true if queue is empty *)
+fun queue-empty (backr, frontr) = list-empty (!backr) andalso list-empty (!frontr)
+

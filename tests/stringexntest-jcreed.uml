@@ -1,0 +1,15 @@
+let 
+    import "std.uh"
+    import "string.uh"  
+    exception Fail
+in
+
+(* in sml implementation of um: *)
+(* 48 .s results in array out of bounds error *)
+(* 47 .s results in infinite dot-printing loop (!?) *)
+(* 46 .s correctly prints unhandled exception *)
+(*                    1         2         3         4         5  *)
+(*          012345678901234567890123456789012345678901234567890  *)
+   print    "..............................................\n";
+   raise Fail
+end

@@ -1,0 +1,3 @@
+let in
+    putc (sub_("hello world", 0))
+end

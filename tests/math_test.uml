@@ -1,0 +1,39 @@
+let
+  import "std.uh"
+  import "string.uh"
+  import "growarray.uh"
+  import "random.uh"
+  import "io.uh"
+  import "list.uh"
+  import "int.uh"
+  import "math.uh"
+
+  val x = FP(15, 0x23B) (* 2*pi/360 *)
+  val y = FP(8, 0x394B) (* 360/2*pi *)
+  val z = FP(15, 0x1333) (* 0.15 *)
+  val z2 = FP(15, 0x170A) (* 0.18 *)
+  val a = FP(13, 0x2800) (* 1.25 *) 
+  val b = FP(15, 0x2666) (* .3 *)
+  val c = FP(15, 0xD99A) (* -.3 *)
+  val d = FP(13, 0x6000) (* 3 *)
+  val e = FP(12, 0x7000) (* 7 *)
+
+  fun neg_str x = if fp_is_negative(x) then "it's negative" else "it's positive"
+
+  val () = print (fp_to_string (fp_negate(b)) ^ "\n\r") 
+  val () = print (fp_to_string (b fp_subtract a) ^ "\n\r")
+  val () = print (fp_to_string (b fp_subtract c) ^ "\n\r")
+  val () = print (fp_to_string (c fp_subtract b) ^ "\n\r")
+  val () = print (fp_to_string (b fp_add c) ^ "\n\r")
+  val () = print ("multiplies \n\r")
+  val () = print (fp_to_string (fp_to_single((b fp_multiply d))) ^ "\n\r")
+  val () = print ((fp_to_string (fp_to_single(b fp_multiply c)) handle FP-exn(s) => s) ^ "\n\r")
+  val () = print ("divisions \n\r")
+  val () = print (fp_to_string (a fp_divide d) ^ "\n\r")
+  val () = print (fp_to_string (fp_to_single (e fp_divide d)) ^ "\n\r")
+  val () = print ((fp_to_string (fp_to_single (b fp_divide c)) handle FP-exn(s) => s) ^ "\n\r")
+  val () = print ((fp_to_string (fp_to_single (z fp_divide z2)) handle FP-exn(s) => s) ^ "\n\r")
+
+in
+    ()
+end

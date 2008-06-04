@@ -1,0 +1,9 @@
+
+let
+  
+  datatype t = A | B | C of unit | D of int
+in
+    case (A, B, C (), D 5) of
+	(A, B, C (), D 6) => putc ?*
+      | (A, B, C (), _) => putc ?\n
+end

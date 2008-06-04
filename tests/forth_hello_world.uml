@@ -1,0 +1,6 @@
+let
+    import "std.uh" 
+    import "string.uh"
+in
+    print "hello world\n"
+end

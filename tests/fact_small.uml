@@ -1,0 +1,7 @@
+let
+    fun fact n acc = 
+        if n = 0 then acc
+		  else fact (n - 1) (acc * n)
+in
+    putc (chr_ (fact 5 1))
+end

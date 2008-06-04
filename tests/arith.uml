@@ -1,0 +1,21 @@
+let 
+  import "std.uh"
+  import "string.uh"
+  import "int.uh"
+  import "list.uh"
+
+  val ls = 10 :: 7 :: 5 :: nil
+  val r1 = list-foldr (op +) 0 ls
+  val r2 = list-foldr (op -) 0 ls
+  val r3 = r1 - 23
+  val r4 = r1 div 2
+  val r5 = r1 divs (0 - 2)
+
+in
+    print ((int-tostring r1) ^ "\n");
+    print ((int-tostring r2) ^ "\n");
+    print ((int-tostring r3) ^ "\n");
+    print ((int-tostring r4) ^ "\n");
+    print ((int-tostring r5) ^ "\n")
+end
+

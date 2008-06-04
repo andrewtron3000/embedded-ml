@@ -1,0 +1,47 @@
+let
+  import "std.uh"
+  import "list.uh"
+  import "string.uh"
+
+  import "control.uh"
+
+
+  fun pr s = cntrl-do (fn () => print s)
+  val imp = implode
+  fun % s = cntrl-satisfy (fn x =>
+                              (print [trying [imp (x::nil)] = [imp (s::nil)] = [
+                                                  if ord x = ord s then "t" else "f"]\n];
+                              ord x = ord s))
+            >> pr (imp (s :: ?! :: nil))
+
+  val a = % ?A
+  val b = % ?B
+  val d = % ?D
+  val e = % ?E
+
+  val athenb = a >> ^^ b
+  val all = cntrl-repeat ( !! (   athenb >> ^^ athenb >> ^^ d >> pr "#" cntrl-return "ababd "
+                               || (a || e) ** d >> pr "@" cntrl-return "ad "
+                               || athenb >> pr "$" cntrl-return "ab "
+                               || d cntrl-return "d "
+                               || b cntrl-return "b ") )
+
+  val input = ref (explode "ABABABDDABABDD")
+  fun read () = 
+      let 
+        val (h, t) = case !input of h :: t => (h, t)
+                                  | nil => (?X, nil)
+        do input := t
+        do print [\nread: [imp (h::nil)]\n]
+      in
+        h
+      end
+
+  val res = cntrl-run read all
+  do case res of NONE => print "NONE"
+               | SOME nil => print "nil"
+               | SOME l => list-app (fn s => print s) l
+  do print "\n"
+in
+  ()
+end

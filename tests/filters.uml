@@ -1,0 +1,21 @@
+let
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+    import "array.uh"
+    import "filter.uh"
+
+    val f = filter-create 3
+    fun p () = print ((int-tostring (filter-average f)) ^ " ")
+
+    do filter-insert f 5000
+    do p ()
+    do filter-insert f 4800
+    do p ()
+    do filter-insert f 4300
+    do p ()
+    do filter-insert f 4100
+    do p () 
+in
+    ()
+end

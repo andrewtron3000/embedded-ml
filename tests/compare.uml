@@ -1,0 +1,65 @@
+let 
+  import "std.uh"
+  import "string.uh"
+
+  fun gtnf x = x > ~4
+
+  fun gtf x = x > 4
+
+  fun fgt x = 4 > x
+
+  fun nfgt x = ~4 > x
+
+  fun ltz x = x < 0
+
+  fun lez x = x <= 0
+
+  fun zlt x = 0 < x
+
+  fun zle x = 0 <= x
+
+  fun should_be true true = print "yes\n"
+    | should_be false false = print "yes\n"
+    | should_be _ _ = print "no\n"
+in
+  should_be true (gtnf 3);
+  should_be true (gtnf 0);
+  should_be true (gtnf ~2);
+  should_be false (gtnf ~4);
+  should_be false (gtnf ~10);
+
+  should_be true (gtf 5);
+  should_be false (gtf 4);
+  should_be false (gtf 2);
+  should_be false (gtf 0);
+  should_be false (gtf ~2);
+ 
+  should_be false (fgt 5);
+  should_be false (fgt 4);
+  should_be true (fgt 2);
+  should_be true (fgt 0);
+  should_be true (fgt ~2);
+
+  should_be false (nfgt 2);
+  should_be false (nfgt 0);
+  should_be false (nfgt ~2);
+  should_be false (nfgt ~4);
+  should_be true (nfgt ~10);
+
+  should_be false (ltz 2);
+  should_be false (ltz 0);
+  should_be true (ltz ~2);
+
+  should_be false (lez 2);
+  should_be true (lez 0);
+  should_be true (lez ~2);
+
+  should_be true (zlt 2);
+  should_be false (zlt 0);
+  should_be false (zlt ~2);
+
+  should_be true (zle 2);
+  should_be true (zle 0);
+  should_be false (zle ~2)
+
+end

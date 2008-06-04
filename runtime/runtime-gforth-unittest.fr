@@ -1,0 +1,643 @@
+hex
+
+: pass_msg
+   s" [PASS]: " type type cr
+;
+
+: fail_msg
+   s" [FAIL]: " type type cr
+;
+
+: check_it
+   if 
+      pass_msg
+   else
+      fail_msg
+   then
+;
+
+( heap_addr -- )
+: print_test_string
+   s" printing string=<" type 
+   dup \ addr addr
+   @ GMHEAPmask and dup \ addr len len
+   0
+   do \ addr len
+      2dup \ addr len addr len
+      1 + 4 * \ addr len addr len+1_in_bytes
+      i 8 * 4 + \ addr len addr len+1_in_bytes 8i+4
+      + \ addr len addr len+1_in_bytes+8i+1
+      + @ emit
+   loop
+   2drop
+   s" >" type cr 
+;
+
+: dumpVars
+   0 v @ dumpHeapElement
+   1 v @ dumpHeapElement
+   2 v @ dumpHeapElement
+   3 v @ dumpHeapElement
+   4 v @ dumpHeapElement
+   5 v @ dumpHeapElement
+   6 v @ dumpHeapElement
+   7 v @ dumpHeapElement
+   8 v @ dumpHeapElement
+   9 v @ dumpHeapElement
+   a v @ dumpHeapElement
+   b v @ dumpHeapElement
+   c v @ dumpHeapElement
+;
+
+: setupHeap
+   0 71 alloc_untraced 0 v ! \ 0 - 8
+
+   1 e alloc_tagged 1 v ! \ 8 - f
+   0 v @ 1 v @ 4 + ! 
+
+   2 2 alloc_traced_array dup 2 v ! \ 10 - 1b
+   4 +
+   1 v @ swap 2 efficient_set
+
+   3 3 alloc_traced_string \ 1c - 2b 
+   dup 3 v ! 
+   dup 14 + dup 4 - 4 v ! 68 swap ! \ 2c - 33
+   dup 1c + dup 4 - 5 v ! 69 swap ! \ 34 - 3b
+   dup 24 + dup 4 - 6 v ! 21 swap ! \ 3c - 43
+   drop
+   3 v @ print_test_string
+
+   7 0 alloc_traced_string 7 v ! \ 44 - 4b
+
+   8 1 alloc_traced_array dup 8 v ! dup 3 v @ swap 4 + ! drop \ 4c - 53
+
+   9 1 alloc_traced_string \ 54 - 5b
+   dup 9 v ! 
+   dup c + dup 4 - a v ! 68 swap ! \ 5c - 63 
+   drop
+
+   b 0 7 alloc_tagged b v ! \ 64 - 6b
+
+   c 0 7 alloc_tagged c v ! \ 6c - 73
+
+   \ at this point we have a heap that has
+   \ 1) an untraced that contains 0x71 at v0
+   \ 2) a tagged that contains v0 with tag e at v1
+   \ 3) a traced array that contains 2 v1s at v2
+   \ 4) a traced string that contains "hi!" at v3
+   \ 5) an untraced that contains 'h' at v4
+   \ 6) an untraced that contains 'i' at v5
+   \ 7) an untraced that contains '!' at v6
+   \ 8) a traced string of zero length at v7
+   \ 9) a traced tuple of length 1 containing v4 at v8
+   \ 10) a traced string of length 1 containing 'h' at v9
+   \ 11) an untraced that contains 'h' at va
+   \ 12) a tagged that contains 0 with tag 7 at vb
+   \ 13) a tagged that contains 0 with tag 7 at vc
+;
+
+variable temp
+
+: unit_test
+   cr 
+   initializeHeap
+   
+   s" heap element should start at beginning of heap"
+   1 61 alloc_untraced temp !
+   temp @
+   GMHEAP @ =
+   check_it 
+
+   s" first word should be zero"
+   temp @ @
+   0 = 
+   check_it   
+
+   s" second word should be value"
+   temp @ 4 + @
+   61 = 
+   check_it
+
+   s" untraced allocate should allocate 8 bytes"
+   1 51 alloc_untraced
+   1 71 alloc_untraced
+   swap
+   -
+   8 = 
+   check_it
+
+   s" first element of tagged node is correct"
+   1 a alloc_tagged temp !
+   temp @ @
+   20000000 a +
+   = 
+   check_it
+   
+   s" tagged allocate should allocate 8 bytes"
+   1 a alloc_tagged
+   1 71 alloc_untraced
+   swap
+   -
+   8 = 
+   check_it
+
+   s" first element of the alloc traced is correct"
+   1 3 alloc_traced_array temp !
+   temp @ 4 + deadbeef swap 3 efficient_set
+   temp @ @
+   40000000 3 + =
+   check_it
+   s" subsequent element of alloc traced array is correct"
+   temp @ 4 + @
+   deadbeef =
+   check_it   
+   s" subsequent element of alloc traced array is correct"
+   temp @ 8 + @
+   deadbeef =
+   check_it   
+   s" subsequent element of alloc traced array is correct"
+   temp @ c + @
+   deadbeef =
+   check_it   
+   s" subsequent element of alloc traced array is not set"
+   temp @ 10 + @
+   deadbeef = invert
+   check_it   
+
+   s" traced 3 element array allocate should allocate 16 bytes"
+   temp @
+   1 71 alloc_untraced
+   swap
+   -
+   10 = 
+   check_it
+
+   s" first element of the zero alloc traced is correct"
+   1 0 alloc_traced_array temp !
+   temp @ @
+   40000000 =
+   check_it
+
+   s" traced 0 element array allocate should allocate 8 bytes"
+   temp @
+   1 71 alloc_untraced
+   swap
+   -
+   8 = 
+   check_it
+
+   s" first element of alloc traced string is correct"
+   1 2 alloc_traced_string temp !
+   temp @ @
+   40000000 2 + =
+   check_it
+   s" subsequent element of alloc traced array is correct"
+   temp @ 4 + @
+   temp @ c + =
+   check_it   
+   s" subsequent element of alloc traced array is correct"
+   temp @ 8 + @
+   temp @ 14 + =
+   check_it   
+   s" subsequent element of alloc traced array is not set"
+   temp @ c + @
+   temp @ 1c + = invert
+   check_it   
+
+   s" traced 2 element string allocate should allocate 28 bytes (12 bytes per character + 1 header word)"
+   temp @
+   1 71 alloc_untraced
+   swap
+   -
+   1c = 
+   check_it
+
+   s" first element of the zero length string is correct"
+   1 0 alloc_traced_string temp !
+   temp @ @ 
+   40000000 =
+   check_it
+
+   s" traced 0 element string allocate should allocate 8 bytes"
+   temp @
+   1 71 alloc_untraced
+   swap
+   -
+   8 = 
+   check_it
+
+   s" alloc string: 106_string <- string  " type cr 
+   5 2f alloc_traced_string 
+   dup 5 v ! 
+   dup c4 + 2c swap ! 
+   dup cc + a swap ! 
+   dup d4 + 61 swap ! 
+   dup dc + 6e swap ! 
+   dup e4 + 64 swap ! 
+   dup ec + 20 swap ! 
+   dup f4 + 74 swap ! 
+   dup fc + 68 swap ! 
+   dup 104 + 65 swap ! 
+   dup 10c + 20 swap ! 
+   dup 114 + 73 swap ! 
+   dup 11c + 74 swap ! 
+   dup 124 + 72 swap ! 
+   dup 12c + 69 swap ! 
+   dup 134 + 6e swap ! 
+   dup 13c + 67 swap ! 
+   dup 144 + 20 swap ! 
+   dup 14c + 69 swap ! 
+   dup 154 + 73 swap ! 
+   dup 15c + 20 swap ! 
+   dup 164 + 22 swap ! 
+   dup 16c + 68 swap ! 
+   dup 174 + 65 swap ! 
+   dup 17c + 6c swap ! 
+   dup 184 + 6c swap ! 
+   dup 18c + 6f swap ! 
+   dup 194 + 22 swap ! 
+   dup 19c + 2e swap ! 
+   dup 1a4 + a swap ! 
+   dup 1ac + 57 swap ! 
+   dup 1b4 + 68 swap ! 
+   dup 1bc + 61 swap ! 
+   dup 1c4 + 74 swap ! 
+   dup 1cc + 20 swap ! 
+   dup 1d4 + 64 swap ! 
+   dup 1dc + 6f swap ! 
+   dup 1e4 + 20 swap ! 
+   dup 1ec + 79 swap ! 
+   dup 1f4 + 6f swap ! 
+   dup 1fc + 75 swap ! 
+   dup 204 + 20 swap ! 
+   dup 20c + 74 swap ! 
+   dup 214 + 68 swap ! 
+   dup 21c + 69 swap ! 
+   dup 224 + 6e swap ! 
+   dup 22c + 6b swap ! 
+   dup 234 + 3f swap ! 
+   \ now we can use 
+   print_test_string
+
+   s" heap size is correct at init time"
+   initializeHeap
+   hBytesRemaining
+   GMHEAPtotalsize =
+   check_it
+
+   s" basic heap switch test 1"
+   hSwitchHeaps
+   GMHEAPinactive @
+   0
+   =
+   check_it
+
+   s" basic heap switch test 2"
+   GMHEAPactive @
+   GMHEAPtotalsize
+   =
+   check_it
+
+   s" basic heap switch test 2a"
+   1 81 alloc_untraced
+   GMHEAP @ GMHEAPtotalsize + 
+   =
+   check_it
+
+   s" basic heap switch test 3"
+   hSwitchHeaps
+   GMHEAPactive @
+   0
+   =
+   check_it
+
+   s" basic heap switch test 4"
+   GMHEAPinactive @
+   GMHEAPtotalsize
+   =
+   check_it
+
+
+   initializeHeap
+   setupHeap
+
+   s" testing hPeek untraced function"
+   0 v @ hPeek swap drop
+   0 =
+   check_it
+
+   s" testing hPeek tagged function"
+   1 v @ hPeek swap drop
+   GMHEAPtaggedmask e or =
+   check_it
+
+   s" testing hPeek traced array"
+   2 v @ hPeek swap drop 
+   GMHEAPtracedmask 2 or =
+   check_it
+
+   s" testing hPeek string array"
+   3 v @ hPeek swap drop
+   GMHEAPtracedmask 3 or =
+   check_it
+
+   s" copy test 1"
+   0 v @ hEvacuateNode temp !
+   temp @
+   GMHEAP @ GMHEAPtotalsize + 
+   = 
+   check_it
+
+   s" forward bit test 1"
+   0 v @ hPeek swap drop isForwardBitSet
+   check_it
+
+   s" check forward pointer test 1"
+   0 v @ 4 + @
+   GMHEAP @ GMHEAPtotalsize +
+   = 
+   check_it
+
+   s" check to make sure flag in new heap is OK test 1"
+   GMHEAP @ GMHEAPtotalsize + @
+   0 = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 1"
+   GMHEAP @ GMHEAPtotalsize + 4 + @
+   71 = 
+   check_it
+
+   s" copy test 2"
+   1 v @ hEvacuateNode temp !
+   temp @
+   GMHEAP @ GMHEAPtotalsize + 8 + 
+   = 
+   check_it
+
+   s" forward bit test 2"
+   1 v @ hPeek swap drop isForwardBitSet
+   check_it
+
+   s" check forward pointer test 2"
+   1 v @ 4 + @
+   GMHEAP @ GMHEAPtotalsize + 8 +
+   = 
+   check_it
+
+   s" check to make sure flag in new heap is OK test 2"
+   GMHEAP @ GMHEAPtotalsize + 8 + @
+   GMHEAPtaggedmask e or = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 2"
+   GMHEAP @ GMHEAPtotalsize + 8 + 4 + @ 
+   0 v @    \ note we haven't scavenged yet... so it should still
+            \ be in the old heap
+   = 
+   check_it
+
+   s" copy test 3"
+   2 v @ hEvacuateNode temp !
+   temp @
+   GMHEAP @ GMHEAPtotalsize + 10 + 
+   = 
+   check_it
+
+   s" forward bit test 3"
+   2 v @ hPeek swap drop isForwardBitSet
+   check_it
+
+   s" check forward pointer test 3"
+   2 v @ 4 + @
+   GMHEAP @ GMHEAPtotalsize + 10 +
+   = 
+   check_it
+
+   s" check to make sure flag in new heap is OK test 3"
+   GMHEAP @ GMHEAPtotalsize + 10 + @
+   GMHEAPtracedmask 2 or = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 3"
+   GMHEAP @ GMHEAPtotalsize + 10 + 4 + @ 
+   1 v @ \ note we haven't scavenged yet... so it should still
+         \ be in the old heap
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 3 part 2"
+   GMHEAP @ GMHEAPtotalsize + 10 + 8 + @ 
+   1 v @ \ note we haven't scavenged yet... so it should still
+         \ be in the old heap
+   = 
+   check_it
+
+   s" copy test 4"
+   3 v @ hEvacuateNode temp !
+   temp @
+   GMHEAP @ GMHEAPtotalsize + 1c + 
+   = 
+   check_it
+
+   s" forward bit test 4"
+   3 v @ hPeek swap drop isForwardBitSet
+   check_it
+
+   s" check forward pointer test 4"
+   3 v @ 4 + @
+   GMHEAP @ GMHEAPtotalsize + 1c +
+   = 
+   check_it
+
+   s" check to make sure flag in new heap is OK test 4"
+   GMHEAP @ GMHEAPtotalsize + 1c + @
+   GMHEAPtracedmask 3 or = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 4"
+   GMHEAP @ GMHEAPtotalsize + 1c + 4 + @ 
+   4 v @ \ note we haven't scavenged yet... so it should still
+         \ be in the old heap
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 4 part 2"
+   GMHEAP @ GMHEAPtotalsize + 1c + 8 + @ 
+   5 v @ \ note we haven't scavenged yet... so it should still
+         \ be in the old heap
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 4 part 3"
+   GMHEAP @ GMHEAPtotalsize + 1c + c + @ 
+   6 v @ \ note we haven't scavenged yet... so it should still
+         \ be in the old heap
+   = 
+   check_it
+
+   GMHEAP @ u.
+   GMHEAP @ GMHEAPtotalsize + u.
+   hScan
+   hScavenge
+
+   s" check to make sure data word in new heap is OK test 2 <after scavenge>"
+   GMHEAP @ GMHEAPtotalsize + 8 + 4 + @ dup dumpHeapElement
+   GMHEAP @ GMHEAPtotalsize + dup dumpHeapElement
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 3 <after scavenge>"
+   GMHEAP @ GMHEAPtotalsize + 10 + 4 + @ 
+   GMHEAP @ GMHEAPtotalsize 8 + +
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 3 part 2 <after scavenge>"
+   GMHEAP @ GMHEAPtotalsize + 10 + 8 + @ 
+   GMHEAP @ GMHEAPtotalsize 8 + + 
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 4 <after scavenge>"
+   GMHEAP @ GMHEAPtotalsize + 1c + 4 + @ 
+   GMHEAP @ GMHEAPtotalsize 2c + + 
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 4 part 2 <after scavenge>"
+   GMHEAP @ GMHEAPtotalsize + 1c + 8 + @ 
+   GMHEAP @ GMHEAPtotalsize 34 + + 
+   = 
+   check_it
+
+   s" check to make sure data word in new heap is OK test 4 part 3 <after scavenge>"
+   GMHEAP @ GMHEAPtotalsize + 1c + c + @ 
+   GMHEAP @ GMHEAPtotalsize 3c + + 
+   = 
+   check_it
+
+   s" copy test node 7"
+   7 v @ hEvacuateNode temp !
+   temp @
+   GMHEAP @ GMHEAPtotalsize 44 + + 
+   = 
+   check_it
+
+   s" forward bit test node 7"
+   7 v @ hPeek swap drop isForwardBitSet
+   check_it
+
+   s" check to make sure flag in new heap is OK test node 7"
+   GMHEAP @ GMHEAPtotalsize 44 + + @
+   GMHEAPtracedmask = 
+   check_it
+
+
+   s" copy test node 8"
+   8 v @ hEvacuateNode temp !
+   temp @
+   GMHEAP @ GMHEAPtotalsize 4c + + 
+   = 
+   check_it
+
+   s" forward bit test node 8"
+   8 v @ hPeek swap drop isForwardBitSet
+   check_it
+
+   s" check to make sure flag in new heap is OK test node 8"
+   GMHEAP @ GMHEAPtotalsize 4c + + @
+   GMHEAPtracedmask 1 or = 
+   check_it
+
+
+
+
+
+   initializeHeap
+   setupHeap
+   7 hTransferStackFrame
+
+   s" check v0 after transfering stack frame"
+   0 v @
+   GMHEAP @ GMHEAPtotalsize +
+   = 
+   check_it
+
+   s" check v1 after transfering stack frame"
+   1 v @
+   GMHEAP @ GMHEAPtotalsize 8 + +
+   = 
+   check_it
+
+   s" check v2 after transfering stack frame"
+   2 v @
+   GMHEAP @ GMHEAPtotalsize 10 + +
+   = 
+   check_it
+
+   s" check v3 after transfering stack frame"
+   3 v @
+   GMHEAP @ GMHEAPtotalsize 1c + +
+   = 
+   check_it
+
+   s" check v4 after transfering stack frame"
+   4 v @
+   GMHEAP @ GMHEAPtotalsize 2c + +
+   = 
+   check_it
+
+   s" check v5 after transfering stack frame"
+   5 v @
+   GMHEAP @ GMHEAPtotalsize 34 + +
+   = 
+   check_it
+
+   s" check v6 after transfering stack frame"
+   6 v @
+   GMHEAP @ GMHEAPtotalsize 3c + +
+   = 
+   check_it
+
+   initializeHeap
+   s" beginning allocation loop" type cr
+   GMHEAPtotalsize 8 /
+   0
+   do
+      1 71 alloc_untraced drop
+   loop
+   s" ended allocation loop" type cr
+   GMHEAP @ 0 v ! 
+   s" bunch of allocates worked.  Should have seen one GC..."
+   1 71 alloc_untraced
+   GMHEAP @ GMHEAPtotalsize 8 + +
+   =
+   check_it
+
+   initializeHeap
+   setupHeap
+   d hGarbageCollect
+   d hGarbageCollect
+   d hGarbageCollect
+
+   dumpVars
+
+   \ to do add case for 1 length traced array
+   \ there was a bug that was fixed in the gc relating to this
+
+   \ to do add a case for doing garbage collection on a tagged integer
+   \ that has a nil pointer, and the nil pointer has been assigned to a
+   \ variable that needs to be copied to the new heap.  the garbage 
+   \ collector should copy the node, but not scavenge the target pointer that 
+   \ is nil.
+
+   \ todo: add a case that illustrates exactly why initializing only
+   \ the first word of a zero array / string doesn't fix the garbage
+   \ collection problems.  problems only went away when we cleared the
+   \ entire heaps after collection.
+;
+
+unit_test
+   
+   

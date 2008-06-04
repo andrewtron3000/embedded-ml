@@ -1,0 +1,11 @@
+let
+
+    val l = (1, nil) :: nil
+
+    fun la (f, h::_) = f h
+      | la (f, nil) = halt () 
+
+in
+    la (op::, l);
+    la (op::, l)
+end

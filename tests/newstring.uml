@@ -1,0 +1,9 @@
+let 
+    val s = "hello world"
+
+    (* val s = {|?h, ?i, ?!|} *)
+in
+    update_(s, 0, ?H);
+    putc (sub_(s, 0));
+    putc (sub_(s, 1))
+end

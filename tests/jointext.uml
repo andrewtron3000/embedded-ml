@@ -1,0 +1,13 @@
+let
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+
+    val x = 6
+    val s = "hello"
+in
+    print [This is a test of jointext.
+           The numeral is [int-tostring 6],
+           and the string is "[s]".
+           What do you [ [think] ]?]
+end

@@ -1,0 +1,13 @@
+let 
+  import "std.uh"
+  import "string.uh"
+  import "int.uh"
+
+	fun nfib n = 
+      if (n <= 1) 
+      then 1
+      else 1 + (nfib (n - 1)) + (nfib (n - 2))
+in
+    nfib 32
+end
+

@@ -1,0 +1,6 @@
+let
+  val z = 6 + 4
+  val y = 5 + 1
+in
+  if y > 10 then y + z else y - z
+end

@@ -1,0 +1,7 @@
+
+let
+    datatype t = A | B of int * t
+    infixr B
+in
+    0 B 1 B 2 B A
+end

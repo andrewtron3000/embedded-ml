@@ -1,0 +1,7 @@
+let
+   val x = 5
+   fun incr x = x + 1
+   val y = (incr x) + 10
+in
+   y
+end

@@ -1,0 +1,7 @@
+
+let
+    fun f 1 = ""
+      | f _ = "z"
+in
+    (f 0, f 1)
+end

@@ -1,0 +1,13 @@
+let
+    datatype (a, b) mytype =
+	Constructor1 of a
+      | Constructor2 of b * a * int
+      | SomethingElse
+      | Whatever of b
+    and notthis = Avoid of b
+	
+in
+
+    Avoid 0  : unit -> unit
+
+end

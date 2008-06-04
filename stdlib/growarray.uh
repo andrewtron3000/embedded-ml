@@ -1,0 +1,100 @@
+
+val require-std = provide-std
+val provide-growarray = ()
+
+type a growarray = (a array ref * int ref)
+
+(* specify the initial element *)
+fun growarray-new a = (ref (array(4, a)), ref 0)
+
+fun growarray-length (_, len) = !len
+
+fun growarray-sub ((a, len), i) =
+    if i chk (!len) then raise Subscript
+    (* PERF unsafe sub *)
+    else sub(!a, i)
+
+(* doesn't automatically grow *)
+fun growarray-update ((a, len), i, x) =
+    if i chk !len then raise Subscript
+    (* PERF unsafe update *)
+    else update(!a, i, x)
+
+(* push on the tail *)
+fun growarray-push ((ra, len), x) =
+    if !len chk length (! ra)
+    then (* resize *)
+	let
+	    val oa = !ra
+
+	    val nl = (length oa * 2) + 1
+	    val na = array(nl, sub(oa, 0))
+
+	    fun init n =
+		if n chk length oa
+		then ()
+		(* PERF unsafe versions *)
+		else (update(na, n, sub(oa, n));
+		      init (n + 1))
+	in
+	    (* print ("resize! to " ^ int-tostring nl ^ "\n"); *)
+	    (* start at 1, since the whole thing is
+	       initialized to the 0th element *)
+	    init 1;
+	    ra := na;
+	    growarray-push ((ra, len), x)
+	end
+    else (update(!ra, !len, x);
+	  len := !len + 1)
+
+fun growarray-subarray ((ra, len), start, req) =
+    if start < 0 orelse (start + req) > !len orelse req < 0
+    then raise Subscript
+    else
+	if req = 0
+	then array0 ()
+	else
+	    let
+		val oa = !ra
+		val na = array(req, sub(oa, 0))
+		fun init z =
+		    if z chk req
+		    then ()
+                    (* PERF unsafe versions *)
+		    else (update (na, z, sub(oa, start + z));
+			  init (z + 1))
+	    in
+		init 0;
+		na
+	    end
+
+(* PERF app on the underlying array? *)
+fun growarray-app f a =
+    let
+	fun p n =
+	    if n chk growarray-length a
+	    then ()
+	    else (f(growarray-sub(a, n));
+		  p (n + 1))
+    in
+	p 0
+    end
+
+(* PERF findfrom on the underlying array? *)
+fun growarray-findfrom n f a =
+    let
+	fun aff i =
+	    (* PERF sub_ *)
+	    if i chk growarray-length a
+	    then NONE
+	    else if f (growarray-sub(a, i))
+		 then SOME i
+		 else aff (i + 1)
+    in
+	aff n
+    end
+
+fun growarray-find f a = growarray-findfrom 0 f a
+
+(* SUSP should reset clear the array? *)
+fun growarray-reset (ra, len) = (len := 0; (ra, len))

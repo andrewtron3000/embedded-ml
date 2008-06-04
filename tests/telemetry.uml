@@ -1,0 +1,29 @@
+let
+   import "std.uh"
+   import "list.uh"
+   import "string.uh"
+   import "int.uh"
+   import "array.uh" 
+   import "hash.uh"
+   import "char.uh"
+   import "telemetry.uh"
+
+   val () = telemetry-add ("element1", UINT8 (ref 13))
+   val () = telemetry-add ("element2", UINT16 (ref 512))
+   val () = telemetry-add ("thatthirdelement", UINT32 (ref 0xfffff))
+   val () = telemetry-add ("quattro", BOOL (ref true))
+
+   val names = {| 
+                "element1", 
+                "element2",
+                "thatthirdelement",
+                "quattro"
+               |} 
+
+   val pkt = (telemetry-define-packet names) 
+
+   val telemetry-stream = telemetry-generate-packet pkt
+
+in
+    print (chars-tohexstring telemetry-stream)
+end

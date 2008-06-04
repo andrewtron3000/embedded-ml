@@ -1,0 +1,553 @@
+
+let
+
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "io.uh"
+    import "obfuscate.uh"
+    import "int.uh"
+
+    import "stream.uh"
+    import "parse.uh"
+    import "roman.uh"
+    import "array.uh"
+    import "growarray.uh"
+
+    (* users *)
+    val rwh = "rwh"
+    val rwh_pass = "xavier50"
+    val guest = "guest"
+
+
+    do let in
+        print "\n\n\n\n\n\n\n\n\n\n";
+        print "\n\n\n\n\n\n\n\n\n\n";
+        print "\n\n\n\n\n\n\n\n\n\n";
+        print "\n\n\n\n\n\n\n\n\n\n";
+        print "12:00:00 1/1/19100\n";
+        print "Welcome to Universal Machine IX (UMIX).\n\n";
+        print "This machine is a shared resource. Please do not log\n";
+        print "in to multiple simultaneous UMIX servers. No game playing\n";
+        print "is allowed.\n\n";
+        
+        print "Please log in (use 'guest' for visitor access).\n";
+        print "login: "
+    end
+
+
+    val name = getline ()
+
+    do print "password: "
+    val pass = getline ()
+
+    fun bug s =
+        let in
+            print "UMIX bug: ";
+            print s;
+            print "\n";
+            halt ()
+        end
+
+
+    type perm = { owner : string }
+
+    datatype file =
+        Program of string list -> unit
+      | Text of string
+      | Directory of (string * perm * file) list ref
+
+    val user =
+        case (name, pass) of
+            (* guest with any password *)
+            ((sis "guest") _, _) => guest
+	  | ((sis rwh) _, (sis rwh_pass) _) => rwh
+          | (u, _) =>
+                (let in
+		     (* try to prevent password brute-forcing *)
+		     obfuscate-delay 800;
+                     print ("ACCESS DENIED for user " ^ u ^ "\n");
+                     halt ()
+                 end)
+
+    val cwd = ref (user :: "home" :: nil)
+
+    (* some commands and programs require access to the root
+       of the filesystem *)
+    val rootr = ref nil
+    val fsroot = Directory rootr
+
+
+    fun okread { owner } =
+	string-equals(owner, "root")
+	orelse string-equals (owner, user)
+
+    val okwrite = okread
+
+    (* get the file pointed to by the path,
+       where the path is 
+       f1 :: d1 :: d2 :: ... :: dn :: nil
+
+       where f may be any type of file or
+       directory, and d1...dn are files. The
+       list is in "reverse" order so that
+       /home/tom/README is represented as
+       "README" :: "tom" :: "home" :: nil.
+       *)
+    fun getpath p =
+        let
+            fun search thing nil = SOME thing
+              | search (Directory ((!) l)) (f :: path) =
+                (* find f inside the directory l *)
+                let
+                    (* XXX check / return permissions? *)
+                    fun findy (((sis f) _, perm, file) :: _) = 
+			if okread perm
+			then search file path
+			else
+			    let in
+				print ("Permission denied: " ^ f ^ "\n");
+				NONE
+			    end
+                      | findy (_ :: more) = findy more
+                      | findy nil = NONE
+                in
+                    findy l
+                end
+        in
+            search fsroot (list-rev p)
+        end
+
+    fun mkabsolute path =
+	let
+	    (* remove trailing /
+	       this works even in the case that path is "/" *)
+	    val path = 
+		case sub (path, length path - 1) of
+		    ?/ => substring'(path, 1)
+		  | _ => path
+
+	    val parts = string-fields (fn c => ord c = ord ?/) path
+
+	    (* val _ = list-app (fn s => print (s ^ "\n")) parts *)
+
+	    fun readpath (p, nil) = p
+		(* empty means that we have written
+		   either /absolute/path or relative/with//double.
+		   for regularity, we treat these as
+		   /absolute/path and /double respectively. *)
+	      | readpath (p, ((sis "") _) :: more) = 
+		let in
+		    (* print "rpempty\n"; *)
+		    readpath (nil, more)
+		end
+		(* shorthand for current directory, as in ./runme
+		   or /asdf/./ghjk; ignore it. *)
+	      | readpath (p, ((sis ".") _) :: more) = readpath (p, more)
+		(* attempting to ascend above root. pretend root is parent of root *)
+	      | readpath (nil, ((sis "..") _) :: more) = 
+		let in
+		    (* print "uproot\n"; *)
+		    readpath (nil, more)
+		end
+		(* pop off one level *)
+	      | readpath (h :: rest, ((sis "..") _) :: more) = 
+		let in
+		    (* print "up\n"; *)
+		    readpath (rest, more)
+		end
+	      | readpath (p, normal :: more) = 
+		let in
+		    (* print "normal\n"; *)
+		    readpath(normal :: p, more)
+		end
+	in
+	    readpath (!cwd, parts)
+	end handle Match =>
+	    let in
+		print "GOT MATCH.\n";
+		halt ()
+	    end
+
+    (* get a path relative to the current directory.
+       path is a string like "a/b/c" or "/c" or "../asdf/"
+       or "./whatever". Tries to do the right thing,
+       not worrying about semantic consistency. *)
+    fun getrel path = getpath (mkabsolute path)
+
+    fun makefile (path, filename, perm, contents) =
+        let
+            fun search (Directory r) nil = 
+                (* this is the dir. *)
+                let
+                in
+		    (* print ("Creating file " ^ filename ^ "\n");*)
+                    (* note: will overwrite directories, etc. *)
+                    r := 
+                    (filename, perm, contents) ::
+                    list-filter (fn (x, _, _) =>
+                                 not (string-equals(x, filename))) (!r)
+                end
+              | search (Directory ((!) l)) (f :: path) =
+                (* find f inside the directory l *)
+                let
+                    fun findy (((sis f) _, perm, file) :: _) = 
+			if okwrite perm
+			then search file path
+			else print ("Can't write file: " ^ filename ^ 
+				    "; permission denied.\n")
+                      | findy (_ :: more) = findy more
+                      | findy nil =
+                        print ("Could not create file " ^ filename ^ " : "
+                               ^ " no such path " ^ f ^ "\n")
+                in
+                    findy l
+                end
+              | search _ _ =
+                print ("Could not create file " ^ filename ^ " : "
+                       ^ " path not valid\n")
+        in
+            search fsroot (list-rev path)
+        end
+
+    (* some applications *)
+    fun a_out l =
+        let in
+            print "segmentation fault (core dumped)\n";
+            makefile (!cwd, "core",
+                      (* ?? *)
+                      { owner = guest }, 
+                      Text ("(seriously, who reads core files?)\n"))
+        end
+
+    fun ml2000 l =
+	let in
+	    print "You win! Your verification code is:\n\n";
+	    print "WHAT'S THE STATUS OF THE RELEASE?\n"
+	end
+
+    fun umodem (_ :: file :: eof :: nil) = 
+	let
+	    val sz = length eof
+	    val ga = growarray-new ?_
+
+	    fun pushc c = growarray-push (ga, c)
+
+	    (* does the ga end with EOF? *)
+	    fun saw-eof () = 
+		growarray-length ga >= sz
+		andalso
+		let
+		    (* location that the string should
+		       start in ga *)
+		    val gas = growarray-length ga - sz
+
+		    fun check n =
+			if n >= sz then true
+			else
+			    if ord (sub(eof, n)) =
+			       ord (growarray-sub(ga, gas + n))
+			    then check (n + 1)
+			    else false
+
+		in
+		    check 0
+		end
+
+	    fun rd () =
+		let in
+		    pushc (getc ());
+		    if (growarray-length ga mod 512) = 0
+		    then print ("Transferred " ^ int-tostring (growarray-length ga) ^ "...\n")
+		    else ();
+		    if saw-eof ()
+		    then ()
+		    else rd () 
+		end
+
+	    val () = rd ()
+	    val () = print ("writing " ^ int-tostring (growarray-length ga - sz) ^ " characters\n")
+	in
+	    makefile (!cwd, file, { owner = user },
+		      Text (growarray-subarray (ga, 0, growarray-length ga - sz)))
+	end
+      | umodem _ =
+	let in
+	    print "umodem: transfer files between UMIX systems\n";
+	    print "usage: umodem file.out EOF_SENTINEL\n";
+	    print "writes characters from the console into the file\n";
+	    print "until the specified sequence EOF_SENTINEL is reached.\n"
+	end
+
+    fun qbasic (_ :: file :: nil) =
+	(case getrel file of
+	     SOME (Text s) =>
+		 (let 
+		      val basename = list-head (string-fields (fn ?. => true
+							        | _  => false) file)
+		      import "qbasic.uml"
+		  in  let
+			  val p = qbasic-parse s
+			  val p = qbasic-optimize p
+		      in
+			  makefile (!cwd, basename ^ ".exe", 
+				    { owner = user }, 
+				    Program (fn l =>
+					     (qbasic-eval p l)
+					     handle QBasic s =>
+						 print ("\nqbasic: " ^ s ^ "\n")));
+			  print "Compiled.\n"
+		      end handle QBasic s => print ("qbasic: " ^ s ^ "\n")
+		  end)
+	   | SOME _ => print "qbasic: not a text file\n"
+	   | NONE => print "qbasic: no such file\n")
+      | qbasic _ =
+	let in
+	    (* XXX in latin *)
+	    print "QVICKBASIC version VII.0\n";
+	    print "usage: qbasic file.bas\n"
+	end
+
+    (* build initial filesystem *)
+
+    (* VISVAL BASIC?
+       UISUAL BASIC *)
+    val binr = ref ( ("qbasic", { owner = "root" }, Program qbasic) ::
+		     ("umodem", { owner = "root" }, Program umodem) ::
+		    nil )
+
+    val home_rwh = ref ( ("README", { owner = rwh }, 
+                          Text "this is secret! how did you hack my password? damn kids\n") ::
+			 ("ml2000.exe", { owner = rwh }, Program ml2000) ::
+                         nil )
+
+    val home_guest_code = 
+	ref (	     
+	      ("hack.bas", { owner = guest },
+	       let
+		   import "hack_bas.uml"
+	       in
+		   Text hack-bas
+	       end) :: nil )
+
+    val home_guest = ref ( ("README_GUESTS", { owner = "root" }, 
+                            Text ("Notice!\n\n" ^
+                                  "Guest access is provided as a courtesy to the community.\n" ^
+				  "We have recently noticed an increase in abuse using the\n" ^
+				  "guest account. Please clean up after yourself.\n" ^
+				  "Hacking attempts will not be tolerated!\n\n" ^
+				  "    -  root\n\n")) ::
+			   ("code", { owner = guest }, Directory home_guest_code) ::
+                           ("a.out", { owner = guest }, Program a_out) ::
+			   (".history", { owner = guest },
+			    Text (string-concat
+				  ("cat README_GUESTS\n" ::
+				  "lol\n" ::
+				  "md code\n" ::
+				  "mkdir code\n" ::
+				  "cd code\n" ::
+				  "ls\n" ::
+				  "/bin/umodem hack.bas EOF\n" ::
+				  "/bin/qbasic hack.bas\n" ::
+				  "./hack.exe rwh\n" ::
+				  "wtf\n" ::
+				  "help\n" ::
+				  "help hack.exe\n" ::
+				  "?\n" ::
+				  "quit\n" ::
+				  "logout\n" ::
+				  "eixt\n" ::
+				  "\n" ::
+				  "ql8 y348iunhy\n" ::
+				  nil))) ::
+                           nil )
+
+    val homer = 
+        ref
+        ( (rwh, { owner = rwh }, Directory home_rwh) ::
+          (guest, { owner = guest }, Directory home_guest) :: 
+	  nil )
+
+    do rootr := ( ("home", { owner = "root" }, Directory homer) ::
+		  ("bin", { owner = "root" }, Directory binr) ::
+		  nil )
+
+    datatype flag =
+        Toggle of string
+      | Char of char    
+
+    fun cdup () =
+        cwd := (case !cwd of
+                    nil => (print "cdup: already at root.\n";
+                            nil)
+                  | _ :: t => t)
+
+    fun run file args =
+        (case getrel file of
+	     (SOME (Program f)) => f (file :: args)
+	   | (SOME _) => print "run: not an executable file.\n"
+	   | _ => print "run: no such program.\n")
+	     handle Match => 
+		 let in
+		     print "UMIX BUG: match inside prog\n"
+		 end
+
+    val commands =
+        { name = "ls",
+          flags = nil,
+          run = (fn (flags, nil) =>
+		 let
+		     (* XXX use general flags system *)
+		     val long = list-exists (fn s =>
+					     case array-find (fn ?l => true
+							       | _  => false) s of
+						 SOME _ => true
+					       | _ => false) flags
+		 in
+		     (case getpath (!cwd) of
+			  (SOME (Directory ((!) l))) =>
+			      if long then
+				 list-app (fn (name, { owner }, file) =>
+					   let in
+					       print
+					       (case file of
+						    Text _ => "-rw- "
+						  | Directory _ => "drwx "
+						  | Program _ => "-r-x ");
+					       print ("   " ^ 
+						      string-pad (12, owner) ^
+						      name ^ "\n")
+					   end) l
+			      else
+				  list-app (fn (name, { owner }, file) =>
+					    print ((case file of
+							Text _ => name
+						      | Directory _ => name ^ "/"
+						      | Program _ => name ^ "*") ^ "\n")
+					    ) l
+			 | _ => bug "cwd is not a dir")
+		 end),
+          help = "Lists the files in the current directory.",
+          usage = "ls" } ::
+        { name = "cat",
+          flags = nil,
+          run = (fn (flags, s :: nil) =>
+                 (case getrel s of
+                      (SOME (Text s)) => print s
+                    | (SOME _) => print "cat: not a text file\n"
+                    | _ => print "cat: no such file\n")),
+          help = "Prints a file to the terminal.",
+          usage = "cat file" } ::
+        { name = "cdup",
+          flags = nil,
+          run = (fn (flags, nil) => cdup ()),
+          help = "Ascends to the parent directory.",
+          usage = "cdup" } ::
+        { name = "cd",
+          flags = nil,
+          run = (fn (flags, s :: nil) =>
+		 let 
+		     val abs = mkabsolute s
+		 in
+		     case getpath abs of
+			 (SOME (Directory _)) => cwd := abs
+		       | _ => print "cd: not a directory.\n"
+		 end),
+          help = "Changes the current directory.",
+          usage = "cd dir" } ::
+        { name = "run",
+          flags = nil,
+          run = (fn (_, s :: args) => run s args),
+          help = "Runs a program.",
+          usage = "run file args" } ::
+        { name = "pwd",
+          flags = nil,
+          run = (fn (_, nil) =>
+                 let in
+                     print "/";
+                     list-app (fn f => (print f;
+                                        print "/")) (list-rev (!cwd));
+                     print "\n"
+                 end),
+          help = "Displays the current directory.",
+          usage = "pwd" } ::
+        nil
+        
+
+    (* add help, which refers to the rest of the command list *)
+    val commands =
+        { name = "help",
+          flags = nil,
+          run = (fn (_, nil) =>
+                 let in
+                     print "For information on a specific command, type\n  help cmd\n";
+                     print "UMIX Commands:\n";
+                     list-app (fn { name, flags, run, help, usage } =>
+                               print ("  " ^ name ^ "\n")) commands
+                 end
+                 | (_, cmd :: nil) => 
+                 let
+                     fun findc ({ name = name as ((sis cmd) _), flags, run, help, usage } :: _) =
+                         print (name ^ " : " ^ help ^ "\n" ^
+                                "usage : " ^ usage ^ "\n")
+                       | findc (_ :: t) = findc t
+                       | findc nil = print ("help: unknown command " ^ cmd ^ "\n")
+                 in
+                     findc commands
+                 end),
+          help = "List commands, or describe a command.",
+          usage = "help [command]" } :: 
+        commands
+
+    fun bash () =
+        let
+            (* XXX print path too? as C:\path> *)
+            do print "% "
+
+            val entry = string-tokens (fn c => ord c = ord ? ) (getline ())
+
+	    fun process entry =
+            (case entry of
+                 nil => ()
+               | cmd :: args =>
+                     let
+                         (* find this command *)
+                         fun findc ({ name = name as ((sis cmd) _), flags, run, help, usage } :: _) =
+			     let
+				 val (flags, args) = 
+				     list-partition
+				     (fn s => length s > 0 
+				      andalso ord(sub(s, 0)) = ord ?-) args
+				     (* XXXXX process flags properly *)
+			     in
+				 ( ( run (flags, args) ) handle Match => 
+				     let in
+					 print "SYNTAX ERROR.\n";
+					 print ("Command: " ^ name ^ "\n");
+					 print ("Purpose: " ^ help ^ "\n");
+					 print ("Correct syntax: " ^ usage ^ "\n")
+				     end)
+			     end
+                           | findc (_ :: t) = findc t
+                           | findc nil = 
+				 (* not a builtin. maybe it's a path to a program? *)
+				 (case getrel cmd of
+				      SOME f => process ("run" :: entry)
+				    | NONE => 
+					  print ("unknown command " ^ cmd ^ "\n" ^
+						 "new to UMIX? try\n  help\nfor help.\n"))
+                     in
+                         findc commands
+                     end)
+
+        in
+	    process entry;
+            (* keep going... *)
+            bash ()
+        end
+
+in
+    print ("logged in as " ^ user ^ "\n");
+    bash () 
+      handle IO => print ("UMIX shutdown: console EOF\n")
+end

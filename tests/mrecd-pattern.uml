@@ -1,0 +1,10 @@
+(* test mutual recursion on datatypes *)
+let
+  datatype a even = Succ of odd
+                  | Zero
+  and odd = Next of even
+
+in
+    case raise Match of
+	Next e => Next e
+end

@@ -1,0 +1,8 @@
+let
+    datatype t = A | B
+in
+    case A of
+	A => 999
+      | B => 888
+    
+end

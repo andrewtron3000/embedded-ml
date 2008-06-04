@@ -1,0 +1,10 @@
+
+let
+    exception X of int
+in
+    
+    print
+    ((if raise X 3 then "no-1" else "no-2")
+	 handle X n => (if n = 3 then "yes" else "noooo")
+	      | _ => "no")
+end

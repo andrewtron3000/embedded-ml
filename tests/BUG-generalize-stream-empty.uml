@@ -1,0 +1,258 @@
+
+let
+
+    (* as of revision 455 *)
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "growarray.uh"
+    import "io.uh"
+    import "int.uh"
+
+(* STREAMS *)
+val provide-stream = ()
+
+type a susp = unit -> a
+    
+datatype a front = Nil | Cons of a * front susp
+type a stream = a front susp
+
+fun stream-delay s =
+    let
+        val r = ref (fn () => raise Match)
+    in
+        r := (fn () => 
+              let val ss = s ()
+              in 
+		  r := (fn () => ss);
+		  ss
+              end);
+        (fn () => (!r) ())
+    end
+
+fun stream-force s = s ()
+
+val stream-empty = (fn () => Nil)
+(* XXX to workaround generalization/unification bug *)
+(* fun stream-empty () = Nil *)
+
+(* no memoization; there's no point *)
+fun stream-fromlist nil = stream-empty
+  | stream-fromlist (h :: t) = (fn () => Cons (h, stream-fromlist t))
+
+(* ditto. *)
+fun stream-fromstring s =
+    let
+	fun rs n () =
+	    if n >= length s 
+	    then Nil
+	    (* PERF sub_ *)
+	    else Cons(sub(s, n), rs (n + 1))
+    in
+	rs 0
+    end
+
+fun stream-app f =
+    let
+	fun sa s =
+	    case stream-force s of
+		Nil => ()
+	      | Cons (h, s') => (f h; sa s')
+    in
+	sa
+    end
+
+
+(* ----------- PARSE ----------- *)
+
+val require-stream = provide-stream
+val require-growarray = provide-growarray
+val provide-parse  = ()
+
+type (a, t) parser = t stream * unit cont -> a * t stream
+
+(* Primitive Parsers *)
+
+(* parse-succeed : 'a -> ('a, 'b) parser *)
+fun parse-succeed x (ts, k) = (x, ts)
+fun parse-fail (_, k) = throw () to k
+
+(* succeed with x if the stream is empty *)
+(*
+fun parse-done x ((stream-force) Nil, k) = (x, stream-empty)
+  | parse-done _ (_,   k) = throw () to k
+*)
+fun parse-done x (s, k) =
+    (case stream-force s of
+	 Nil => (x, stream-empty)
+       | Cons _ => throw () to k)
+
+fun parse-any (ts, k) =
+    (case stream-force ts of
+	 Nil => throw () to k
+       | Cons (h, t) => (h, t))
+
+(* sequential successful parse *)
+fun -- (p, q) (ts, k) =
+	 let val (x, ts) = p (ts, k)
+	 in
+	     q x (ts, k)
+	 end
+
+(* sequential failing *)
+fun || (p, q) (ts, k) =
+    letcc out
+    in
+	letcc fail
+	in
+	    throw (p (ts, fail))
+	    to out
+	end;
+
+	q (ts, k)
+    end
+
+fun $ p input = p () input
+
+fun parse-stream p s =
+    letcc out
+    in
+	letcc fail
+	in
+	    throw SOME let val (item, _) = p (s, fail)
+		       in item
+		       end
+		   to out
+	end;
+	
+	NONE
+    end
+
+fun parse-list p l = parse-stream p (stream-fromlist l)
+fun parse-string p s = parse-stream p (stream-fromstring s)
+
+fun parse-fix f arg = f (parse-fix f) arg
+
+  infix  2 -- 
+  infix  1 ||
+
+(* utilities *)
+
+  infix 4 <<
+  infix 4 >>
+  infix 2 parse-wth
+  infix 2 parse-suchthat
+  infix 2 parse-return
+(*   infix 2 when *)
+
+  fun && (p, q) = p -- (fn x => q -- (fn y => parse-succeed (x, y)))
+  infix 3 &&
+
+  fun parse-wth (p, f) = p -- (fn x => (parse-succeed (f x)))
+  fun parse-suchthat (p, g) = p -- (fn x => if g x then parse-succeed x else parse-fail)
+  fun parse-return (p, x) = p -- (fn _ => parse-succeed x)
+  fun parse-alt (h :: t) = h || parse-alt t
+    | parse-alt nil = parse-fail
+  fun parse-satisfy g = parse-any parse-suchthat g
+  fun parse-opt p = p parse-wth SOME || parse-succeed NONE
+  fun << (p, q) = p -- (fn x => q parse-return x)
+  fun >> (p, q) = p -- (fn _ => q)
+
+  fun parse-repeat p = parse-fix (fn rep => p && rep parse-wth (op ::) || parse-succeed nil)
+  fun parse-repeat1 p = (p && parse-repeat p) parse-wth op ::
+
+  fun parse-separate p q = (p && parse-repeat (q >> p)) parse-wth op::
+  fun parse-separate0 p q = parse-separate p q || parse-succeed nil
+
+  fun parse-matching f = parse-any -- (fn ((f) x) => parse-succeed x | _ => parse-fail)
+
+  fun parse-when (p, f) = 
+      p -- (fn x => case f x of SOME r => parse-succeed r | NONE => parse-fail)
+  infix 2 parse-when
+
+datatype associativity = Parse-left | Parse-right | Parse-non
+
+datatype a opr =
+    Parse-prefix of int * (a -> a)
+  | Parse-infix of associativity * int * (a * a -> a)
+  | Parse-postfix of int * (a -> a)
+
+datatype a fixityitem =
+    Parse-atm of a
+  | Parse-opr of a opr
+
+fun parse-assoc (Parse-prefix _) = Parse-non
+  | parse-assoc (Parse-infix(asc,_,_)) = asc
+  | parse-assoc (Parse-postfix _) = Parse-non
+    
+fun parse-prec (Parse-prefix(n,_)) = n
+  | parse-prec (Parse-infix(_,n,_)) = n
+  | parse-prec (Parse-postfix(n,_)) = n
+
+
+
+
+(* useful parsers *)
+
+val parse-char-digit = parse-matching 
+                        (fn c => 
+			 let val n = ord c
+			 in
+			     if n >= (ord ?0)
+				andalso n <= (ord ?9)
+			     then n - ord ?0
+			     else raise Match
+			 end)
+
+(* XXX doesn't check for overflow *)
+val parse-char-decimal = parse-repeat1 parse-char-digit
+    parse-wth (fn x =>
+	       let fun lton (acc, nil) = acc
+		     | lton (acc, h :: t) = lton (acc * 10 + h, t)
+	       in
+		   lton(0, x)
+	       end)
+
+
+
+    (* offending code *)
+
+
+    do let
+	 datatype command = 
+	    CSplit of unit
+	  | CUse
+
+	 datatype mytoken =
+	     (* any identifier *)
+	     ZId of string
+	     (* separator character *)
+	   | ZNone
+
+	 fun is_id (ZNone) = ""
+	   | is_id _ = raise Match
+	     
+	 fun & c = parse-succeed ()
+	     
+	 fun expr () = ( & ?( && & ?) ) parse-return ()
+	     
+	 val modname = parse-matching (is_id) << parse-done ()
+	     
+	 fun stmt ()= 
+	      & ?u >> $ expr             parse-return CUse
+	   || & ?z >> modname            parse-return CUse
+       in
+	   ()
+       end
+
+   (* type should NOT depend on mytoken *)
+    val _ = Cons (0, stream-empty)
+    (* val () = parse-done *)
+
+    (* val () = op || *)
+
+    (* import "qbasic.uml" *)
+
+in
+    print "OK"
+end

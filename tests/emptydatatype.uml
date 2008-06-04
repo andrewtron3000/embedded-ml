@@ -1,0 +1,7 @@
+
+let
+    (* datatype with NO constructors *)
+    datatype void
+in
+    ()
+end

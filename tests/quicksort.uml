@@ -1,0 +1,45 @@
+let
+  fun append (x::xs) ys = 
+      x::(append xs ys)
+    | append nil ys = ys
+
+  fun partition x (y::ys) (accl, accg) =
+      if y < x then partition x ys (y::accl, accg)
+      else partition x ys (accl, y::accg)
+    | partition x nil acc = acc
+
+  fun print (x::xs) = (putc (chr_ (x + 65)); putc ? ; print xs)
+    | print nil = putc ?\n
+
+  fun qsort (x::xs) = 
+      let
+  val (l, g) = partition x xs (nil, nil) 
+          val l' = qsort l
+val () = print l'
+          val g' = qsort g 
+val () = print g'
+val () = putc ?\n
+val () = putc ?\n
+      in
+	append l' (x::g')
+      end
+    | qsort nil = nil
+
+  fun test (x1::x2::xs) = x1 <= x2 andalso test (x2::xs)
+    | test _ = true
+                                           
+  fun buildlist 0 = nil
+    | buildlist n = n::(buildlist (n - 1))
+
+  val l = buildlist 50
+
+  val l' = qsort l
+in
+  putc ?:;
+  if test l' then putc ?) else putc ?(;
+  putc ?\n
+  ;
+  print l
+  ;
+  print l'
+end

@@ -1,0 +1,30 @@
+val require-list = provide-list
+val require-threads = provide-threads
+
+val provide-futures = ()
+
+(* ( result option reference, waiter list ) *)
+type a future = ( a option ref * (unit -> unit) list ref )
+
+fun future-create () = ( ref NONE, ref nil )
+
+fun future-ready (result, waiters) = case !result of SOME _ => true
+                                                   | NONE => false
+
+fun future-complete (result, waiters) ans =
+    ( result := SOME ans ;
+      list-app fork (!waiters) ;
+      waiters := nil )
+
+fun future-force (f as (result, waiters)) = 
+    let
+        fun susp () = letcc k in ( waiters := !waiters @ 
+                                              ( (fn () => throw () to k) :: nil) ;
+                                   resched () ) 
+                              end
+    in
+       ( if future-ready f then () else susp () ;
+         case !result of SOME x => x
+                       (* Should never happen *)
+                       | NONE => raise Match )
+    end

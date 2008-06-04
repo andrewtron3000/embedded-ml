@@ -1,0 +1,97 @@
+
+val provide-std = ()
+
+(* install top-level exception handler. *)
+
+val () =
+    letcc out
+    in
+	letcc toplevel
+	in
+	    sethandler_ toplevel;
+	    throw () to out
+	end;
+
+	putc ?u; putc ?n; putc ?c;
+	putc ?a; putc ?u; putc ?g;
+	putc ?h; putc ?t; putc ? ;
+	putc ?e; putc ?x; putc ?n;
+	putc ?!; putc ?\n;
+	
+	halt ()
+    end
+
+datatype (a, b) sum = LEFT of a | RIGHT of b
+datatype a option = SOME of a | NONE
+
+fun ignore _ = ()
+
+fun option-map f (SOME x) = SOME (f x)
+  | option-map _ NONE = NONE
+
+fun isSome (SOME _) = true
+  | isSome NONE = false
+
+fun valOf (SOME x) = x
+  | valOf NONE = raise Match
+
+datatype order = LESS | GREATER | EQUAL
+
+fun order-equals (LESS, LESS) = true
+  | order-equals (GREATER, GREATER) = true
+  | order-equals (EQUAL, EQUAL) = true
+  | order-equals (_, _) = false
+
+fun not true = false
+  | not false = true
+
+fun o (f, g) x = f(g(x))
+infix o
+
+fun flip f x y = f y x
+
+(* wrap primitives *)
+
+exception Radix
+
+fun chr n =
+    (* use unsigned comparison *)
+    if n chk 256
+    then raise Radix
+    else chr_ n
+
+(* arrays *)
+exception Subscript
+
+fun sub (a, x) =
+    (* use unsigned comparison *)
+    if x chk length a
+    then raise Subscript
+    else sub_(a, x)
+
+fun update (a, x, e) =
+    (* use unsigned comparison *)
+    if x chk length a
+    then raise Subscript
+    else update_(a, x, e)
+
+(* numbers *)
+
+exception Div
+
+fun div (a,0) = raise Div
+  | div (a,b) = div_ (a,b)
+infix div
+
+fun divs (a,0) = raise Div
+  | divs (a,b) = sdiv_ (a,b)
+infix divs
+
+fun mod (a, b) =
+    let val q = a div b
+    in
+	a - (b * q)
+    end
+
+infix mod
+

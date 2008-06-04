@@ -1,0 +1,72 @@
+(* Attempt at comprehensive tests for
+   the less-than operator (whose
+   implementation is not trivial). This is
+   mildly complicated by the fact that
+   the optimizer will fold tests if
+   they are known. So we use functions
+   to return the numbers we're interested
+   in. In order to avoid inlining those,
+   each one has to be called at least
+   twice (however, future versions of
+   the inliner may notice that the body
+   is trivial, at which point this trick
+   won't work...). *)
+
+let
+    fun fact 0 = 1
+      | fact n = n * fact (n - 1)
+
+    val six = fact 3
+    val negone = six - 7
+
+    val zero = negone + 1
+
+    fun ok () =
+	let in
+	    putc ?o;
+	    putc ?k;
+	    putc ?\n
+	end
+
+    fun bad () =
+	let in
+	    putc ?n;
+	    putc ?o;
+	    putc ?\n
+	end
+
+in
+    (if six < 6
+     then bad ()
+     else ok ());
+
+    (if 6 < six
+     then bad ()
+     else ok ());
+
+    (if negone < 1
+     then ok ()
+     else bad ());
+
+    (if 1 < negone
+     then bad ()
+     else ok ());
+
+    (if negone < zero
+     then ok ()
+     else bad ());
+	
+    (if zero < negone
+     then bad ()
+     else ok ());
+
+    (if zero < zero
+     then bad ()
+     else ok ());
+
+    (if negone < negone
+     then bad ()
+     else ok ())
+   
+    (* XXX more... *)
+end

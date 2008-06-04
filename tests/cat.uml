@@ -1,0 +1,13 @@
+let 
+    val EOF = 0 - 1
+
+    fun cat () =
+	let val c = getc_ ()
+	in
+	    (* putc ?-; *)
+	    if c = EOF then ()
+	    else (putc (chr_ c); cat ())
+	end
+in
+    cat ()
+end

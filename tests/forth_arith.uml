@@ -1,0 +1,12 @@
+(* Tests array primitives. (these are unsafe.)
+   for checked prims see arrays.uml. *)
+
+let
+    val _ = (putc ?0; putc ?\n)
+
+    val a = array(10, ?a)
+
+    val _ = (putc (chr_ (2 + 3 + ord (sub_(a, 2)))); putc ?\n)
+in
+    putc ?\n
+end

@@ -1,0 +1,15 @@
+let
+database msg {
+
+    table seqs {
+
+        key id.
+
+        /* 
+            'back'
+
+        */
+    }
+
+}
+in () end

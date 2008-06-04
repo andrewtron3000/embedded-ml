@@ -1,0 +1,36 @@
+val provide-filter = ()
+val require-std = provide-std
+val require-string = provide-string
+val require-int = provide-int
+val require-array = provide-array
+
+type filterData = { array : int array, index : int ref, width : int }
+
+(* *)
+fun filter-create w = 
+    let
+        val idx = ref 0
+        val ar = array(w, 0)
+    in
+        { array=ar, index=idx, width=w }
+    end
+
+(* *)
+fun filter-insert c v =
+    let
+        val a = #array/filterData c
+        val ir = #index/filterData c
+        val w = #width/filterData c
+    in
+        ( update_(a, !ir, v) ;
+          ir := (!ir + 1) mod w )
+    end
+
+(* *)
+fun filter-average c = 
+    let
+        val a = #array/filterData c
+        val w = #width/filterData c
+    in
+        (array-foldl op+ 0 a) div w
+    end

@@ -1,0 +1,28 @@
+(* this tests the unsafe(?) sethandler primitive *)
+
+let
+    val _ =
+	letcc out
+	in
+	    letcc u
+	    in
+		sethandler_ u;
+		throw () to out
+	    end;
+	    putc ?o;
+	    putc ?k;
+	    putc ?\n;
+	    halt ()
+	end
+
+    exception X
+in
+    putc ?.; putc ?.; putc ?.; putc ? ;
+
+    raise X;
+	
+    putc ?n;
+    putc ?o;
+    putc ?\n
+
+end

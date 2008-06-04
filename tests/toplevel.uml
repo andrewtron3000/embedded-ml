@@ -1,0 +1,10 @@
+(* should invoke toplevel exception handler,
+   printing something like "uncaught exn!" *)
+let
+    import "std.uh"
+
+    exception Whatever
+in
+    raise Whatever;
+    putc ?n; putc ?o; putc ?\n
+end

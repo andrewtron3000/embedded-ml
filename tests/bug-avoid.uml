@@ -1,0 +1,10 @@
+let
+
+    datatype t = A
+
+in
+    case A of
+	_ => 111
+      | A => 222
+
+end 

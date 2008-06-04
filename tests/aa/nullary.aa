@@ -1,0 +1,9 @@
+
+let datatype tt = A | B
+    fun ++(x : tt, y : tt) = B
+    infix ++
+in
+    A ++ B;
+
+   (A : tt, B : tt) : tt * tt
+end

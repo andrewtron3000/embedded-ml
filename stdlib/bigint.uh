@@ -1,0 +1,481 @@
+(* Arbitrary precision integers. *)
+
+(* Based on the SMLNJ impelmentation (int-inf.sml).  We first implement 
+   BigNat, which is just the natural numbers, and then build a BigInt on 
+   top of it. 
+*)
+
+val provide-bigint = ()
+
+val require-string = provide-string
+val require-int = provide-int 
+val require-list = provide-list
+
+
+type bignat = int list
+datatype bi-sign = POS | NEG
+datatype bigint = BI of {sign : bi-sign, digits : bignat}
+datatype bi-verify = BI-CORRECT | BI-WRONG of bignat
+
+exception Negative
+(* using stdlib Div *)
+(* exception DivideByZero *)
+
+val {bi-add, bi-subt, bi-mult, bi-tostring, bi-fromint, 
+     bi-fromstring, bi-cmp, bi-divmod, bi-verify} = 
+let 
+
+(* pow (x,y) = x^y *)
+fun pow (b,0) = 1
+  | pow (b,e) = b*(pow (b,e - 1))
+
+infix pow
+
+(* PERF: set deliberately low to make the code more
+   obfuscated *)
+val bn-lgbase     = 6
+val bn-base       = 2 pow bn-lgbase
+val bn-nbase      = 0 - bn-base
+val bn-maxDigit   = 0 - (bn-nbase + 1)
+val bn-lowmask    = bn-base - 1
+val bn-highmask   = notb bn-lowmask
+                    
+val bn-lghbase     = bn-lgbase div 2
+val bn-hbase       = 2 pow bn-lghbase
+val bn-hmask       = bn-hbase - 1
+val bn-hsgnextmask = notb ((notb bn-hmask) shr bn-lghbase)
+
+(* That one special neg *)
+val bi-minint = 0x80000000
+
+
+exception VERIFY
+fun bn-verify bignat =
+  (list-app (fn x => if x > bn-maxDigit then raise VERIFY
+                     else ()) bignat;
+   BI-CORRECT)
+  handle VERIFY => BI-WRONG bignat
+
+(*
+
+val bn-lgbase     = 30
+val bn-base       = 0x40000000
+val bn-nbase      = 0xC0000000
+val bn-maxDigit   = 0x3FFFFFFF
+val bn-lowmask    = 0x3FFFFFFF
+val bn-highmask   = 0xC0000000
+                    
+val bn-lghbase     = 15
+val bn-hbase       = 0x8000
+val bn-hmask       = 0x7FFF
+val bn-hsgnextmask = notb ((notb bn-hmask) shr bn-lghbase)
+*)
+val bn-zero = nil
+val bn-one = 1::nil
+
+
+fun bn-tostring nil = "[]"
+  | bn-tostring (x::xs) = 
+    (list-foldl (fn (n,s) => s ^ ", " ^ int-tostring n) 
+     ("["^int-tostring x) xs) ^ "]"
+
+(* itobn : int -> bignat *)
+fun itobn 0 = 0 :: nil
+  | itobn i =
+    if i < 0 then raise Negative 
+    else if i < bn-base then i :: nil
+         else 
+           (i andb bn-lowmask)::(itobn ((i andb bn-highmask) shr bn-lgbase))
+ 
+(* bntoi : bignat -> int *)
+fun bntoi nil = 0
+  | bntoi (low :: high) = low + ((bntoi high) * bn-base)
+
+fun bn-eq (nil,nil) = true
+  | bn-eq (x::xs,y::ys) = (x = y) andalso bn-eq (xs,ys)
+  | bn-eq _ = false
+
+fun bn-cmp (nil,nil) = EQUAL
+  | bn-cmp ( _ ,nil) = GREATER
+  | bn-cmp (nil, _ ) = LESS
+  | bn-cmp (i::ri,j::rj) =
+    (case bn-cmp (ri,rj) of
+       EQUAL => if i = j then EQUAL
+                else if i < j then LESS
+                     else GREATER
+     | c => c) 
+
+fun bn-addOne nil = 1::nil
+  | bn-addOne (bn::bns) = 
+    if bn+1 = bn-base then 0::(bn-addOne bns) else (bn+1)::bns
+
+fun bn-add (nil,digits)     = digits
+  | bn-add (digits,nil)     = digits
+  | bn-add (dm::rm, dn::rn) = bn-addd ((bn-nbase+dm)+dn, rm, rn)
+and bn-addd (s,m,n) =
+    if s < 0 then (s + bn-base) :: bn-add (m,n) else (s :: bn-addc (m,n))
+and bn-addc (m,nil) = bn-addOne m
+  | bn-addc (nil,n) = bn-addOne n
+  | bn-addc (dm::rm, dn::rn) = bn-addd ((bn-nbase + dm) + dn + 1, rm, rn)
+
+
+fun bn-consd (0, nil) = nil
+  | bn-consd (d, r)   = d::r
+
+fun bn-subtOne (0::mr)  = bn-maxDigit::(bn-subtOne mr)
+  | bn-subtOne (1::nil) = nil
+  | bn-subtOne (n::mr)  = (n - 1)::mr
+  | bn-subtOne nil      = raise Negative
+
+fun bn-subt (m,nil)          = m
+  | bn-subt (nil,n)          = raise Negative
+  | bn-subt (dm::rm, dn::rn) = bn-subd (dm - dn, rm, rn)
+and bn-subb (nil, n)         = raise Negative
+  | bn-subb (dm::rm, nil)    = bn-subd (dm - 1, rm, nil)
+  | bn-subb (dm::rm, dn::rn) = bn-subd (dm - dn - 1, rm, rn)
+and bn-subd (d, m, n)        =
+    if d >= 0 then bn-consd(d, bn-subt(m,n)) 
+    else bn-consd(d + bn-base, bn-subb (m, n))
+
+fun hl w =
+    (if w < 0 
+     then bn-hsgnextmask orb (w shr bn-lghbase) 
+     else w shr bn-lghbase,  
+     (* MUST sign-extend *)
+     w andb bn-hmask)
+
+
+(* multiply 2 digits *)
+fun bn-mul2 (m, n) = 
+    let 
+      val (mh, ml) = hl m
+      val (nh, nl) = hl n
+      val x = mh*nh
+      val y = (mh - ml)*(nh - nl) (* x-y+z = mh*nl + ml*nh *)
+      val z = ml*nl
+      val (zh, zl) = hl z
+      val (uh, ul) = hl (bn-nbase + x + z - y + zh) (* can't overflow *)
+    in 
+      (x + uh + bn-hbase, (ul shl bn-lghbase) + zl) 
+    end
+
+(* multiply bigint by digit *)
+fun bn-muld (m, 0) = nil
+  | bn-muld (m, 1) = m (* speedup *)
+  | bn-muld (m, i) = 
+    let
+        fun bn-muldc (nil, 0) = nil
+	  | bn-muldc (nil, c) = c::nil
+	  | bn-muldc (d::r, c) = 
+            let
+		val (h, l) = bn-mul2 (d, i)
+		val l1 = l + bn-nbase + c
+            in 
+		if l1 >= 0 
+		then l1 :: bn-muldc (r, h+1)
+		else (l1 - bn-nbase) :: bn-muldc (r, h) 
+            end
+    in 
+        bn-muldc (m, 0) 
+    end
+
+fun bn-mult (m, nil) = nil
+  | bn-mult (m, d::nil) = bn-muld (m, d) (* speedup *)
+  | bn-mult (m, 0::r) = bn-consd (0, bn-mult (m, r)) (* speedup *)
+  | bn-mult (m, n) = 
+    let 
+        fun bn-muln nil = nil
+	  | bn-muln (d::r) = bn-add (bn-muld (n, d), bn-consd (0, bn-muln r))
+    in 
+	bn-muln m 
+    end
+
+
+fun sdiv (x,y) =
+  case (x < 0, y < 0) of
+    (false, false) => x div y
+  | (true, false)  => 0 - ((0 - x) div y)
+  | (false, true)  => 0 - (x div (0 - y))
+  | (true, true)   => (0 - x) div (0 - y)
+
+fun div p = sdiv p
+
+infix div
+
+fun quotrem (i,j) = ((i div j), (i mod j))
+fun sh i = i shl bn-lghbase
+fun scale i = if i = bn-maxDigit then 1 
+              else bn-nbase div (0 - (i+1))
+
+fun bn-divmod2 ((u,v), i) = 
+    let
+      val (vh,vl) = hl v
+      val (ih,il) = hl i
+      fun adj (q,r) = if r<0 then adj (q - 1, r+i) else (q, r)
+      val (q1,r1) = quotrem (u, ih)
+      val (q1,r1) = adj (q1, sh r1+vh - q1*il)
+      val (q0,r0) = quotrem (r1, ih)
+      val (q0,r0) = adj (q0, sh r0+vl - q0*il)
+    in 
+      (sh q1+q0, r0) 
+    end
+
+(* divide bignat by digit>0 *)
+fun bn-divmodd (m, 1) = (m, 0) (* speedup *)
+  | bn-divmodd (m, i) = 
+  let
+    val scale = scale i
+    val i' = i * scale
+    val m' = bn-muld (m, scale)
+    fun dmi nil = (nil, 0)
+      | dmi (d::r) = 
+      let 
+        val (qt,rm) = dmi r
+        val (q1,r1) = bn-divmod2 ((rm,d), i')
+      in 
+        (bn-consd (q1,qt), r1) 
+      end
+    val (q,r) = dmi m'
+  in 
+    (q, r div scale) 
+  end
+
+
+(* From Knuth Vol II, 4.3.1, but without opt. in step D3 *)
+fun bn-divmod (m, nil) = raise Div
+  | bn-divmod (nil, n) = (nil, nil) (* speedup *)
+  | bn-divmod (d::r, 0::s) = 
+    let 
+      val (qt,rm) = bn-divmod (r,s)
+    in 
+      (qt, bn-consd (d, rm)) 
+    end (* speedup *)
+  | bn-divmod (m, d::nil) = 
+    let 
+      val (qt, rm) = bn-divmodd (m, d)
+    in
+      (qt, if rm=0 then nil else (rm::nil)) 
+    end
+  | bn-divmod (m, n) = 
+    let
+      val ln = list-length n (* >= 2 *)
+      val scale = scale(list-nth (ln - 1) n)
+      val m' = bn-muld (m, scale)
+      val n' = bn-muld (n, scale)
+      val n1 = list-nth (ln - 1) n'(* >= base/2 *)
+      fun divl nil = (nil, nil)
+        | divl (d::r) = 
+          let
+            val (qt,rm) = divl r
+            val m = bn-consd (d, rm)
+            fun msds (nil,_) = (0,0)
+              | msds (d::nil,1) = (0,d)
+              | msds (d2::d1::nil,1) = (d1,d2)
+              | msds (d::r,i) = msds (r,i - 1)
+            val (m1,m2) = msds (m, ln)
+            val tq = if m1 = n1 then bn-maxDigit
+                     else #1/2 (bn-divmod2 ((m1,m2), n1))
+            fun try (q,qn') = (q, bn-subt (m,qn'))
+              handle Negative => try (q - 1, bn-subt (qn', n'))
+            val (q,rr) = try (tq, bn-muld (n',tq))
+          in 
+            (bn-consd (q,qt), rr) 
+          end
+      val (qt,rm') = divl m'
+      val (rm,_(*0*)) = bn-divmodd (rm',scale)
+    in 
+      (qt,rm) 
+    end
+
+
+
+(* DEBUG TOSTRING
+fun bi-tostring (BI {sign, digits}) =
+  let
+    val initstring = 
+      case sign of 
+        POS => "POS "
+      | NEG => "NEG "
+  in
+    initstring ^ (bn-tostring digits)
+  end
+*)
+
+fun bi-verify (BI {sign, digits}) =
+  case digits of
+    nil => (case sign of NEG => BI-WRONG digits | _ => BI-CORRECT)
+  | _   => bn-verify digits
+
+(* PERF instead of going by 10, pick a bigger number and insert extra
+   0s where necessary *)
+fun bi-tostring (BI {sign, digits}) =
+  let
+    val ten = itobn 10
+
+    fun bn-tostring nil = ""
+      | bn-tostring digits = 
+        let
+          val (q,r) = bn-divmod(digits,ten)
+        in
+          (bn-tostring q) ^ (int-tostring (bntoi r))
+        end
+      
+    val bnstring =
+      case digits of
+        nil => "0"
+      | small::nil => int-tostring small (* speed *)
+      | digs => bn-tostring digs
+
+  in
+    case sign of
+      POS => bnstring
+    | NEG => "-" ^ bnstring
+
+  end
+
+
+fun bi-eq (BI{sign=s1,digits=d1},BI{sign=s2,digits=d2}) =
+  case (s1,s2) of
+    (POS,POS) => bn-eq (d1,d2)
+  | (NEG,NEG) => bn-eq (d1,d2)
+  | _         => false
+
+fun bi-cmp (BI{sign=NEG,digits=_},BI{sign=POS,digits=_})  = LESS
+  | bi-cmp (BI{sign=POS,digits=_},BI{sign=NEG,digits=_})  = GREATER
+  | bi-cmp (BI{sign=POS,digits=d},BI{sign=POS,digits=d'}) = bn-cmp (d,d')
+  | bi-cmp (BI{sign=NEG,digits=d},BI{sign=NEG,digits=d'}) = bn-cmp (d',d)
+
+val bi-zero      = BI {sign = POS, digits = bn-zero}
+val bi-one       = BI {sign = POS, digits = bn-one}
+val bi-minus-one = BI {sign = NEG, digits = bn-one}
+
+fun bi-posi digits = BI {sign = POS, digits = digits}
+fun bi-negi digits = BI {sign = NEG, digits = digits}
+fun bi-zneg nil    = bi-zero
+  | bi-zneg digits = BI {sign = NEG, digits = digits}
+
+
+val bi-minNeg = bi-minint
+val bn-bigNatMinNeg = bn-addOne (itobn (0 - (bi-minNeg + 1)))
+val bi-bigIntMinNeg = bi-negi bn-bigNatMinNeg
+
+fun bi-fromint 0 = bi-zero
+  | bi-fromint i =
+    if i < 0
+    then if (i = bi-minNeg)
+         then bi-bigIntMinNeg
+         else BI{sign=NEG, digits = itobn (0-i)}
+    else BI{sign = POS, digits = itobn i}
+
+fun bi-negSign POS = NEG
+  | bi-negSign NEG = POS
+
+fun bi-subtNat (m,nil) = {sign=POS, digits=m}
+  | bi-subtNat (nil,n) = {sign=NEG, digits=n}
+  | bi-subtNat (m,n)   =
+    ({sign = POS, digits = bn-subt(m,n)})
+    handle Negative => {sign=NEG, digits=bn-subt(n,m)}
+
+fun bi-neg (i as BI{digits = nil, sign}) = bi-zero
+  | bi-neg (BI{sign, digits}) = BI{sign=(bi-negSign sign), digits=digits}
+
+
+fun bi-mult (_,BI{digits=nil, sign}) = bi-zero
+  | bi-mult (BI{digits=nil, sign},_) = bi-zero
+  | bi-mult (BI{sign = POS, digits = d1}, BI{sign = NEG, digits = d2}) =
+    BI{sign = NEG, digits = bn-mult(d1,d2)}
+  | bi-mult (BI{sign = NEG, digits = d1}, BI{sign = POS, digits = d2}) =
+    BI{sign = NEG, digits = bn-mult(d1,d2)}
+  | bi-mult (BI{digits=d1,sign=_}, BI{digits=d2,sign=_}) =
+    BI{sign = POS, digits = bn-mult(d1,d2)}
+
+fun bi-add (BI{digits=nil, sign}, i2) = i2
+  | bi-add (i1, BI{digits=nil, sign}) = i1
+  | bi-add (BI{sign=POS, digits=d1}, BI{sign=NEG, digits=d2}) =
+    BI(bi-subtNat(d1, d2))
+  | bi-add (BI{sign=NEG, digits=d1}, BI{sign=POS, digits=d2}) =
+    BI(bi-subtNat(d2, d1))
+  | bi-add (BI{sign=s1, digits=d1}, BI{digits=d2, sign=s2}) =
+    BI{sign=s1, digits=bn-add(d1, d2)}
+
+fun bi-subt (i1, BI{digits=nil,sign}) = i1
+  | bi-subt (BI{digits=nil,sign=s1}, BI{sign=s2,digits=digits}) =
+    BI{sign=bi-negSign s2, digits=digits}
+  | bi-subt (BI{sign=POS, digits=d1}, BI{sign=POS, digits=d2}) =
+    BI(bi-subtNat(d1, d2))
+  | bi-subt (BI{sign=NEG, digits=d1}, BI{sign=NEG, digits=d2}) =
+    BI(bi-subtNat(d2, d1))
+  | bi-subt (BI{sign=s1, digits=d1}, BI{digits=d2, sign=s2}) =
+    BI{sign=s1, digits=bn-add(d1, d2)}
+
+fun bi-divmod (BI{sign=POS,digits=m},BI{sign=POS,digits=n}) =
+    (case bn-divmod (m,n) of 
+       (q,r) => (bi-posi q, bi-posi r))
+  | bi-divmod (BI{sign=POS,digits=nil},BI{sign=NEG,digits=n}) = 
+    (bi-zero,bi-zero)
+  | bi-divmod (BI{sign=POS,digits=m},BI{sign=NEG,digits=n}) = 
+    let
+      val (q,r) = bn-divmod (bn-subtOne m, n)
+    in 
+      (bi-negi(bn-addOne q), bi-zneg(bn-subtOne(bn-subt(n,r)))) 
+    end
+  | bi-divmod (BI{sign=NEG,digits=m},BI{sign=POS,digits=n}) = 
+    let
+      val (q,r) = bn-divmod (bn-subtOne m, n)
+    in 
+      (bi-negi(bn-addOne q), bi-posi(bn-subtOne(bn-subt(n,r)))) 
+    end
+  | bi-divmod (BI{sign=NEG,digits=m},BI{sign=NEG,digits=n}) =
+    (case bn-divmod (m,n) of 
+       (q,r) => (bi-posi q, bi-zneg r))
+(*
+fun bi-div (BI{sign=sign1,digits=digs1},BI{sign=sign2,digits=digs2})
+  let
+    val (d,_) = bn-divmod (digs1,digs2)
+  in
+    case (sign1,sign2) of
+      (POS,POS) => d
+    | (NEG,POS) => ~d
+    | (POS,NEG) => ~d
+    | (NEG,NEG) => d
+  end
+*)    
+
+
+
+
+fun bi-fromstring s =
+  letcc exit
+  in
+    let
+	    val ten = bi-fromint 10
+	    fun go (acc, n) =
+        if n = length s
+        then SOME acc
+        else go(bi-add(bi-mult(ten, acc),
+                       bi-fromint
+                       let val c = ord (sub(s, n))
+                       in
+                         if c >= ord ?0 andalso c <= ord ?9
+                         then c - ord ?0
+                         else throw NONE to exit
+                       end),
+                n + 1)
+    in
+	    go(bi-fromint 0, 0)
+    end
+  end
+
+
+
+in
+  { bi-add = bi-add, 
+    bi-subt = bi-subt, 
+    bi-mult = bi-mult, 
+    bi-tostring = bi-tostring, 
+    bi-fromstring = bi-fromstring,
+    bi-fromint = bi-fromint,
+    bi-cmp = bi-cmp,
+    bi-divmod = bi-divmod,
+    bi-verify = bi-verify }
+end

@@ -1,0 +1,57 @@
+
+let
+    datatype a option = SOME of a | NONE
+
+    fun single-entry (n, id, kind, rep, title, createdate, 
+                      pict, body, linkdest, month, year, 
+                      imghttpdir) =
+        let in
+            ()
+        end
+
+    val month = 111
+    val year  = 222
+
+    val n = 0
+
+    val name = [hi]
+    val updates = 1
+    val lastupdate = 1
+    val imghttpdir = [dir]
+    val replieson = true
+
+    val results = nil
+
+    (* print an entry. folded over 'results' keeping track of
+       the current most recent month and year, so that it can print
+       separators as well. *)
+    fun pentry ((id, kind, linkdest, body, title, createdate,
+                 pict, replies, cm, cy, lastreply), (lm, ly)) =
+        let 
+
+            val rep =
+              if replieson
+              then
+              let
+                fun ago n = [ugh]
+              in
+                  SOME(replies, ago 1)
+              end
+              else NONE
+
+        in
+            single-entry (n, id, kind, rep, title, createdate, 
+                          pict, body, linkdest, month, year, imghttpdir);
+
+            (cm, cy)
+        end
+
+    (* print all entries.. *)
+    val (lastm, lasty) = foldl (results, (0, 0), pentry)
+
+in
+
+    (* and now the links to old months at the bottom *)
+
+    ()
+end

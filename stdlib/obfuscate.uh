@@ -1,0 +1,51 @@
+
+val require-string = provide-string
+val require-des = provide-des
+val provide-obfuscate = ()
+
+(* ENH should make this more obfuscated. *)
+fun obfuscate-delay 0 = "X"
+  | obfuscate-delay n =
+    array(1, chr ((n * 13) mod 256)) ^
+    obfuscate-delay (n - 1)
+
+
+datatype obs-string =
+    ObsString of { key : des-key,
+		   (* same length as underlying string *)
+		   chars : (int * int) array }
+
+(* NOTE: should never use this! *)
+(* use ObsString{"constant"} instead *)
+fun obs-fromstring (k1, k2) s =
+    let
+	val key = des-key (k1, k2)
+    in
+	ObsString
+	{ key = key,
+	  chars = array-mapi (fn (n, c) =>
+			      des-encrypt key (n, ord c)) s }
+    end
+
+fun obs-tostring (ObsString { key, chars }) =
+    array-mapi (fn (_, r) =>
+		(* do NOT take out range check in chr,
+		   since we want to catch corrupted strings
+		   here *)
+		chr (#2/2 (des-decrypt key r))
+		) chars
+
+fun obs-sub (ObsString { key, chars }, n) =
+    chr (#2/2 (des-decrypt key (sub (chars, n))))
+
+fun obs-update (ObsString { key, chars}, n, c) =
+    update(chars, n, des-encrypt key (n, ord c))
+
+fun obs-concat (s1 as (ObsString { key = key1, chars = chars1 }),
+                s2 as (ObsString { key = key2, chars = chars2 })) =
+    let fun init i = if i < length chars1 then des-encrypt key2 (i, ord (obs-sub (s1, i)))
+                     else des-encrypt key2 (i, ord (obs-sub (s2, i - length chars1)))
+        val chars = array-tabulate (length chars1 + length chars2) init
+    in
+      ObsString { key = key2, chars = chars }
+    end

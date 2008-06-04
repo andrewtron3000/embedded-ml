@@ -1,0 +1,8 @@
+let
+   native pm = "printme" : int -> unit 
+
+   fun g z = z 15
+in
+   g pm 
+   (* g (fn x => x) *)
+end

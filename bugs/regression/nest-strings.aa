@@ -1,0 +1,5 @@
+
+(* this should parse and fail to typecheck *)
+
+print [<a href="[FCGI]/escape/copyone/[itos
+       n]?move=[if lastm then [1] else [0]     ]">]

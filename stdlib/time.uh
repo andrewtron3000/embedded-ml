@@ -1,0 +1,100 @@
+val provide-time = ()
+val require-array = provide-array
+val require-string = provide-string
+
+(* *)
+type timedata = 
+     {
+      seconds : int,
+      minutes : int,
+      hours : int, 
+      date : int, 
+      month : int,
+      year : int,
+      unix_time : int
+     }
+
+(* *)
+fun time-tostring timerec =
+    let
+        val month = int-tostring (#month/timedata timerec)
+        val day = int-tostring (#date/timedata timerec)
+        val year = int-tostring (#year/timedata timerec)
+        val h = int-tostring (#hours/timedata timerec)
+        val m = int-tostring (#minutes/timedata timerec)
+        val s = int-tostring (#seconds/timedata timerec)
+
+        fun format v = 
+            if (length v) = 1 
+            then ("0" ^ v) 
+            else v 
+    in
+        [[month]/[day]/[year] [h]:[(format m)]:[(format s)]]
+    end
+
+(* *)
+fun time-to-seconds timerec = 
+    let 
+        (* compute delta time from 00:00:00 jan 1, 1970 *)
+        val dsec = #seconds/timedata timerec
+        val dmin = #minutes/timedata timerec 
+        val dhour = #hours/timedata timerec
+        val ddate = (#date/timedata timerec) - 1
+        val month = #month/timedata timerec
+        val year = #year/timedata timerec
+                   
+        val seconds_per_hour = 3600
+        val seconds_per_day = 24 * seconds_per_hour
+        val seconds_per_year = 365 * seconds_per_day
+                               
+        fun is-leap-year year =
+            let 
+                val y4 = (year mod 4) = 0
+                val y100 = (year mod 100) <> 0
+                val y400 = (year mod 400) = 0
+            in
+                (y4 andalso y100) orelse y400
+            end
+            
+        fun year-seconds y =
+            let
+                fun leap-seconds-per-year y i acc =
+                    if i >= y then acc
+                    else (if is-leap-year i 
+                          then leap-seconds-per-year y (i+1) (acc + seconds_per_day)
+                          else leap-seconds-per-year y (i+1) acc)
+            in
+                ( (y - 1970) * seconds_per_year + 
+                  (leap-seconds-per-year y 1970 0) )
+            end
+            
+        fun month-seconds y m = 
+            let
+                val days = {| 0, 31, (if is-leap-year y then 29 else 28), 31, 30, 
+                            31, 30, 31, 31, 30, 31, 30, 31 |}
+                           
+                fun secs m i acc = 
+                    let 
+                        val secs_for_month = sub(days, i) * seconds_per_day
+                    in
+                        if i >= m then acc 
+                        else secs m (i+1) (acc + secs_for_month)
+                    end
+            in
+                secs m 1 0
+            end
+            
+    in
+        (dsec +
+         (dmin * 60) + 
+         (dhour * seconds_per_hour) +
+         (ddate * seconds_per_day) +
+         (month-seconds year month) +
+         (year-seconds year))
+    end
+
+
+
+
+    
+     

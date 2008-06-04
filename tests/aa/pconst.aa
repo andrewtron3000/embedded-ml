@@ -1,0 +1,11 @@
+let
+
+    fun f 11 111 = "one"
+      | f 22 222 = "two"
+      | f 22 333 = "twentythree"
+      | f 33 333 = "three"
+      | f _  _   = "other"
+in
+
+    f 22 333
+end

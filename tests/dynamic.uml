@@ -1,0 +1,17 @@
+
+let
+    import "std.uh"
+    import "string.uh"
+    import "int.uh"
+in
+    print (int-tohexstring (dynamic_ 0));
+    putc ?\n;
+
+    print (int-tohexstring (dynamic_ 1));
+    putc ?\n;
+
+    print (int-tohexstring (dynamic_ 2));
+    putc ?\n;
+
+    ()
+end
