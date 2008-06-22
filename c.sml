@@ -25,6 +25,7 @@ struct
          | TUPLEVAR of inst * W.word
          | ARRAYVAR of inst * inst
          | STORE of inst * inst
+         | NATIVE_CALL of string * W.word * inst
          | VARIABLE_REF of W.word
          | DEREFERENCE of inst
          | ADD of inst * inst 
