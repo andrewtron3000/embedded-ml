@@ -31,7 +31,7 @@
 #define Arrayval(x, i) ( Tupleval(x, i) )
 
 /* Arraylen : hptr -> int */
-#define Arraylen(x) ( (x) & GMHEAPmask ) 
+#define Arraylen(x) ( (*x) & HEAPmask ) 
 
 extern uint32_t *temp;
 extern uint32_t *stackframe[];
@@ -41,6 +41,8 @@ extern uint32_t storage[];
 
 void efficient_copy(void *d, void *s, uint32_t words);
 void efficient_set(void *d, uint32_t target, uint32_t words);
+
+uint32_t hExtractTag ( uint32_t *h );
 
 uint32_t *alloc_untraced(uint32_t value, uint32_t context_len);
 uint32_t *alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_len);
