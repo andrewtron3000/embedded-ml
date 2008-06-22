@@ -9,3 +9,7 @@ ffi.o : ffi.c
 
 phidgets_ffi.o : phidgets_ffi.c
 	gcc $(CFLAGS) $(INCLUDES) $(LIBS) -c phidgets_ffi.c
+
+clean :
+	rm -f *.o
+
