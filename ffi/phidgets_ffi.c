@@ -18,12 +18,15 @@ uint32_t *phidgetsOpen( uint32_t context_len, uint32_t *stackvar )
   rc = CPhidgetTextLCD_create( &phid ); 
   assert( rc == 0 );
   assert( (uint32_t) phid != 0 );
+  printf("got past create\n");
 
-  rc = CPhidget_open( (CPhidgetHandle) phid, serial_number );
+  rc = CPhidget_open( (CPhidgetHandle) phid, -1 /* 68132 */ /*serial_number*/ );
   assert( rc == 0 );
+  printf("got past open\n");
 
   rc = CPhidget_waitForAttachment( (CPhidgetHandle) phid, 0 );
   assert( rc == 0 );
+  printf("got past attachment\n");
  
   return boxUnsigned( context_len, (uint32_t) phid);
 }

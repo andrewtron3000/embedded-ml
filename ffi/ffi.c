@@ -83,7 +83,7 @@ uint32_t *unboxTuple( uint32_t *hptr, uint32_t i )
   /*
    * make sure we're dealing with a traced string element.
    */
-  assert ( hExtractTag(hptr) == HEAPtaggedmask );
+  assert ( hExtractTag(hptr) == HEAPtracedmask );
 
   return Tupleval(hptr, i);
 }
