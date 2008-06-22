@@ -6,7 +6,7 @@ struct
   structure W = Word32
 
   open C
-  fun print includemain  out runtime (blocks, lab) =
+  fun print out runtime (blocks, lab) compileflags =
       let
           val path = "./.tmp/"
           val () = OS.FileSys.mkDir path
@@ -59,6 +59,7 @@ struct
                                                             (asm_to_string source) ^ (asm_to_string SEPARATOR)  (* ^
                                                             "assert (( " ^ (asm_to_string target) ^ " >= &storage[0]) && (" ^ (asm_to_string target) ^ " < &storage[10000]))" ^ (asm_to_string SEPARATOR) *)
                                 | DEREFERENCE target => "D(" ^ (asm_to_string target) ^ ")"
+                                | NATIVE_CALL (f, c, a) => f ^ "(" ^ (W.toString c) ^ ", " ^ (asm_to_string a) ^ ")"
                                 | VARIABLE_REF i => "(stackframe + 0x" ^ (W.toString i) ^ ")"
                                 | CMP_EQ (l, r) => "(" ^ (asm_to_string l) ^ " == " ^ (asm_to_string r) ^ ")"
                                 | CMP_NEQ (l, r) => "(" ^ (asm_to_string l) ^ " != " ^ (asm_to_string r) ^ ")"
@@ -179,9 +180,9 @@ struct
                 val f = TextIO.openOut (path ^ "makefile");
                 val () = TextIO.output (f, hdr);
                 val () = TextIO.output (f, ("a.out: libarchive.a \n"));
-                val () = TextIO.output (f, ("\t$(CC) $(CFLAGS) -L. -larchive -o $@ \n"));
+                val () = TextIO.output (f, ("\t$(CC) $(CFLAGS) -L. -larchive " ^ compileflags ^ " -o $@ \n"));
                 val () = TextIO.output (f, ("libarchive.a: \n"));
-                val () = TextIO.output (f, ("\tmake -j 6 -f makefile.obj \n"));
+                val () = TextIO.output (f, ("\tmake -j 2 -f makefile.obj \n"));
                 val () = TextIO.output (f, ("\tfind . -print | grep \"\\.o\" | xargs $(AR) $(ARFLAGS) libarchive.a\n"));
                 val () = TextIO.output (f, ("\t$(RANLIB) libarchive.a\n"));
                 val () = TextIO.flushOut f;

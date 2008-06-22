@@ -293,6 +293,18 @@ fun convert (Fix(fns, App(Label main, nil))) = let
 
               | convertBlock (context, Primop(PArraylength, _, _, _)) = raise ToC "bad array len"
 
+              | convertBlock (context, Primop(PNative f, [args], [v], [c])) = 
+                let
+                    val v_context_info = ContextMap.addToContext(context, v)
+                    val context_len = W.fromInt (ContextMap.contextLength context)
+                    val target = W.fromInt(#position(v_context_info))
+                in
+                    COMMENT ("native: " ^ f) ::
+                    UPDATE_STACK ( target,
+                                   NATIVE_CALL (f, context_len, convertToHeapAddr context args) ) ::
+                    convertBlock(#context(v_context_info), c)
+                end
+
               | convertBlock (context, App(f, vas)) =
                 let 
                     val f_as_string = case f of Label lb => Variable.tostring(lb)
