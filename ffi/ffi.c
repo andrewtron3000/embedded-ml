@@ -5,10 +5,11 @@
 #include "ffi.h"
 #include "runtime-c.h"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 /* unboxUnsigned : hptr -> int */
 uint32_t unboxUnsigned( uint32_t *hptr )
 {
-
   /*
    * make sure we're dealing with an untraced heap element.  (just an
    * integer)
