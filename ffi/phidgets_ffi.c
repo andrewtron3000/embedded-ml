@@ -5,7 +5,7 @@
 #include "phidget21.h"
 #include "ffi.h"
 
-#define PHIDGETS_MAX_CHARS 40
+#define PHIDGETS_MAX_CHARS 20
 
 uint32_t *phidgetsOpen( uint32_t context_len, uint32_t *stackvar )
 {
@@ -49,27 +49,20 @@ uint32_t *phidgetsSetDisplay( uint32_t context_len, uint32_t *tuple )
 {
   int rc;
   char phidget_str[PHIDGETS_MAX_CHARS + 1];
-  char phidget_line1[PHIDGETS_MAX_CHARS / 2 + 1];
-  char phidget_line2[PHIDGETS_MAX_CHARS / 2 + 1];
   CPhidgetTextLCDHandle phid;
+  int lineno;
 
   phid = (CPhidgetTextLCDHandle) unboxUnsigned( unboxTuple(tuple, 0) );
   assert( phid != 0 );
 
-  unboxString( unboxTuple(tuple, 1), phidget_str, PHIDGETS_MAX_CHARS );
+  lineno = (int) unboxUnsigned( unboxTuple(tuple, 1) );
 
-  if (strlen(phidget_str) > PHIDGETS_MAX_CHARS / 2)
-  {
-    strncpy(phidget_line1, phidget_str, PHIDGETS_MAX_CHARS / 2);
-    rc = CPhidgetTextLCD_setDisplayString(phid, 0, phidget_line1);
-    strncpy(phidget_line2, phidget_str + PHIDGETS_MAX_CHARS / 2, PHIDGETS_MAX_CHARS / 2);
-    rc = CPhidgetTextLCD_setDisplayString(phid, 1, phidget_line2);
-  }
-  else
-  {
-    strncpy(phidget_line1, phidget_str, PHIDGETS_MAX_CHARS / 2);
-    rc = CPhidgetTextLCD_setDisplayString(phid, 0, phidget_line1);
-  }
+  memset(phidget_str, 0x0, sizeof(phidget_str));
+
+  unboxString( unboxTuple(tuple, 2), phidget_str, sizeof(phidget_str) );
+
+  rc = CPhidgetTextLCD_setDisplayString(phid, lineno, phidget_str);
+  assert( rc == 0 );
 
   return (uint32_t *) NULL;
 }

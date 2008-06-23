@@ -39,11 +39,14 @@ void unboxString( uint32_t *hptr, char *buf, uint32_t buf_len )
 
   string_len = Arraylen(hptr);
 
-  for(i = 0; i < MIN(string_len, buf_len); i++)
+  for(i = 0; i < MIN(string_len, buf_len - 1); i++)
   {
     boxed_char = Arrayval(hptr, i);
     buf[i] = (char) Intval(boxed_char);
   }
+
+  /* null terminate the string */
+  buf[i] = (char) 0;
 }
 
 /* boxString : contextlen * string -> hptr */
