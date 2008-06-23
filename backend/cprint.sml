@@ -59,7 +59,7 @@ struct
                                                             (asm_to_string source) ^ (asm_to_string SEPARATOR)  (* ^
                                                             "assert (( " ^ (asm_to_string target) ^ " >= &storage[0]) && (" ^ (asm_to_string target) ^ " < &storage[10000]))" ^ (asm_to_string SEPARATOR) *)
                                 | DEREFERENCE target => "D(" ^ (asm_to_string target) ^ ")"
-                                | NATIVE_CALL (f, c, a) => f ^ "(" ^ (W.toString c) ^ ", " ^ (asm_to_string a) ^ ")"
+                                | NATIVE_CALL (f, c, a) => f ^ "(0x" ^ (W.toString c) ^ ", " ^ (asm_to_string a) ^ ")"
                                 | VARIABLE_REF i => "(stackframe + 0x" ^ (W.toString i) ^ ")"
                                 | CMP_EQ (l, r) => "(" ^ (asm_to_string l) ^ " == " ^ (asm_to_string r) ^ ")"
                                 | CMP_NEQ (l, r) => "(" ^ (asm_to_string l) ^ " != " ^ (asm_to_string r) ^ ")"
