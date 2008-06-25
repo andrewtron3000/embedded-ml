@@ -8,6 +8,7 @@ let
     val serno = 68132
     val lcd_h = phidgets-lcd-open serno
     val ik_h = phidgets-ik-open serno
+
     val () = phidgets-set-output-state (ik_h, 0, 0)
     val () = phidgets-set-display-string (lcd_h, 0, "12345678901234567890")
 
@@ -15,17 +16,12 @@ let
     val () = phidgets-set-display-string (lcd_h, 1, "yo mama")
 
     val () = phidgets-set-output-state (ik_h, 0, 0)
-    val () = phidgets-set-display-string (lcd_h, 0, "12345678901234567890")
-
-    val () = phidgets-set-output-state (ik_h, 0, 1)
-    val () = phidgets-set-display-string (lcd_h, 1, "abcdef")
-
-    val () = phidgets-set-output-state (ik_h, 0, 1)
     val () = phidgets-set-display-string (lcd_h, 0, "adfadsfasfd")
 
-    val () = phidgets-set-output-state (ik_h, 0, 0)
-
     val hs = int-tostring lcd_h
+
+    val () = phidgets-close lcd_h
+    val () = phidgets-close ik_h
 in
     print [Phidget Handle is: [hs]\n\r]
 end
