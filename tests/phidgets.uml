@@ -1,0 +1,31 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "phidgets.uh"
+
+    val serno = 68132
+    val lcd_h = phidgets-lcd-open serno
+    val ik_h = phidgets-ik-open serno
+    val () = phidgets-set-output-state (ik_h, 0, 0)
+    val () = phidgets-set-display-string (lcd_h, 0, "12345678901234567890")
+
+    val () = phidgets-set-output-state (ik_h, 0, 1)
+    val () = phidgets-set-display-string (lcd_h, 1, "yo mama")
+
+    val () = phidgets-set-output-state (ik_h, 0, 0)
+    val () = phidgets-set-display-string (lcd_h, 0, "12345678901234567890")
+
+    val () = phidgets-set-output-state (ik_h, 0, 1)
+    val () = phidgets-set-display-string (lcd_h, 1, "abcdef")
+
+    val () = phidgets-set-output-state (ik_h, 0, 1)
+    val () = phidgets-set-display-string (lcd_h, 0, "adfadsfasfd")
+
+    val () = phidgets-set-output-state (ik_h, 0, 0)
+
+    val hs = int-tostring lcd_h
+in
+    print [Phidget Handle is: [hs]\n\r]
+end

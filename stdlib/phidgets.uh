@@ -1,0 +1,40 @@
+
+(* phidgets interfacekit *)
+
+type phidgetHandle = int
+
+datatype phidgetRCType = EPHIDGET_OK  (* 0 *)
+                       | EPHIDGET_NOTFOUND  (* 1 *)
+                       | EPHIDGET_NOMEMORY  (* 2 *)
+                       | EPHIDGET_UNEXPECTED  (* 3 *)
+                       | EPHIDGET_INVALIDARG  (* 4 *)
+                       | EPHIDGET_NOTATTACHED  (* 5 *)
+                       | EPHIDGET_INTERRUPTED  (* 6 *)
+                       | EPHIDGET_INVALID  (* 7 *)
+                       | EPHIDGET_NETWORK  (* 8 *)
+                       | EPHIDGET_UNKNOWNVAL  (* 9 *)
+                       | EPHIDGET_BADPASSWORD  (* 10 *)
+                       | EPHIDGET_UNSUPPORTED  (* 11 *)
+                       | EPHIDGET_DUPLICATE  (* 12 *)
+                       | EPHIDGET_TIMEOUT  (* 13 *)
+                       | EPHIDGET_OUTOFBOUNDS  (* 14 *)
+                       | EPHIDGET_EVENT  (* 15 *)
+                       | EPHIDGET_NETWORK_NOTCONNECTED  (* 16 *)
+                       | EPHIDGET_WRONGDEVICE  (* 17 *)
+
+native phidgets-lcd-open = "phidgetsLCDOpen" : int -> phidgetHandle
+native phidgets-ik-open = "phidgetsIKOpen" : int -> phidgetHandle
+native phidgets-close = "phidgetsClose" : phidgetHandle -> unit
+
+(* phidgets-set-display-string handle lineno string*)
+native phidgets-set-display-string = "phidgetsSetDisplay" : phidgetHandle * int * string -> unit
+
+(* analog input functions *)
+(* phidgets-get-sensor-raw-value handle channelID *)
+native phidgets-get-sensor-raw-value = "phidgetsGetSensorRawValue" : phidgetHandle * int -> int
+
+(* digital output functions *)
+(* phidgets-get-output-state handle channelID *)
+native phidgets-get-output-state = "phidgetsGetOutputState" : phidgetHandle * int -> int
+(* phidgets-set-output-state handle channelID desiredState *)
+native phidgets-set-output-state = "phidgetsSetOutputState" : phidgetHandle * int * int -> unit 
