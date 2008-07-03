@@ -7,6 +7,19 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+int strnlen(char *s, int n)
+{
+  int i;
+
+  for (i = 0; i < n; i++)
+  {
+    if (s[i] == (char) 0)
+      break;
+  }
+
+  return i;
+}
+
 /* unboxUnsigned : hptr -> int */
 uint32_t unboxUnsigned( uint32_t *hptr )
 {
@@ -50,14 +63,11 @@ void unboxString( uint32_t *hptr, char *buf, uint32_t buf_len )
 }
 
 /* boxString : contextlen * string -> hptr */
-uint32_t *boxString( uint32_t context_len, char *str )
+uint32_t *boxString( uint32_t context_len, char *str, int str_len )
 {
-  uint32_t str_len;
   uint32_t *hptr;
   uint32_t *first_char_ptr;
   int i;
-
-  str_len = strlen(str);
 
   hptr = alloc_traced_string(str_len, context_len);
 
@@ -79,7 +89,6 @@ uint32_t *boxString( uint32_t context_len, char *str )
   return hptr;
 }
 
-
 /* unboxTuple : hptr * int -> hptr */
 uint32_t *unboxTuple( uint32_t *hptr, uint32_t i )
 {
@@ -92,5 +101,3 @@ uint32_t *unboxTuple( uint32_t *hptr, uint32_t i )
 }
 
 /* boxTuple : contextlen * hptr* -> hptr */ 
-
-
