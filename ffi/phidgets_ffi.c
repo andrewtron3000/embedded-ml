@@ -6,6 +6,7 @@
 #include "ffi.h"
 
 #define PHIDGETS_MAX_CHARS 20
+static char phidget_str[PHIDGETS_MAX_CHARS + 1];
 
 uint32_t *phidgetsLCDOpen( uint32_t context_len, uint32_t *stackvar )
 {
@@ -69,7 +70,6 @@ uint32_t *phidgetsClose( uint32_t context_len, uint32_t *stackvar )
 uint32_t *phidgetsSetDisplay( uint32_t context_len, uint32_t *tuple )
 {
   int rc;
-  char phidget_str[PHIDGETS_MAX_CHARS + 1];
   CPhidgetTextLCDHandle phid;
   int lineno;
 
@@ -78,8 +78,6 @@ uint32_t *phidgetsSetDisplay( uint32_t context_len, uint32_t *tuple )
 
   lineno = (int) unboxUnsigned( unboxTuple(tuple, 1) );
   assert( (lineno >= 0) && (lineno < 2) ); 
-
-  memset(phidget_str, 0x0, sizeof(phidget_str));
 
   unboxString( unboxTuple(tuple, 2), phidget_str, sizeof(phidget_str) );
 
@@ -144,7 +142,6 @@ uint32_t *phidgetsSetOutputState( uint32_t context_len, uint32_t *tuple )
   assert( (desired_value == 0) || (desired_value == 1) );
 
   rc = CPhidgetInterfaceKit_setOutputState( phid, index, desired_value );
-  printf("desired value = %d\n", desired_value);
   assert( rc == 0 );
 
   return (uint32_t *) NULL;
