@@ -2,7 +2,9 @@ CFLAGS = -Wall
 INCLUDES = -I/project/Phidgetlinux/x86-version/include/ -I../runtime/
 LIBS = -L/project/Phidgetlinux/x86-version/lib/
 
-all: ffi.o phidgets_ffi.o
+all: ffi.o phidgets_ffi.o socket_ffi.o descriptorio_ffi.o
+	ar rS libffi.a $^
+	ranlib libffi.a
 
 ffi.o : ffi.c
 	gcc $(CFLAGS) $(INCLUDES) $(LIBS) -c ffi.c
@@ -10,6 +12,12 @@ ffi.o : ffi.c
 phidgets_ffi.o : phidgets_ffi.c
 	gcc $(CFLAGS) $(INCLUDES) $(LIBS) -c phidgets_ffi.c
 
+socket_ffi.o : socket_ffi.c
+	gcc $(CFLAGS) $(INCLUDES) $(LIBS) -c socket_ffi.c
+
+descriptorio_ffi.o : descriptorio_ffi.c
+	gcc $(CFLAGS) $(INCLUDES) $(LIBS) -c descriptorio_ffi.c
+
 clean :
-	rm -f *.o
+	rm -f *.o *.a
 
