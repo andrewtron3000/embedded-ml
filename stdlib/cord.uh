@@ -1,0 +1,25 @@
+(* cords interface *)
+
+val require-list = provide-list
+val provide-cords = ()
+
+fun cord-create ar = ar :: nil
+
+fun cord-sub (nil, i) = raise Subscript
+  | cord-sub (x :: nil, i) = sub (x, i)
+  | cord-sub (x :: xs, i) = 
+    if i < length x 
+    then sub (x, i)
+    else cord-sub (xs, i - length x)
+
+fun cord-update (nil, i, v) = raise Subscript
+  | cord-update (x :: nil, i, v) = update (x, i, v)
+  | cord-update (x :: xs, i, v) = 
+    if i < length x
+    then update (x, i, v)
+    else cord-update (xs, i - length x, v)
+
+fun cord-prepend (c, x) = x :: c
+fun cord-append (c, x) = c @ (x :: nil)
+
+val cord-tostring = string-concat
