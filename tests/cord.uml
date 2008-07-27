@@ -1,0 +1,18 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "cord.uh"
+
+    val c = cord-create "hello "
+    val c1 = cord-append (c, "world.")
+    val c2 = cord-prepend (c1, "oh! ")
+    val hell = {| cord-sub (c2, 1),
+                  cord-sub (c2, 5),
+                  cord-sub (c2, 13),
+                  cord-sub (c2, 13),
+                  cord-sub (c2, 15) |}
+in
+    print hell
+end

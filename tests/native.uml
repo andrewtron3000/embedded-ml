@@ -1,8 +1,19 @@
 let
    native pm = "printme" : int -> unit 
 
-   fun g z = z 15
+   native am = "addme" : ( int * int ) -> int 
+
+   native gv = "getglobal" : unit -> int
+
+   fun g z = z ()
+   fun gg () = g gv
+   val x = gg ()
+
+   fun a z x = z x
+   fun aa t = a am t
+   val z = aa (3, 4)
+
 in
-   g pm 
-   (* g (fn x => x) *)
+    ( pm x ;
+      pm z )
 end
