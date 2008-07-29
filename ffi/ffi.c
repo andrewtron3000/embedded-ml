@@ -5,8 +5,6 @@
 #include "ffi.h"
 #include "runtime-c.h"
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
 int strnlen(char *s, int n)
 {
   int i;
@@ -52,7 +50,9 @@ void unboxString( uint32_t *hptr, char *buf, uint32_t buf_len )
 
   string_len = Arraylen(hptr);
 
-  for(i = 0; i < MIN(string_len, buf_len - 1); i++)
+  assert ( string_len <= (buf_len - 1) );
+
+  for(i = 0; i < string_len; i++)
   {
     boxed_char = Arrayval(hptr, i);
     buf[i] = (char) Intval(boxed_char);
@@ -78,11 +78,8 @@ uint32_t *boxString( uint32_t context_len, char *str, int str_len )
 
     for (i = 0; i < str_len; i++)
     {
-      /* first set the character's untraced heap node header */
-      *(first_char_ptr + (i * 2)) = (uint32_t) (str[i]);
-
-      /* then assign the character's heap node into the string heap node */
-      *(hptr + i + 1) = (uint32_t) (first_char_ptr + (i * 2));
+      /* assign each character into the new heap structure */
+      *(first_char_ptr + (i * 2) + 1) = (uint32_t) (str[i]);
     }
   }
 
