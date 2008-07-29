@@ -1,6 +1,8 @@
 #include <stdio.h>                /* perror() */
 #include <stdlib.h>               /* atoi() */
+#include <sys/ioctl.h>
 #include <unistd.h>               /* read() */
+#include <termios.h>
 #include <assert.h>
 #include <inttypes.h>
 
@@ -8,6 +10,19 @@
 
 #define D_BUFFER_SIZE 65536
 static uint8_t d_buffer[D_BUFFER_SIZE + 1];
+
+uint32_t *descriptorBytesAvailable( uint32_t context_len, uint32_t *hptr )
+{
+  int d;
+  int bytes;
+
+  d = (int) unboxUnsigned( hptr );
+  assert( d > 0 );
+
+  ioctl(d, FIONREAD, &bytes);
+
+  return boxUnsigned( context_len, bytes ); 
+}
 
 uint32_t *descriptorRead( uint32_t context_len, uint32_t *tuple )
 {
