@@ -6,7 +6,7 @@
 
 #include "ffi.h"
 
-#define D_BUFFER_SIZE 2048
+#define D_BUFFER_SIZE 65536
 static uint8_t d_buffer[D_BUFFER_SIZE + 1];
 
 uint32_t *descriptorRead( uint32_t context_len, uint32_t *tuple )
@@ -20,7 +20,7 @@ uint32_t *descriptorRead( uint32_t context_len, uint32_t *tuple )
   assert( d > 0 );
 
   bytes_to_read = (int) unboxUnsigned( unboxTuple(tuple, 1) );
-  assert( bytes_to_read > 0 );
+  assert( bytes_to_read > 0 && bytes_to_read < D_BUFFER_SIZE );
 
   bytes_read = 0;
   while (bytes_to_read > 0)
