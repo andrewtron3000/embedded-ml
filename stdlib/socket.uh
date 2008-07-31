@@ -1,21 +1,28 @@
 (* sockets interface *)
 
-type socketd = int
+val require-descriptorio = provide-descriptorio
+val provide-socket = ()
 
 (* client calls *)
 
 (* opens a network stream socket *)
-native socket-socket = "socketOpen" : unit -> socketd
-(* socket-connect <socketd> <hostname> <port> *)
-native socket-connect = "socketConnect" : socketd * string * int -> unit
+native socket-open = "socketOpen" : unit -> descType
+
+(* socket-connect <descType> <hostname> <port> *)
+native socket-connect = "socketConnect" : descType * string * int -> unit
 
 (* server calls *)
-(* socket-bind <socketd> <port> *)
-native socket-bind = "socketBind" : socketd * int -> unit
-(* socket-listen <socketd> <queuesize> *)
-native socket-listen = "socketListen" : socketd * int -> unit
-(* socket-accept <socketd> *)
-native socket-accept = "socketAccept" : socketd -> socketd
 
-(* socket-close <socketd> *)
-native socket-close = "socketClose" : socketd -> unit
+(* opens a network stream socket *)
+native socket-set-nonblocking = "socketSetNonBlocking" : descType -> unit
+
+(* socket-bind <descType> <port> *)
+native socket-bind = "socketBind" : descType * int -> unit
+
+(* socket-listen <descType> <queuesize> *)
+native socket-listen = "socketListen" : descType * int -> unit
+
+(* socket-accept <descType> *)
+native socket-accept = "socketAccept" : descType -> descType
+(* socket-close <descType> *)
+val socket-close = descriptor-close
