@@ -77,3 +77,16 @@ uint32_t *descriptorWrite( uint32_t context_len, uint32_t *tuple )
 
   return (uint32_t *) NULL;
 }
+
+uint32_t *descriptorClose( uint32_t context_len, uint32_t *hptr )
+{
+  int d;
+
+  d = (int) unboxUnsigned( hptr );
+  assert( d > 0 );
+
+  close(d);
+
+  return (uint32_t *) NULL;
+}
+
