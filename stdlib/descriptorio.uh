@@ -1,0 +1,14 @@
+(* descriptor IO interface *)
+
+val provide-descriptorio = ()
+
+type descType = int
+
+native descriptor-bytes-avail = "descriptorBytesAvailable" : descType -> int
+
+native descriptor-read = "descriptorRead" : descType * int -> string
+
+native descriptor-write = "descriptorWrite" : descType * string -> unit
+
+native descriptor-close = "descriptorClose" : descType -> unit
+ 
