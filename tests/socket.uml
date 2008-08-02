@@ -15,8 +15,8 @@ let
                 let
                     val b = descriptor-bytes-avail s
                 in 
-                    if b >= 9 
-                    then print [<[descriptor-read (s, 27)]>\n]
+                    if b >= 0 
+                    then print [<[descriptor-read (s, b)]>\n]
                     else ploop (i + 1)
                 end
         in
