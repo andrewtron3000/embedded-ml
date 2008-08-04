@@ -1,0 +1,11 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "clock.uh"
+
+    val (s, ns) = clock-gettime ()
+in
+    print [The time is [int-tostring s] seconds, [int-tostring ns] nanoseconds.\n] 
+end

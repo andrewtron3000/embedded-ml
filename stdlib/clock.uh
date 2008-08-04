@@ -1,0 +1,6 @@
+(* posix clock support *)
+
+val provide-clock = ()
+
+native clock-gettime = "clockGetTime" : unit -> int * int
+
