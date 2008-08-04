@@ -56,5 +56,6 @@ fun queue-length (backr, frontr) =
     end 
 
 (* queue-empty q -- returns true if queue is empty *)
-fun queue-empty (backr, frontr) = list-empty (!backr) andalso list-empty (!frontr)
+fun queue-empty (nil, nil) = true
+  | queue-empty (_, _) = false
 
