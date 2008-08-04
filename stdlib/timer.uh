@@ -6,7 +6,8 @@ val require-clock = provide-clock
 
 val timer-list = (0, clock-gettime(), nil)
 
-fun timer-diff (s1, ns1) (s2, ns2) = (s1 - s2, ns1 - ns2)
+fun timer-add (s1, ns1) (s2, ns2) = (s1 + s2, ns1 + ns2)
+fun timer-sub (s1, ns1) (s2, ns2) = (s1 - s2, ns1 - ns2)
 fun timer-lt (s1, ns1) (s2, ns2) = (s1 < s2) orelse ( (s1 = s2) andalso (ns1 < ns2) )
 fun timer-eq (s1, ns1) (s2, ns2) = (s1 = s2) andalso (ns1 = ns2)
 fun timer-tostring (s1, ns1) = [[int-tostring s1]s [int-tostring ns1]ns]
@@ -22,8 +23,8 @@ fun timer-scan (nextid, last-check, nil) = (nextid, last-check, nil)
   | timer-scan (nextid, last-check, (i, d, f) :: xs) = 
     let
         val curr = clock-gettime () 
-        val delta = timer-diff curr last-check
-        val diff = timer-diff d delta
+        val delta = timer-sub curr last-check
+        val diff = timer-sub d delta
     in
         if timer-lt diff (0, 0)
         then ( f ();
