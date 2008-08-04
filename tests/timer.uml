@@ -1,0 +1,29 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "threads.uh"
+    import "clock.uh"
+    import "timer.uh"
+
+    fun pr () = 
+        ( yield ();
+          pr ())
+
+    fun timer-task ts () = 
+        let
+            val ts' = timer-scan ts
+        in
+            ( yield ();
+              timer-task ts' () )
+        end
+
+    val t2 = timer-create timer-list ((5, 0), (fn () => print "ding\n"))
+    val t3 = timer-create t2 ((10, 0), (fn () => print "dong\n"))
+
+    val () = fork pr
+    val () = fork (timer-task t3)
+in
+  pr ()
+end

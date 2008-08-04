@@ -1,0 +1,33 @@
+(* support for timers *)
+
+val provide-timers = ()
+val require-list = provide-list
+val require-clock = provide-clock
+
+val timer-list = (0, clock-gettime(), nil)
+
+fun timer-diff (s1, ns1) (s2, ns2) = (s1 - s2, ns1 - ns2)
+fun timer-lt (s1, ns1) (s2, ns2) = (s1 < s2) orelse ( (s1 = s2) andalso (ns1 < ns2) )
+fun timer-eq (s1, ns1) (s2, ns2) = (s1 = s2) andalso (ns1 = ns2)
+fun timer-tostring (s1, ns1) = [[int-tostring s1]s [int-tostring ns1]ns]
+
+fun timer-create (nextid, last-check, ts) (dt, f) = 
+    let
+        val (earliers, laters) = list-partition (fn (i, d, f) => timer-lt d dt) ts
+    in 
+        (nextid + 1, last-check, (earliers @ ((nextid, dt, f) :: nil) @ laters))
+    end
+
+fun timer-scan (nextid, last-check, nil) = (nextid, last-check, nil)
+  | timer-scan (nextid, last-check, (i, d, f) :: xs) = 
+    let
+        val curr = clock-gettime () 
+        val delta = timer-diff curr last-check
+        val diff = timer-diff d delta
+    in
+        if timer-lt diff (0, 0)
+        then ( f ();
+               timer-scan (nextid, curr, xs) )
+        else ( (nextid, curr, (i, diff, f) :: xs) )
+    end
+
