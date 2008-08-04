@@ -97,4 +97,33 @@ uint32_t *unboxTuple( uint32_t *hptr, uint32_t i )
   return Tupleval(hptr, i);
 }
 
-/* boxTuple : contextlen * hptr* -> hptr */ 
+/* boxTuple : contextlen * hptr * tuple_len -> hptr */ 
+/* boxString : contextlen * string -> hptr */
+uint32_t *boxTuple( uint32_t context_len, uint32_t *tuple, int tuple_len )
+{
+  uint32_t *hptr;
+  uint32_t *first_ptr;
+  int i;
+
+  /* 
+   * SUSP -- assuming tuple has the same heap structure as a string.
+   * We use this approach to tuples to avoid heap pointer problems if
+   * a garbage collection were to occur in the middle of a sequence of
+   * allocation requests in an ffi function.
+   */
+  hptr = alloc_traced_string(tuple_len, context_len);
+
+  if (tuple_len > 0)
+  {
+    /* pointer to the first tuple element */
+    first_ptr = hptr + tuple_len + 1;
+
+    for (i = 0; i < tuple_len; i++)
+    {
+      /* assign each tuple value into the new heap structure */
+      *(first_ptr + (i * 2) + 1) = tuple[i];
+    }
+  }
+
+  return hptr;
+}

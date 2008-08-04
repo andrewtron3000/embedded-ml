@@ -15,6 +15,8 @@ uint32_t *boxString( uint32_t context_len, char *str, int str_len );
 /* unboxTuple : hptr * int -> hptr */
 uint32_t *unboxTuple( uint32_t *hptr, uint32_t i );
 
-/* boxTuple : contextlen * hptr* -> hptr */ 
+/* boxTuple : contextlen * hptr * int -> hptr */ 
+uint32_t *boxTuple( uint32_t context_len, uint32_t *tuple, int tuple_len );
+
 
 
