@@ -279,12 +279,10 @@ void hScan ( void )
 
 void hGarbageCollect ( uint32_t context_len )
 {
-  fprintf(stderr, "<start gc>");
   hTransferStackFrame ( context_len );
   hScavenge();
   hSwitchHeaps();
 /*  hScan(); */
-  fprintf(stderr, "<end gc>");
 }
 
 void checkHeapForSpace ( uint32_t context_len, uint32_t size_in_words )
