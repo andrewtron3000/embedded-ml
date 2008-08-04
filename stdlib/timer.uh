@@ -4,6 +4,9 @@ val provide-timers = ()
 val require-list = provide-list
 val require-clock = provide-clock
 
+(* timer-list is (next available timer id, 
+                  last checked time, 
+                  list of (id, deltatime, callback) *)
 val timer-list = (0, clock-gettime(), nil)
 
 fun timer-add (s1, ns1) (s2, ns2) = (s1 + s2, ns1 + ns2)
@@ -12,11 +15,26 @@ fun timer-lt (s1, ns1) (s2, ns2) = (s1 < s2) orelse ( (s1 = s2) andalso (ns1 < n
 fun timer-eq (s1, ns1) (s2, ns2) = (s1 = s2) andalso (ns1 = ns2)
 fun timer-tostring (s1, ns1) = [[int-tostring s1]s [int-tostring ns1]ns]
 
-fun timer-create (nextid, last-check, ts) (dt, f) = 
+fun timer-list-tostring (nextid, last-check, nil) acc = acc ^ "\n"
+  | timer-list-tostring (nextid, last-check, (i, d, f) :: xs) acc = 
+    timer-list-tostring (nextid, last-check, xs) (acc ^ "," ^ timer-tostring d)
+
+fun timer-create (nextid, last-check, nil) (dt, f') = 
+    (nextid + 1, last-check, (nextid, dt, f') :: nil)
+  | timer-create (nextid, last-check, x :: xs) (dt, f') =
     let
-        val (earliers, laters) = list-partition (fn (i, d, f) => timer-lt d dt) ts
-    in 
-        (nextid + 1, last-check, (earliers @ ((nextid, dt, f) :: nil) @ laters))
+        val (i, d, f) = x
+    in
+        if timer-lt dt d
+        then (nextid + 1, 
+              last-check,
+              (nextid, dt, f') :: (i, timer-sub d dt, f) :: xs)
+        else 
+            let
+                val (n, l, xs) = timer-create (nextid, last-check, xs) (timer-sub dt d, f')
+            in
+                (n, l, x :: xs)
+            end 
     end
 
 fun timer-scan (nextid, last-check, nil) = (nextid, last-check, nil)

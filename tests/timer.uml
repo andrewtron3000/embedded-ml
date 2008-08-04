@@ -19,8 +19,11 @@ let
               timer-task ts' () )
         end
 
+    val () = print (timer-list-tostring timer-list "")
     val t2 = timer-create timer-list ((5, 0), (fn () => print "ding\n"))
-    val t3 = timer-create t2 ((10, 0), (fn () => print "dong\n"))
+    val () = print (timer-list-tostring t2 "")
+    val t3 = timer-create t2 ((10, 500), (fn () => print "dong\n"))
+    val () = print (timer-list-tostring t3 "")
 
     val () = fork pr
     val () = fork (timer-task t3)
