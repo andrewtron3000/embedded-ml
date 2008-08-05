@@ -26,7 +26,9 @@ let
     val () = print (timer-list-tostring t3 "")
     val (i3, t4) = timer-create t3 ((2, 600), (fn () => print "dooey\n"))
     val () = print (timer-list-tostring t4 "")
-    val t5 = timer-delete i3 t4
+    val (i10, t10) = timer-create t4 ((7, 0), (fn () => print "louis\n"))
+    val () = print (timer-list-tostring t10 "")
+    val t5 = timer-delete i3 t10
     val () = print (timer-list-tostring t5 "")
 
     val () = fork pr
