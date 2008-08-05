@@ -11,25 +11,27 @@ val timer-list = (0, clock-gettime(), nil)
 
 fun timer-list-tostring (nextid, last-check, nil) acc = acc ^ "\n"
   | timer-list-tostring (nextid, last-check, (i, d, f) :: xs) acc = 
-    timer-list-tostring (nextid, last-check, xs) (acc ^ "," ^ clock-tostring d)
+    timer-list-tostring (nextid, last-check, xs) (acc ^ "," ^ "[id=" ^ int-tostring i ^ " " ^ clock-tostring d ^ "]")
 
 fun timer-create (nextid, last-check, nil) (dt, f') = 
-    (nextid + 1, last-check, (nextid, dt, f') :: nil)
+    (nextid, (nextid + 1, last-check, (nextid, dt, f') :: nil))
   | timer-create (nextid, last-check, x :: xs) (dt, f') =
     let
         val (i, d, f) = x
     in
         if clock-lt dt d
-        then (nextid + 1, 
-              last-check,
-              (nextid, dt, f') :: (i, clock-sub d dt, f) :: xs)
+        then (nextid, (nextid + 1, 
+                       last-check,
+                       (nextid, dt, f') :: (i, clock-sub d dt, f) :: xs))
         else 
             let
-                val (n, l, xs) = timer-create (nextid, last-check, xs) (clock-sub dt d, f')
+                val (n', (n, l, xs)) = timer-create (nextid, last-check, xs) (clock-sub dt d, f')
             in
-                (n, l, x :: xs)
+                (n', (n, l, x :: xs))
             end 
     end
+
+fun timer-delete id (n, l, xs) = (n, l, list-filter (fn (i, d, f) => i <> id) xs)
 
 fun timer-scan (nextid, last-check, nil) = (nextid, last-check, nil)
   | timer-scan (nextid, last-check, (i, d, f) :: xs) = 

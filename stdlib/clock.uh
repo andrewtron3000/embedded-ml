@@ -6,7 +6,14 @@ val provide-clock = ()
 native clock-gettime = "clockGetTime" : unit -> int * int
 
 fun clock-add (s1, ns1) (s2, ns2) = (s1 + s2, ns1 + ns2)
-fun clock-sub (s1, ns1) (s2, ns2) = (s1 - s2, ns1 - ns2)
+fun clock-sub (s1, ns1) (s2, ns2) = 
+    let
+        val (ds, dns) = (s1 - s2, ns1 - ns2)
+    in
+        if (dns < 0)
+        then (ds - 1, dns + 1000000000)
+        else (ds, dns)
+    end
 fun clock-lt (s1, ns1) (s2, ns2) = (s1 < s2) orelse ( (s1 = s2) andalso (ns1 < ns2) )
 fun clock-eq (s1, ns1) (s2, ns2) = (s1 = s2) andalso (ns1 = ns2)
 fun clock-tostring (s1, ns1) = [[int-tostring s1]s [int-tostring ns1]ns]
