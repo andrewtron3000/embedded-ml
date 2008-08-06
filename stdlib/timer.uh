@@ -13,46 +13,51 @@ fun timer-list-tostring (nextid, last-check, nil) acc = acc ^ "\n"
   | timer-list-tostring (nextid, last-check, (i, d, f) :: xs) acc = 
     timer-list-tostring (nextid, last-check, xs) (acc ^ "," ^ "[id=" ^ int-tostring i ^ " " ^ clock-tostring d ^ "]")
 
-
-
-fun timer-create' (nextid, last-check, nil) (dt, f') acc = 
-    (nextid, (nextid + 1, 
-              last-check, 
-              acc @ ((nextid, dt, f') :: nil)))
-  | timer-create' (nextid, last-check, x :: xs) (dt, f') acc =
+fun timer-create ls t = 
     let
-        val (i, d, f) = x
-    in
-        if clock-lt dt d
-        then (nextid, (nextid + 1, 
-                       last-check,
-                       acc @ ((nextid, dt, f') :: (i, clock-sub d dt, f) :: xs)))
-        else timer-create' (nextid, last-check, xs) (clock-sub dt d, f') (acc @ (x :: nil))
-    end
-
-fun timer-create ls t = timer-create' ls t nil
-
-(*
-fun timer-create (nextid, last-check, nil) (dt, f') = 
-    (nextid, (nextid + 1, last-check, (nextid, dt, f') :: nil))
-  | timer-create (nextid, last-check, x :: xs) (dt, f') =
-    let
-        val (i, d, f) = x
-    in
-        if clock-lt dt d
-        then (nextid, (nextid + 1, 
-                       last-check,
-                       (nextid, dt, f') :: (i, clock-sub d dt, f) :: xs))
-        else 
+        fun timer-create' (nextid, last-check, nil) (dt, f') acc = 
+            (nextid, (nextid + 1, 
+                      last-check, 
+                      acc @ ((nextid, dt, f') :: nil)))
+          | timer-create' (nextid, last-check, x :: xs) (dt, f') acc =
             let
-                val (n', (n, l, xs)) = timer-create (nextid, last-check, xs) (clock-sub dt d, f')
+                val (i, d, f) = x
             in
-                (n', (n, l, x :: xs))
-            end 
+                if clock-lt dt d
+                then (nextid, (nextid + 1, 
+                               last-check,
+                               acc @ ((nextid, dt, f') :: (i, clock-sub d dt, f) :: xs)))
+                else timer-create' (nextid, last-check, xs) (clock-sub dt d, f') (acc @ (x :: nil))
+            end
+    in
+        timer-create' ls t nil
     end
-*)
 
-fun timer-delete id (n, l, xs) = (n, l, list-filter (fn (i, d, f) => i <> id) xs)
+fun timer-delete id (n, l, xs) =
+    let
+        fun timer-delete' id (n, l, nil) acc = (n, l, acc)
+          | timer-delete' id (n, l, x :: nil) acc =
+            let
+                val (i, d, f) = x
+            in
+                if i = id then (n, l, acc) else (n, l, acc @ (x :: nil))
+            end
+          | timer-delete' id (n, l, x :: x' :: xs) acc =
+            let
+                val (i, d, f) = x
+            in
+                if i = id 
+                then
+                    let
+                        val (i', d', f') = x'
+                    in
+                        (n, l, acc @ ((i', clock-add d d', f') :: xs))
+                    end
+                else timer-delete' id (n, l, x' :: xs) (acc @ (x :: nil))
+            end
+    in
+        timer-delete' id (n, l, xs) nil
+    end
 
 fun timer-scan (nextid, last-check, nil) = (nextid, last-check, nil)
   | timer-scan (nextid, last-check, (i, d, f) :: xs) = 
