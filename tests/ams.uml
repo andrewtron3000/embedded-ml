@@ -1,0 +1,42 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "descriptorio.uh"
+    import "socket.uh"
+    import "ams.uh"
+
+    fun client () =
+        let 
+            val s = socket-open ()
+            val () = socket-connect (s, "127.0.0.1", 40004)
+                             
+            fun ploop i =
+                let
+                    val b = descriptor-bytes-avail s
+                in 
+                    if b > 0 
+                    then print [<[descriptor-read (s, b)]>\n]
+                    else ploop (i + 1)
+                end
+        in
+            ( ploop 1 ;
+              socket-close s )
+        end
+
+    fun server () = 
+        let
+            val s = socket-open ()
+            val () = socket-bind (s, 40005)
+            val () = socket-listen (s, 1)
+            val s2 = socket-accept s
+        in
+            ( descriptor-write (s2, "greetings from FP land.  I'm glad to see you.") ;
+              socket-close s ;
+              socket-close s2 )
+        end
+
+in
+    print "hello ams"
+end
