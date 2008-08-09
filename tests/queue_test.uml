@@ -14,12 +14,10 @@ let
                               | _ => print "unknown message" 
 
   fun pr s () = 
-      (print [[s]\n];
-       queue-send-noyield a-queue (Raw "greetings");
-       queue-send-noyield a-queue (Raw "my name is andrew");
-       queue-send-noyield a-queue (Raw "what is yours?");
+      (queue-send a-queue (Raw "greetings");
+       queue-send a-queue (Raw "my name is andrew");
+       queue-send a-queue (Raw "what is yours?");
        queue-send a-queue (Raw "how are you");
-(*       yield (); *)
        pr s ())
 
 in

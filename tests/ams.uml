@@ -3,9 +3,16 @@ let
     import "list.uh"
     import "string.uh"
     import "int.uh"
+    import "array.uh"
+    import "char.uh"
     import "descriptorio.uh"
     import "socket.uh"
+    import "recordpack.uh"
     import "ams.uh"
+
+    type crap_test =
+         { string1 : string,
+           string2 : string }
 
     fun client () =
         let 
@@ -37,6 +44,13 @@ let
               socket-close s2 )
         end
 
+    val t1 = { string1 = "hi", string2 = "there" }
+
+    fun s r = string-concat ((#string1/crap_test r) :: 
+                             (#string2/crap_test r) :: nil)
+
+    fun fill-f r v = { string1 = v, string2 = "crazy" }
+
 in
-    print "hello ams"
+    print (s (fill-f t1 "crappy"))
 end
