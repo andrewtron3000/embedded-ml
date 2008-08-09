@@ -1,4 +1,5 @@
 val provide-char = ()
+val require-array = provide-array
 
 (* most significant byte is c1 *)
 fun four-chars-to-int (c1, c2, c3, c4) = 
@@ -18,6 +19,21 @@ fun int-to-four-chars i =
     end
 
 (* most significant byte is c1 *)
+fun three-chars-to-int (c1, c2, c3) = 
+    ( (ord c3) orb 
+      ((ord c2) shl 8) orb
+      ((ord c1) shl 16) )
+    
+fun int-to-three-chars i = 
+    let
+        val c1 = i shr 16
+        val c2 = (i shr 8) andb 0xff
+        val c3 = i andb 0xff
+    in
+        (chr c1, chr c2, chr c3)
+    end
+
+(* most significant byte is c1 *)
 fun two-chars-to-int (c1, c2) = 
     ( (ord c2) orb 
       ((ord c1) shl 8) )
@@ -29,13 +45,27 @@ fun int-to-two-chars i =
     in
         (chr c1, chr c2)
     end
-    
+
+(* *)
+fun one-char-to-two-ints c1 =
+    let
+        val v1 = (ord c1) shr 4
+        val v2 = (ord c1) andb 0x0f
+    in
+        (v1, v2)
+    end
+
+fun two-ints-to-one-char (i1, i2) =
+    chr ( (i1 shl 4) orb (i2 andb 0x0f) )
+
+(* *)
 fun bool-to-char b =
     if b then (chr 1) else (chr 0)
                            
 fun char-to-bool c =
     if (ord c) > 0 then true else false
 
+(* *)
 fun chars-tohexstring ds =
     let
         fun f c = (int-tohexstringx 2) (ord c)

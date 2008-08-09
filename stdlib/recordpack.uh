@@ -18,63 +18,120 @@ fun recordpack-to-bits r =
 
 fun recordpack-tostring packlist r =
     let
-        val totalbytes = ( (list-foldr (fn ((f, bits), y) => (recordpack-to-bits bits) + y)
+        val totalbytes = ( (list-foldr (fn ((getf, setf, bits), y) => (recordpack-to-bits bits) + y)
                                        0
                                        packlist) shr 3 )
 
         val ar = array-tabulate totalbytes (fn _ => chr 0)
 
         fun r-to-s nil r ds idx bitoff = ds
-          | r-to-s ((f, bits) :: xs) r ds idx bitoff =
+          | r-to-s ((getf, setf, bits) :: xs) r ds idx bitoff =
+            let
+                val v = getf r
+            in
+                case bits of BITS32 =>
+                             let
+                                 val (c1, c2, c3, c4) = int-to-four-chars v
+                             in
+                                 ( update (ds, idx, c1) ;
+                                   update (ds, idx + 1, c2) ; 
+                                   update (ds, idx + 2, c3) ;
+                                   update (ds, idx + 3, c4) ;
+                                   r-to-s xs r ds (idx + 4) OFF0 )
+                             end
+                           | BITS24 =>
+                             let
+                                 val (c1, c2, c3) = int-to-three-chars v
+                             in
+                                 ( update (ds, idx, c1) ;
+                                   update (ds, idx + 1, c2) ; 
+                                   update (ds, idx + 2, c3) ;
+                                   r-to-s xs r ds (idx + 3) OFF0 )
+                             end
+                           | BITS16 =>
+                             let
+                                 val (c1, c2) = int-to-two-chars v
+                             in
+                                 ( update (ds, idx, c1) ;
+                                   update (ds, idx + 1, c2) ; 
+                                   r-to-s xs r ds (idx + 2) OFF0 )
+                             end
+                           | BITS8 =>
+                             let
+                                 val c1 = chr v
+                             in
+                                 ( update (ds, idx, c1) ;
+                                   r-to-s xs r ds (idx + 1) OFF0 )
+                             end
+                           | BITS4 =>
+                             let
+                                 val c = ord (sub(ds, idx))
+                                 val t = v andb 0xf
+                                 val newc = ( case bitoff of OFF0 => 
+                                                             (t shl 4) orb (c andb 0xf)
+                                                           | OFF4 =>
+                                                             (c andb 0xf0) orb t )
+                                 val (nextidx, nextoff) = case bitoff of OFF0 => (idx, OFF4)
+                                                                       | OFF4 => (idx + 1, OFF0)
+                             in
+                                 ( update (ds, idx, chr newc) ;
+                                   r-to-s xs r ds nextidx nextoff )
+                             end
+            end
+    in
+        r-to-s packlist r ar 0 OFF0
+    end
+
+fun recordpack-fromstring packlist s r =
+    let
+        fun s-to-r nil s r idx bitoff = r
+          | s-to-r ( (getf, setf, bits) :: xs ) s r idx bitoff =
             case bits of BITS32 =>
                          let
-                             val (c1, c2, c3, c4) = int-to-four-chars (f r)
+                             val i = four-chars-to-int ( sub(s, idx),
+                                                         sub(s, idx + 1),
+                                                         sub(s, idx + 2),
+                                                         sub(s, idx + 3) )
+                             val r' = setf r i
                          in
-                             ( update (ds, idx, c1) ;
-                               update (ds, idx + 1, c2) ; 
-                               update (ds, idx + 2, c3) ;
-                               update (ds, idx + 3, c4) ;
-                               r-to-s xs r ds (idx + 4) OFF0 )
+                               s-to-r xs s r' (idx + 4) OFF0
                          end
                        | BITS24 =>
                          let
-                             val (c1, c2, c3) = int-to-three-chars (f r)
+                             val i = three-chars-to-int ( sub(s, idx),
+                                                          sub(s, idx + 1),
+                                                          sub(s, idx + 2) )
+                             val r' = setf r i
                          in
-                             ( update (ds, idx, c1) ;
-                               update (ds, idx + 1, c2) ; 
-                               update (ds, idx + 2, c3) ;
-                               r-to-s xs r ds (idx + 3) OFF0 )
+                               s-to-r xs s r' (idx + 3) OFF0
                          end
                        | BITS16 =>
                          let
-                             val (c1, c2) = int-to-two-chars (f r)
+                             val i = two-chars-to-int ( sub(s, idx),
+                                                        sub(s, idx + 1) )
+                             val r' = setf r i
                          in
-                             ( update (ds, idx, c1) ;
-                               update (ds, idx + 1, c2) ; 
-                               r-to-s xs r ds (idx + 2) OFF0 )
+                               s-to-r xs s r' (idx + 2) OFF0
                          end
                        | BITS8 =>
                          let
-                             val c1 = chr (f r)
+                             val i = ord (sub(s, idx))
+                             val r' = setf r i
                          in
-                             ( update (ds, idx, c1) ;
-                               r-to-s xs r ds (idx + 1) OFF0 )
+                               s-to-r xs s r' (idx + 1) OFF0
                          end
                        | BITS4 =>
-                         let
-                             val c = ord (sub(ds, idx))
-                             val t = (f r) andb 0xf
-                             val newc = ( case bitoff of OFF0 => 
-                                                         (t shl 4) orb (c andb 0xf)
-                                                       | OFF4 =>
-                                                         (c andb 0xf0) orb t )
-                             val (nextidx, nextoff) = case bitoff of OFF0 => (idx, OFF4)
-                                                                   | OFF4 => (idx + 1, OFF0)
-                         in
-                             ( update (ds, idx, chr newc) ;
-                               r-to-s xs r ds nextidx nextoff )
-                         end
+                             let
+                                 val c = ord (sub(s, idx))
+                                 val i = ( case bitoff of OFF0 => (c shl 4)
+                                                        | OFF4 => (c andb 0xf) )
+                                 val r' = setf r i
+                                 val (nextidx, nextoff) = case bitoff of OFF0 => (idx, OFF4)
+                                                                       | OFF4 => (idx + 1, OFF0)
+                             in
+                                 s-to-r xs s r' nextidx nextoff
+                             end
     in
-        r-to-s packlist r ar 0 OFF0
+        s-to-r packlist s r 0 OFF0
     end
 
