@@ -1,0 +1,95 @@
+type ams_assertion =
+     {
+      subject : int,
+      continuum : int,
+      unit : int,
+      role : int,
+      dv_num : int,
+      priority : int,
+      flow_label : int
+     }
+
+type ams_assertion_list =
+     {
+      n : int,
+      assertions : ams_assertion list
+     }
+
+type ams_declaration_struct =
+     {
+      subscriptions : ams_assertion_list,
+      invitations : ams_assertion_list
+     }
+
+type ams_mams_endpoint = string
+
+type ams_delivery_name = 
+     {
+      transport : string,
+      endpoint : string
+     }
+
+type ams_delivery_vector =
+     {
+      dv_num : int,
+      n : int,
+      dv_names : ams_delivery_name list
+     }
+
+type ams_delivery_vector_list =
+     {
+      n : int,
+      dvs : ams_delivery_vector list
+     }
+
+type ams_contact_summary =
+     {
+      endpoint : ams_mams_endpoint,
+      dvs : ams_delivery_vector_list
+     }
+
+type ams_nodestatus =
+     {
+      unit : int,
+      node_number : int,
+      role : int,
+      contact_summary : string,
+      decl_struct : ams_declaration_struct
+     }
+
+type ams_nodestatus_list =
+     {
+      n : int,
+      statuses : ams_nodestatus list
+     }
+
+type ams_cancellation =
+     {
+      subject : int,
+      continuum : int,
+      unit : int,
+      role : int 
+     }
+
+type ams_node_list =
+     {
+      n : int,
+      nodes : int list
+     }
+
+type ams_reconnect =
+     {
+      node : int,
+      contact_summary : string,
+      node_list : ams_node_list
+     }
+
+type ams_cell_descriptor =
+     {
+      unit : int,
+      mams_endpoint : ams_mams_endpoint
+     }
+
+
+
+
