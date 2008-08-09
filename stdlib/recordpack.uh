@@ -1,3 +1,7 @@
+val provide-recordpack = ()
+val require-array = provide-array
+val require-char = provide-char
+
 datatype recordpack_type = 
          BITS32 
        | BITS24

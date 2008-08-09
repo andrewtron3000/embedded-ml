@@ -1,3 +1,6 @@
+val require-char = provide-char
+val require-recordpack = provide-recordpack
+
 type ams_assertion =
      {
       subject : int,
@@ -8,6 +11,102 @@ type ams_assertion =
       priority : int,
       flow_label : int
      }
+ 
+val ams-assertion-packlist = 
+    (fn r => #subject/ams_assertion r,
+     (fn r v => { subject = v,
+                  continuum = #continuum/ams_assertion r,
+                  unit = #unit/ams_assertion r,
+                  role = #role/ams_assertion r,
+                  dv_num = #dv_num/ams_assertion r,
+                  priority = #priority/ams_assertion r,
+                  flow_label = #flow_label/ams_assertion r}),
+     BITS16) ::
+    (fn r => #continuum/ams_assertion r,
+     (fn r v => { subject = #subject/ams_assertion r,
+                  continuum = v,
+                  unit = #unit/ams_assertion r,
+                  role = #role/ams_assertion r,
+                  dv_num = #dv_num/ams_assertion r,
+                  priority = #priority/ams_assertion r,
+                  flow_label = #flow_label/ams_assertion r}),
+     BITS24) ::
+    (fn r => #unit/ams_assertion r,
+     (fn r v => { subject = #subject/ams_assertion r,
+                  continuum = #continuum/ams_assertion r,
+                  unit = v,
+                  role = #role/ams_assertion r,
+                  dv_num = #dv_num/ams_assertion r,
+                  priority = #priority/ams_assertion r,
+                  flow_label = #flow_label/ams_assertion r}),
+     BITS16) ::
+    (fn r => #role/ams_assertion r,
+     (fn r v => { subject = #subject/ams_assertion r,
+                  continuum = #continuum/ams_assertion r,
+                  unit = #unit/ams_assertion r,
+                  role = v,
+                  dv_num = #dv_num/ams_assertion r,
+                  priority = #priority/ams_assertion r,
+                  flow_label = #flow_label/ams_assertion r}),
+     BITS8) ::
+    (fn r => #dv_num/ams_assertion r,
+     (fn r v => { subject = #subject/ams_assertion r,
+                  continuum = #continuum/ams_assertion r,
+                  unit = #unit/ams_assertion r,
+                  role = #role/ams_assertion r,
+                  dv_num = v,
+                  priority = #priority/ams_assertion r,
+                  flow_label = #flow_label/ams_assertion r}),
+     BITS4) ::
+    (fn r => #priority/ams_assertion r,
+     (fn r v => { subject = #subject/ams_assertion r,
+                  continuum = #continuum/ams_assertion r,
+                  unit = #unit/ams_assertion r,
+                  role = #role/ams_assertion r,
+                  dv_num = #dv_num/ams_assertion r,
+                  priority = v,
+                  flow_label = #flow_label/ams_assertion r}),
+     BITS4) ::
+    (fn r => #flow_label/ams_assertion r,
+     (fn r v => { subject = #subject/ams_assertion r,
+                  continuum = #continuum/ams_assertion r,
+                  unit = #unit/ams_assertion r,
+                  role = #role/ams_assertion r,
+                  dv_num = #dv_num/ams_assertion r,
+                  priority = #priority/ams_assertion r,
+                  flow_label = v}),
+     BITS8) :: nil
+
+fun ams-assertion-tostring a = recordpack-tostring ams-assertion-packlist a
+fun ams-assertion-fromstring s = 
+    let
+        val r = { subject = 0,
+                  continuum = 0,
+                  unit = 0,
+                  role = 0,
+                  dv_num = 0,
+                  priority = 0,
+                  flow_label = 0 }
+    in 
+        recordpack-fromstring ams-assertion-packlist s r 
+    end
+
+(*
+fun ams-assertion-fromstring s =
+    let
+        val subject = two-chars-to-int ( sub(s, 0),
+                                         sub(s, 1) )
+        val continuum = three-chars-to-int ( sub(s, 2),
+                                             sub(s, 3),
+                                             sub(s, 4) )
+        val unit = ()
+        val role = ()
+        val dv_num = ()
+        val priority = ()
+        val flow_label = ()
+    in
+    end
+*)
 
 type ams_assertion_list =
      {
