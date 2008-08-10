@@ -40,6 +40,7 @@ for l in ls[1:]:
     records.append(r.strip())
     sizes.append(s.strip())
 
+print '(* %s packlist *)' % typename
 print 'val %s-packlist =' % typename
 num_records = len(ls) - 1
 for (i, r) in enumerate(records):
