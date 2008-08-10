@@ -41,7 +41,7 @@ for l in ls[1:]:
     sizes.append(s.strip())
 
 print '(* %s packlist *)' % typename
-print 'val %s-packlist =' % typename
+print 'val %s_packlist =' % typename
 num_records = len(ls) - 1
 for (i, r) in enumerate(records):
     print printRecord(r, records, typename, sizes[i]),
