@@ -13,14 +13,14 @@ def printRecord(rec, others, typ, siz):
     s = '('
     s = s + 'fn r => #%s/%s r,\n' % (rec, typ)
     s = s + ' (fn r v => { %s = v,\n' % rec
+    others = [x for x in others if x != rec]
     num_others = len(others)
     for (i, o) in enumerate(others):
-        if rec != o:
-            s = s + '              %s = #%s/%s r' % (o, o, typ)
-            if i < num_others - 1:
-                s = s + ',\n'
-            else:
-                s = s + '}),\n'
+        s = s + '              %s = #%s/%s r' % (o, o, typ)
+        if i < num_others - 1:
+            s = s + ',\n'
+        else:
+            s = s + '}),\n'
     s = s + (' %s)' % siz)
     return s
 
