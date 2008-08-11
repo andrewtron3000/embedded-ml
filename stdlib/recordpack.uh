@@ -13,16 +13,16 @@ datatype recordpack_offset_type =
          OFF0
        | OFF4
 
-fun recordpack-to-bits r =
-    case r of BITS32 => 32
-            | BITS24 => 24
-            | BITS16 => 16
-            | BITS8 => 8
-            | BITS4 => 4
+fun recordpack-to-bits getf r =
+    case r of  BITS32 => 32
+             | BITS24 => 24
+             | BITS16 => 16
+             | BITS8 => 8
+             | BITS4 => 4
 
 fun recordpack-tostring packlist r =
     let
-        val totalbytes = ( (list-foldr (fn ((getf, setf, bits), y) => (recordpack-to-bits bits) + y)
+        val totalbytes = ( (list-foldr (fn ((getf, setf, bits), y) => (recordpack-to-bits getf bits) + y)
                                        0
                                        packlist) shr 3 )
 
@@ -30,58 +30,54 @@ fun recordpack-tostring packlist r =
 
         fun r-to-s nil r ds idx bitoff = ds
           | r-to-s ((getf, setf, bits) :: xs) r ds idx bitoff =
-            let
-                val v = getf r
-            in
-                case bits of BITS32 =>
-                             let
-                                 val (c1, c2, c3, c4) = int-to-four-chars v
-                             in
-                                 ( update (ds, idx, c1) ;
-                                   update (ds, idx + 1, c2) ; 
-                                   update (ds, idx + 2, c3) ;
-                                   update (ds, idx + 3, c4) ;
-                                   r-to-s xs r ds (idx + 4) OFF0 )
-                             end
-                           | BITS24 =>
-                             let
-                                 val (c1, c2, c3) = int-to-three-chars v
-                             in
-                                 ( update (ds, idx, c1) ;
-                                   update (ds, idx + 1, c2) ; 
-                                   update (ds, idx + 2, c3) ;
-                                   r-to-s xs r ds (idx + 3) OFF0 )
-                             end
-                           | BITS16 =>
-                             let
-                                 val (c1, c2) = int-to-two-chars v
-                             in
-                                 ( update (ds, idx, c1) ;
-                                   update (ds, idx + 1, c2) ; 
-                                   r-to-s xs r ds (idx + 2) OFF0 )
-                             end
-                           | BITS8 =>
-                             let
-                                 val c1 = chr v
-                             in
-                                 ( update (ds, idx, c1) ;
-                                   r-to-s xs r ds (idx + 1) OFF0 )
-                             end
-                           | BITS4 =>
-                             let
-                                 val c = ord (sub(ds, idx))
-                                 val t = v andb 0xf
-                                 val newc = ( case bitoff of OFF0 => 
-                                                             (t shl 4) orb (c andb 0xf)
-                                                           | OFF4 =>
-                                                             (c andb 0xf0) orb t )
-                                 val (nextidx, nextoff) = case bitoff of OFF0 => (idx, OFF4)
-                                                                       | OFF4 => (idx + 1, OFF0)
-                             in
-                                 ( update (ds, idx, chr newc) ;
-                                   r-to-s xs r ds nextidx nextoff )
-                             end
-            end
+            case bits of BITS32 =>
+                         let
+                             val (c1, c2, c3, c4) = int-to-four-chars (getf r)
+                         in
+                             ( update (ds, idx, c1) ;
+                               update (ds, idx + 1, c2) ; 
+                               update (ds, idx + 2, c3) ;
+                               update (ds, idx + 3, c4) ;
+                               r-to-s xs r ds (idx + 4) OFF0 )
+                         end
+                       | BITS24 =>
+                         let
+                             val (c1, c2, c3) = int-to-three-chars (getf r)
+                         in
+                             ( update (ds, idx, c1) ;
+                               update (ds, idx + 1, c2) ; 
+                               update (ds, idx + 2, c3) ;
+                               r-to-s xs r ds (idx + 3) OFF0 )
+                         end
+                       | BITS16 =>
+                         let
+                             val (c1, c2) = int-to-two-chars (getf r)
+                         in
+                             ( update (ds, idx, c1) ;
+                               update (ds, idx + 1, c2) ; 
+                               r-to-s xs r ds (idx + 2) OFF0 )
+                         end
+                       | BITS8 =>
+                         let
+                             val c1 = chr (getf r)
+                         in
+                             ( update (ds, idx, c1) ;
+                               r-to-s xs r ds (idx + 1) OFF0 )
+                         end
+                       | BITS4 =>
+                         let
+                             val c = ord (sub(ds, idx))
+                             val t = (getf r) andb 0xf
+                             val newc = ( case bitoff of OFF0 => 
+                                                         (t shl 4) orb (c andb 0xf)
+                                                       | OFF4 =>
+                                                         (c andb 0xf0) orb t )
+                             val (nextidx, nextoff) = case bitoff of OFF0 => (idx, OFF4)
+                                                                   | OFF4 => (idx + 1, OFF0)
+                         in
+                             ( update (ds, idx, chr newc) ;
+                               r-to-s xs r ds nextidx nextoff )
+                         end
     in
         r-to-s packlist r ar 0 OFF0
     end
