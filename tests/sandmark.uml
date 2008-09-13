@@ -11,10 +11,6 @@ let
     import "growarray.uh"
     import "io.uh"
     import "util.uh"
-    import "phidgets.uh"
-
-    val phidgetHndl = phidgets-open 68132
-    fun phidgetPrint s = phidgets-set-display-string (phidgetHndl, 0, s)
 
     val keys = 
 {|
@@ -40,7 +36,7 @@ des-key (0x020c63ac, 0xfb35e841)
     (* run the encryption loop for N cycles *)
     val N = 10000
 
-    do phidgetPrint [ == SANDmark 19107 beginning stress test / benchmark.. ==\n\r]
+    do print [ == SANDmark 19107 beginning stress test / benchmark.. ==\n\r]
 
     val kr = ref 0
     fun getkey () = 
@@ -58,11 +54,11 @@ des-key (0x020c63ac, 0xfb35e841)
 	ford 0 N (0x12345678, 0x09ABCDEF)
 	(fn (i, ws) =>
 	 (if i mod 100 = 0 
-	  then phidgetPrint ([[string-pad(4, [[int-tostring ((N - i) div 100)].])] [pwp ws]\n\r])
+	  then print ([[string-pad(4, [[int-tostring ((N - i) div 100)].])] [pwp ws]\n\r])
 	  else ();
 	  des-encrypt3(getkey (), getkey (), getkey ()) ws))
 
     val ws = loop ()
 in
-    phidgetPrint [SANDmark complete.\n\r]
+    print [SANDmark complete.\n\r]
 end
