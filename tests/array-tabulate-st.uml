@@ -7,7 +7,7 @@ let
 
     fun f (i, s) = ( s, s ^ (int-tostring i) )
 
-    val a = array-tabulate-st 9 f "start:" 
+    val (a, sf) = array-tabulate-st 9 f "start:" 
 
     fun pf ar = array-app print ar
 in
