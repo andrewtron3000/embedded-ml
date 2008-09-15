@@ -114,6 +114,29 @@ fun array-tabulate 0 _ = array0 ()
       loop 1
     end
 
+(* array-tabulate-st 
+   similar to array-tabulate except it allows
+   you to thread state through.  the function 
+   should have the signature:
+   f (i, state) -> (value, newstate) *)
+fun array-tabulate-st 0 f s1 = array0 ()
+  | array-tabulate-st i f s1 = 
+    let
+	val (x, s2) = f (0, s1)
+	val v = array (i, x)
+	fun loop n sx = 
+	    if n = i then v
+	    else
+		let
+		    val (x', s') = f (n, sx)
+		in
+		    ( update_ (v, n, x') ;
+		      loop (n+1) s' )
+		end
+    in
+	loop 1 s2
+    end
+
 fun array-xor-checksum ds = 
     let
         val total = array-foldl (fn (x, y) => (ord x) + y) 0 ds
