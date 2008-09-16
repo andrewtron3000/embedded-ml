@@ -13,6 +13,24 @@ fun array-app f a =
 	p 0
     end
 
+(* array-app-st is like array-app except it allows you to thread a
+piece of state through the function f.  the signature of f should be:
+f ( x, state ) -> nextstate *)
+fun array-app-st f a s1 =
+    let
+	fun p n sx = 
+	    if n chk length a
+	    then ()
+	    else 
+		let
+		    val s2 = f (sub_(a, n), sx)
+		in
+		    p (n+1) s2
+		end
+    in
+	p 0 s1
+    end
+    
 fun array-appi f a =
     let
 	fun p n =
