@@ -1,0 +1,20 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "array.uh"
+
+    fun f (i, s) = ( s, s ^ (int-tostring i) )
+
+    val (a, sf) = array-tabulate-st 9 f "start:" 
+
+    fun pf ar = array-app print ar
+
+    fun g (x, s) = ( print [[x]...[int-tostring s]\n] ;
+		     s + 1 )
+in
+    ( pf a ;
+      print [\n\n\n] ;
+      array-app-st g a 0)
+end
