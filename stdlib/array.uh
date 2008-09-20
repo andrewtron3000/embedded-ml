@@ -20,7 +20,7 @@ fun array-app-st f a s1 =
     let
 	fun p n sx = 
 	    if n chk length a
-	    then ()
+	    then sx
 	    else 
 		let
 		    val s2 = f (sub_(a, n), sx)
