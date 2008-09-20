@@ -1,0 +1,21 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "array.uh"
+    import "char.uh"
+    import "marshall.uh"
+
+    val s = { cs = {| chr 69, chr 1, chr 2, chr 0xa5 |},
+    	      byte_offset = 0,
+	      bit_offset = 0 }
+
+    val (i1, s) = readNextInteger(s, 1, 0)
+    val (i2, s) = readNextInteger(s, 2, 0)
+    val (i3, s) = readNextInteger(s, 0, 4)
+    val (i4, s) = readNextInteger(s, 0, 4)
+
+in
+    print [hi marshall! [int-tostring i1], [int-tostring i2], [int-tostring i3], [int-tostring i4]\n]
+end
