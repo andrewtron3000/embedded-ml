@@ -84,3 +84,61 @@ fun readNextInteger (s, bytes, bits) =
 				   | _ => raise Marshall )
 		    | _ => raise Marshall
     end
+
+fun writeNextInteger (s, bytes, bits, i) =
+    let
+	val byte_offset = #byte_offset/marshall_type s
+	val bit_offset = #bit_offset/marshall_type s
+	val cs = #cs/marshall_type s
+    in
+	( case bytes of 4 =>
+			let
+			    val (c1, c2, c3, c4) = int-to-four-chars i
+			in
+			    ( update (cs, byte_offset, c1) ;
+			      update (cs, byte_offset + 1, c2) ;
+			      update (cs, byte_offset + 2, c3) ;
+			      update (cs, byte_offset + 3, c4) ;
+			      { cs = cs, byte_offset = byte_offset + 4, bit_offset = bit_offset } )
+			end 
+		      | 3 => 
+			let
+			    val (c1, c2, c3) = int-to-three-chars i
+			in
+			    ( update (cs, byte_offset, c1) ;
+			      update (cs, byte_offset + 1, c2) ;
+			      update (cs, byte_offset + 2, c3) ;
+			      { cs = cs, byte_offset = byte_offset + 3, bit_offset = bit_offset } )
+			end 
+		      | 2 =>
+			let
+			    val (c1, c2) = int-to-two-chars i
+			in
+			    ( update (cs, byte_offset, c1) ;
+			      update (cs, byte_offset + 1, c2) ;
+			      { cs = cs, byte_offset = byte_offset + 2, bit_offset = bit_offset } )
+			end 
+		      | 1 =>
+			let
+			    val c1 = chr (i andb 0xff)
+			in
+			    ( update (cs, byte_offset, c1) ;
+			      { cs = cs, byte_offset = byte_offset + 1, bit_offset = bit_offset } )
+			end  
+		      | 0 =>
+			( case bits of 4 =>
+				       if bit_offset > 4 then raise Marshall
+				       else
+					   ( let
+						val z = (0xf0 shr (4 - bit_offset)) andb (ord (sub (cs, byte_offset)))
+						val y = (i andb 0xf) shl (4 - bit_offset)
+						val a = (z orb y) andb 0xff
+						val bito = (bit_offset + 4) mod 8
+						val byteo = if bito = 0
+							    then byte_offset + 1
+							    else byte_offset
+					    in
+						( update (cs, byte_offset, chr a) ;
+						  { cs = cs, byte_offset = byteo, bit_offset = bito } )
+					    end ) ) )
+    end
