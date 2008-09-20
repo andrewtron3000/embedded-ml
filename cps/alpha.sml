@@ -58,10 +58,12 @@ struct
         App(va, vl) => App (value va, map value vl)
       | Alloc (t, vas, v, ce) => 
           alph vas [v] (fn (vas, [v], re) =>
-                        Alloc(t, vas, v, re ce))
+                        Alloc(t, vas, v, re ce)
+                        | _ => raise Alpha "impossible")
       | Project(i, va, v, ce) => 
           alph [va] [v] (fn ([va], [v], re) =>
-                         Project(i, va, v, re ce))
+                         Project(i, va, v, re ce)
+                         | _ => raise Alpha "impossible")
 
       | Fix (vael, ce) =>
           let
@@ -79,12 +81,14 @@ struct
       | Intswitch (va, iel, def) =>
           alph [va] []
              (fn ([va], [], re) =>
-              Intswitch(va, ListUtil.mapsecond re iel, re def))
+              Intswitch(va, ListUtil.mapsecond re iel, re def)
+              | _ => raise Alpha "impossible")
 
       | Sumswitch (va, n, v, icl, def) => 
           alph [va] [v]
              (fn ([va], [v], re) =>
-              Sumswitch(va, n, v, ListUtil.mapsecond re icl, re def))
+              Sumswitch(va, n, v, ListUtil.mapsecond re icl, re def)
+              | _ => raise Alpha "impossible")
 
       | Primop (po, vas, vs, ces) => 
           alph vas vs

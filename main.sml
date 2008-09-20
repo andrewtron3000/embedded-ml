@@ -9,6 +9,6 @@ val _ =
         [input] => OS.Process.exit(Compile.compile input (!outf))
       | _ =>
             let in
-                print "Usage: humlock file.uml\n\n";
+                print "Usage: mlc file.uml\n\n";
                 print (Params.usage ())
             end
