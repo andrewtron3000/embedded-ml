@@ -15,20 +15,9 @@ import sys
 # priority, int, 0, 4
 # flow, int, 1, 0
 # test, composite, unit, role
-# fruits, composite, test, priority, continuum
+# fruits, composite, test, subject, continuum
 # subscription_array, array, subject, fruits
-# subscription_assert, composite, subject, continuum, unit, role, dvNum, subscription_array, priority, test, flow
-
-def importRecords(ls):
-    ''' ls specifies the packet structures '''
-    d = {}
-    for l in ls:
-        l = l.strip()
-        xs = l.split(',')
-        xs = map( lambda x: x.strip(), xs )
-        name = xs[0]
-        d[name] = xs[1:]
-    return d
+# subscription_assert, composite, subject, continuum, unit, role, dvNum, priority, flow
 
 def getType(d, x):
     return d[x][0]
@@ -50,6 +39,19 @@ def arrayGetCountVariable(d, x):
 
 def arrayGetComposite(d, x):
     return d[x][2]
+
+def importRecords(ls):
+    ''' ls specifies the packet structures '''
+    d = {}
+    keys = []
+    for l in ls:
+        l = l.strip()
+        xs = l.split(',')
+        xs = map( lambda x: x.strip(), xs )
+        name = xs[0]
+        d[name] = xs[1:]
+        keys.append(name)
+    return (d, keys)
 
 class outputEngine:
     def __init__(self, indent=0, dx=4):
@@ -84,7 +86,7 @@ def integerFromString(d, name):
     return ('readNextInteger (s, %d, %d)' % ( intGetBytes(d, name), intGetBits(d, name) ))
 
 def stringFromString(d, name):
-    return ('readNextString (s, %d)' % stringGetBytes(d, name))
+    return ('readNextString s')
     
 def arrayFromString(d, name):
     oe = outputEngine()
@@ -112,7 +114,7 @@ def compositeFromString(d, name):
         t = getType(d, x)
         if t == 'int':
             oe.add('val (%s, s) = %s\n' % (x, integerFromString(d, x)))
-        elif t == 'char array':
+        elif t == 'string':
             oe.add('val (%s, s) = %s\n' % (x, stringFromString(d, x)))
         elif t == 'composite':
             oe.add('val (%s, s) =\n' % x)
@@ -157,8 +159,7 @@ def integerToString(d, x, name):
                                                    targetRecordName(x, name) ))
 
 def stringToString(d, x, name):
-    return ('writeNextString (s, %d, %d)' % ( stringGetBytes(d, x),
-                                              targetRecordName(x, name) ))
+    return ('writeNextString (s, %s)' % targetRecordName(x, name))
 
 def arrayToString(d, x, name):
     oe = outputEngine()
@@ -187,7 +188,7 @@ def compositeToString(d, name, last=''):
         t = getType(d, x)
         if t == 'int':
             oe.add('val s = %s\n' % integerToString(d, x, name))
-        elif t == 'char array':
+        elif t == 'string':
             oe.add('val s = %s\n' % stringToString(d, x, name))
         elif t == 'composite':
             oe.add('val s =\n')
@@ -224,8 +225,12 @@ def createRecordDefinition(d, name):
         elif t == 'array':
             e = arrayGetComposite(d, x)
             zs.append('%s : %s array' % (x, recordName(e))) 
+        elif t == 'int':
+            zs.append('%s : int' % x)
+        elif t == 'string':
+            zs.append('%s : string' % x)
         else:
-            zs.append('%s : %s' % (x, t))
+            sys.exit('invalid type in a record: %s' % t)
     oe.interleave(zs, ',\n')
     oe.add('\n')
     oe.decreaseIndent()
@@ -275,7 +280,7 @@ if __name__ == '__main__':
     ls = f.readlines()
     f.close()
 
-    d = importRecords(ls) 
+    d, ks = importRecords(ls) 
 
     oe = outputEngine()
     oe.add('let \n')
@@ -286,20 +291,23 @@ if __name__ == '__main__':
     oe.add('import "string.uh"')
     oe.add('import "int.uh"')
     oe.add('import "array.uh"')
-    oe.add('fun readNextInteger (s, i1, i2) = (1, s)')
-    oe.add('fun writeNextInteger (s, i1, i2, i) = s')
+    oe.add('import "marshall.uh"')
+    oe.add('\n')
+    oe.add('fun readNextString s = ("hi", s)')
+    oe.add('fun writeNextString (s, st) = s')
+    oe.add('\n')
 
-    s = createRecordDefinition(d, 'test')
-    oe.add(s)
-    s = createRecordDefinition(d, 'fruits')
-    oe.add(s)
-    s = createRecordDefinition(d, 'subscription_assert')
-    oe.add(s)
+    composites = [x for x in ks if getType(d, x) == 'composite']
 
-    s = createFromStringFunction(d, 'subscription_assert')
-    oe.add(s)
-    s = createToStringFunction(d, 'subscription_assert')
-    oe.add(s)
+    for c in composites:
+        oe.add(createRecordDefinition(d, c))
+        oe.add('\n')
+
+    for c in composites:
+        oe.add(createFromStringFunction(d, c))
+        oe.add('\n')
+        oe.add(createToStringFunction(d, c))
+        oe.add('\n')
 
     oe.decreaseIndent()
     oe.add('in \n')
