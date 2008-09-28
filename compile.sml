@@ -66,6 +66,10 @@ struct
         (SOME ("-compileflags",
                "additional flags to add to the makefile (\"\")")) "compileflags"
 
+    val gcctarget = Params.param ""
+        (SOME ("-gcctarget",
+               "Cross compilation target when using gcc (\"\")")) "gcctarget"
+
     val fr_backend = Params.flag false
         (SOME ("-frbackend",
                "generate a Forth file")) "frfile"
@@ -392,7 +396,7 @@ struct
                                        else Assemble.TARG_UM,
                               obfuscate = !obfuscate_outer } out code;
 	     *)
-            (if !c_backend then (CPrint.print out runtime c_asm (!compileflags))
+            (if !c_backend then (CPrint.print out runtime c_asm (!compileflags) (!gcctarget))
              else if !fr_backend then (ForthPrint.print includemain out runtime fr_asm)
              else (vprint "Not printing anything.\n"));
             OS.Process.success

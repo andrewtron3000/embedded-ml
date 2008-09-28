@@ -6,7 +6,7 @@ struct
   structure W = Word32
 
   open C
-  fun print out runtime (blocks, lab) compileflags =
+  fun print out runtime (blocks, lab) compileflags target =
       let
           val path = "./.tmp/"
           val () = OS.FileSys.mkDir path
@@ -161,7 +161,7 @@ struct
                 TextIO.closeOut f
             end
 
-        fun generateMakefile bs = 
+        fun generateMakefile bs target = 
             let 
                 fun genObjStr (lab, asm) = 
                     let 
@@ -170,12 +170,13 @@ struct
                         v ^ " "
                     end
                 val os = foldr (op^) "" (map genObjStr bs)
-                val hdr = ( "CC := gcc\n" ^
+		val target = if target = "" then target else (target ^ "-")
+                val hdr = ( "CC := " ^ target ^ "gcc\n" ^
                             "CFLAGS := -O2\n" ^
-                            "AR := ar\n" ^
+                            "AR := " ^ target ^ "ar\n" ^
                             "ARFLAGS := rS\n" ^
                             "RM := rm -f \n" ^
-                            "RANLIB := ranlib\n" ^
+                            "RANLIB := " ^ target ^ "ranlib\n" ^
                             "OBJECTS := runtime-c main " ^ os ^ "\n" )
                 val f = TextIO.openOut (path ^ "makefile");
                 val () = TextIO.output (f, hdr);
@@ -204,7 +205,7 @@ struct
       in
         generateRuntimeFiles ();
         generateLabelHeaderFile ordered_blocks;
-        generateMakefile ordered_blocks;
+        generateMakefile ordered_blocks target;
         app printblock ordered_blocks;
         TextIO.output (file, "#include \"labels.h\"\n");
         TextIO.output (file, "int main(int argc, char **argv)\n{\n");
