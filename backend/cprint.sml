@@ -103,7 +103,7 @@ struct
                                 | SEPARATOR => ";\n"
                                 | SET (d, t, b) => "efficient_set(" ^
                                                    (asm_to_string d) ^ ", " ^
-                                                   (asm_to_string t) ^ ", " ^
+                                                   "(uint32_t) " ^ (asm_to_string t) ^ ", " ^
                                                    (asm_to_string b) ^ ")"
                                 | COPY (d, s, b) => "efficient_copy(" ^
                                                    (asm_to_string d) ^ ", " ^
