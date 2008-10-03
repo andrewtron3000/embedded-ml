@@ -1,0 +1,31 @@
+subject, int, 2, 0
+continuum, int, 3, 0
+unit, int, 2, 0
+role, int, 1, 0
+delivery_vector_num, int, 0, 4
+priority, int, 0, 4
+flow, int, 1, 0
+subscription_assert, composite, subject, continuum, unit, role, delivery_vector_num, priority, flow
+invitation_assert, composite, subscription_assert
+num_assertion_structs, int, 2, 0
+subscription_list, array, num_assertion_structs, subscription_assert
+invitation_list, array, num_assertion_structs, invitation_assert
+declaration_struct, composite, subscription_list, invitation_list
+delivery_point_names, string
+number_delivery_vectors, int, 0, 4
+delivery_vector, composite, delivery_vector_num, number_delivery_vectors, delivery_point_names
+number_list_delivery_vectors, int, 1, 0
+delivery_vector_list, array, number_list_delivery_vectors, delivery_vector
+mams_endpoint_name, string
+contact_summary, composite, mams_endpoint_name, delivery_vector_list
+node_number, int, 1, 0
+node_status, composite, unit, node_number, role, contact_summary, declaration_struct
+num_nodes, int, 1, 0
+node_numbers, composite, node_number
+node_list, array, num_nodes, node_numbers
+cell_descriptor, composite, unit, mams_endpoint_name
+num_node_statuses, int, 4, 0
+node_status_list, array, num_node_statuses, node_status
+subscription_cancellation, composite, subject, continuum, unit, role
+invitation_cancellation, composite, subscription_cancellation
+reconnect_struct, composite, node_number, contact_summary, node_list
