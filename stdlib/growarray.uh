@@ -7,6 +7,7 @@ type a growarray = (a array ref * int ref)
 (* specify the initial element *)
 fun growarray-new a = (ref (array(4, a)), ref 0)
 
+fun growarray-array (ar, _) = !ar
 fun growarray-length (_, len) = !len
 
 fun growarray-sub ((a, len), i) =
