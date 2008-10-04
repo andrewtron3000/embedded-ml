@@ -6,7 +6,7 @@ delivery_vector_num, int, 0, 4
 priority, int, 0, 4
 flow, int, 1, 0
 subscription_assert, composite, subject, continuum, unit, role, delivery_vector_num, priority, flow
-invitation_assert, composite, subscription_assert
+invitation_assert, composite, subject, continuum, unit, role, delivery_vector_num, priority, flow
 num_assertion_structs, int, 2, 0
 subscription_list, array, num_assertion_structs, subscription_assert
 invitation_list, array, num_assertion_structs, invitation_assert
