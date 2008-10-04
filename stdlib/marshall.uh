@@ -1,6 +1,9 @@
+val require-array = provide-array
+val require-growarray = provide-growarray
 
 type marshall_type = 
-     { cs : char array,
+     { readbuffer : char array,
+       writebuffer : char growarray,
        byte_offset : int,
        bit_offset : int }
 
@@ -10,32 +13,33 @@ fun readNextInteger (s, bytes, bits) =
     let
 	val byte_offset = #byte_offset/marshall_type s
 	val bit_offset = #bit_offset/marshall_type s
-	val cs = #cs/marshall_type s 
+	val cs = #readbuffer/marshall_type s
+	val writebuffer = #writebuffer/marshall_type s
     in
 	case bytes of 4 =>  
 		      ( four-chars-to-int ( sub (cs, byte_offset),
 					    sub (cs, byte_offset + 1),
 					    sub (cs, byte_offset + 2),
 					    sub (cs, byte_offset + 3) ),
-			{ cs = cs, 
+			{ readbuffer = cs, writebuffer = writebuffer, 
 			  byte_offset = byte_offset + 4,
 			  bit_offset = bit_offset } )
 		    | 3 => 
 		      ( three-chars-to-int ( sub (cs, byte_offset),
 					     sub (cs, byte_offset + 1),
 					     sub (cs, byte_offset + 2) ),
-			{ cs = cs, 
+			{ readbuffer = cs, writebuffer = writebuffer, 
 			  byte_offset = byte_offset + 3,
 			  bit_offset = bit_offset } )
 		    | 2 => 
 		      ( two-chars-to-int ( sub (cs, byte_offset),
 					   sub (cs, byte_offset + 1) ),
-			{ cs = cs,
+			{ readbuffer = cs, writebuffer = writebuffer,
 			  byte_offset = byte_offset + 2,
 			  bit_offset = bit_offset } )
 		    | 1 => 
 		      ( ord (sub (cs, byte_offset)),
-			{ cs = cs,
+			{ readbuffer = cs, writebuffer = writebuffer,
 			  byte_offset = byte_offset + 1,
 			  bit_offset = bit_offset } )
 		    | 0 =>
@@ -51,7 +55,7 @@ fun readNextInteger (s, bytes, bits) =
 						     then byte_offset + 1
 						     else byte_offset
 				     in
-					 ( a, {cs = cs, byte_offset = byteo, bit_offset = bito} )
+					 ( a, {readbuffer = cs, writebuffer = writebuffer, byte_offset = byteo, bit_offset = bito} )
 				     end
 				   | 2 => 
 				     let
@@ -65,7 +69,7 @@ fun readNextInteger (s, bytes, bits) =
 						     then byte_offset + 1
 						     else byte_offset
 				     in
-					 ( a, {cs = cs, byte_offset = byteo, bit_offset = bito} )
+					 ( a, {readbuffer = cs, writebuffer = writebuffer, byte_offset = byteo, bit_offset = bito} )
 				     end
 				   | 1 =>
 				     let
@@ -79,7 +83,7 @@ fun readNextInteger (s, bytes, bits) =
 						     then byte_offset + 1
 						     else byte_offset
 				     in
-					 ( a, {cs = cs, byte_offset = byteo, bit_offset = bito} )
+					 ( a, {readbuffer = cs, writebuffer = writebuffer, byte_offset = byteo, bit_offset = bito} )
 				     end
 				   | _ => raise Marshall )
 		    | _ => raise Marshall
@@ -89,48 +93,49 @@ fun writeNextInteger (s, bytes, bits, i) =
     let
 	val byte_offset = #byte_offset/marshall_type s
 	val bit_offset = #bit_offset/marshall_type s
-	val cs = #cs/marshall_type s
+	val cs = #writebuffer/marshall_type s
+	val readbuffer = #readbuffer/marshall_type s
     in
 	( case bytes of 4 =>
 			let
 			    val (c1, c2, c3, c4) = int-to-four-chars i
 			in
-			    ( update (cs, byte_offset, c1) ;
-			      update (cs, byte_offset + 1, c2) ;
-			      update (cs, byte_offset + 2, c3) ;
-			      update (cs, byte_offset + 3, c4) ;
-			      { cs = cs, byte_offset = byte_offset + 4, bit_offset = bit_offset } )
+			    ( growarray-update (cs, byte_offset, c1) ;
+			      growarray-update (cs, byte_offset + 1, c2) ;
+			      growarray-update (cs, byte_offset + 2, c3) ;
+			      growarray-update (cs, byte_offset + 3, c4) ;
+			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 4, bit_offset = bit_offset } )
 			end 
 		      | 3 => 
 			let
 			    val (c1, c2, c3) = int-to-three-chars i
 			in
-			    ( update (cs, byte_offset, c1) ;
-			      update (cs, byte_offset + 1, c2) ;
-			      update (cs, byte_offset + 2, c3) ;
-			      { cs = cs, byte_offset = byte_offset + 3, bit_offset = bit_offset } )
+			    ( growarray-update (cs, byte_offset, c1) ;
+			      growarray-update (cs, byte_offset + 1, c2) ;
+			      growarray-update (cs, byte_offset + 2, c3) ;
+			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 3, bit_offset = bit_offset } )
 			end 
 		      | 2 =>
 			let
 			    val (c1, c2) = int-to-two-chars i
 			in
-			    ( update (cs, byte_offset, c1) ;
-			      update (cs, byte_offset + 1, c2) ;
-			      { cs = cs, byte_offset = byte_offset + 2, bit_offset = bit_offset } )
+			    ( growarray-update (cs, byte_offset, c1) ;
+			      growarray-update (cs, byte_offset + 1, c2) ;
+			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 2, bit_offset = bit_offset } )
 			end 
 		      | 1 =>
 			let
 			    val c1 = chr (i andb 0xff)
 			in
-			    ( update (cs, byte_offset, c1) ;
-			      { cs = cs, byte_offset = byte_offset + 1, bit_offset = bit_offset } )
+			    ( growarray-update (cs, byte_offset, c1) ;
+			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 1, bit_offset = bit_offset } )
 			end  
 		      | 0 =>
 			( case bits of 4 =>
 				       if bit_offset > 4 then raise Marshall
 				       else
 					   ( let
-						val z = (0xf0 shr (4 - bit_offset)) andb (ord (sub (cs, byte_offset)))
+						val z = (0xf0 shr (4 - bit_offset)) andb (ord (growarray-sub (cs, byte_offset)))
 						val y = (i andb 0xf) shl (4 - bit_offset)
 						val a = (z orb y) andb 0xff
 						val bito = (bit_offset + 4) mod 8
@@ -138,7 +143,10 @@ fun writeNextInteger (s, bytes, bits, i) =
 							    then byte_offset + 1
 							    else byte_offset
 					    in
-						( update (cs, byte_offset, chr a) ;
-						  { cs = cs, byte_offset = byteo, bit_offset = bito } )
+						( growarray-update (cs, byte_offset, chr a) ;
+						  { readbuffer = readbuffer, writebuffer = cs, byte_offset = byteo, bit_offset = bito } )
 					    end ) ) )
     end
+    handle Subscript => ( growarray-push ( (#writebuffer/marshall_type s), chr 0) ;
+			  print [resizing...\n] ;
+			  writeNextInteger (s, bytes, bits, i) )
