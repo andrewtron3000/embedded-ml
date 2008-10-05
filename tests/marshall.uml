@@ -22,19 +22,22 @@ let
     val ws = writeNextInteger(ws, 0, 4, 0xc)
     val ws = writeNextInteger(ws, 0, 4, 0xd)
     val ws = writeNextInteger(ws, 2, 0, 0xbbcc)
+    val ws = writeNextString(ws, {| chr 0x10, chr 0x11, chr 0x12, chr 0x13, chr 0x14, chr 0x15, chr 0x16|})
 
     val () = print [result = [chars-tohexstring (growarray-array (#writebuffer/marshall_type ws))]\n] 
 
-    val s = { readbuffer = {| chr 69, chr 1, chr 2, chr 0xa5 |},
+    val s = { readbuffer = {| chr 69, chr 1, chr 2, chr 0xa5, ?h, ?i, ?t, ?h, ?e, ?r, ?e, chr 0, chr 0xfe |},
     	      writebuffer = growarray-new (chr 0),
     	      byte_offset = 0,
 	      bit_offset = 0 }
 
     val (i1, s) = readNextInteger(s, 1, 0)
     val (i2, s) = readNextInteger(s, 2, 0)
-    val (i3, s) = readNextInteger(s, 0, 2)
+    val (i3, s) = readNextInteger(s, 0, 4)
     val (i4, s) = readNextInteger(s, 0, 4)
+    val (st, s) = readNextString s
+    val (i5, s) = readNextInteger(s, 1, 0)
 
 in
-    print [hi marshall! [int-tostring i1], [int-tostring i2], [int-tostring i3], [int-tostring i4]\n]
+    print [[st] [int-tostring i1], [int-tostring i2], [int-tostring i3], [int-tostring i4], [int-tostring i5]\n]
 end
