@@ -22,7 +22,7 @@ fun readNextString s =
     in
 	case (scanner cs) of SOME i => ( substring (cs, byte_offset, (i - byte_offset + 1)),
 					 { readbuffer = cs,
-					   writebufer = writebuffer,
+					   writebuffer = writebuffer,
 					   byte_offset = byte_offset + (i - byte_offset + 1),
 					   bit_offset = bit_offset } )
 			   | NONE => raise Marshall
