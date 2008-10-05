@@ -100,34 +100,34 @@ fun writeNextInteger (s, bytes, bits, i) =
 			let
 			    val (c1, c2, c3, c4) = int-to-four-chars i
 			in
-			    ( growarray-update (cs, byte_offset, c1) ;
-			      growarray-update (cs, byte_offset + 1, c2) ;
-			      growarray-update (cs, byte_offset + 2, c3) ;
-			      growarray-update (cs, byte_offset + 3, c4) ;
+			    ( growarray-push (cs, c1) ;
+			      growarray-push (cs, c2) ;
+			      growarray-push (cs, c3) ;
+			      growarray-push (cs, c4) ;
 			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 4, bit_offset = bit_offset } )
 			end 
 		      | 3 => 
 			let
 			    val (c1, c2, c3) = int-to-three-chars i
 			in
-			    ( growarray-update (cs, byte_offset, c1) ;
-			      growarray-update (cs, byte_offset + 1, c2) ;
-			      growarray-update (cs, byte_offset + 2, c3) ;
+			    ( growarray-push (cs, c1) ;
+			      growarray-push (cs, c2) ;
+			      growarray-push (cs, c3) ;
 			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 3, bit_offset = bit_offset } )
 			end 
 		      | 2 =>
 			let
 			    val (c1, c2) = int-to-two-chars i
 			in
-			    ( growarray-update (cs, byte_offset, c1) ;
-			      growarray-update (cs, byte_offset + 1, c2) ;
+			    ( growarray-push (cs, c1) ;
+			      growarray-push (cs, c2) ;
 			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 2, bit_offset = bit_offset } )
 			end 
 		      | 1 =>
 			let
 			    val c1 = chr (i andb 0xff)
 			in
-			    ( growarray-update (cs, byte_offset, c1) ;
+			    ( growarray-push (cs, c1) ;
 			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 1, bit_offset = bit_offset } )
 			end  
 		      | 0 =>
@@ -145,8 +145,10 @@ fun writeNextInteger (s, bytes, bits, i) =
 					    in
 						( growarray-update (cs, byte_offset, chr a) ;
 						  { readbuffer = readbuffer, writebuffer = cs, byte_offset = byteo, bit_offset = bito } )
-					    end ) ) )
+					    end ) 
+				     | _ => raise Marshall ) 
+		      | _ => raise Marshall )
+
     end
     handle Subscript => ( growarray-push ( (#writebuffer/marshall_type s), chr 0) ;
-			  print [resizing...\n] ;
 			  writeNextInteger (s, bytes, bits, i) )
