@@ -5,24 +5,30 @@ let
     import "int.uh"
     import "array.uh"
     import "char.uh"
+    import "growarray.uh"
     import "marshall.uh"
 
-    val ws = { cs = {| chr 0, chr 0, chr 0, chr 0, chr 0, chr 0, chr 0, chr 0 |},
+    val ws = { readbuffer = {| chr 0, chr 0, chr 0, chr 0, chr 0, chr 0, chr 0, chr 0 |},
+    	       writebuffer = growarray-new (chr 0),
 	       byte_offset = 0,
 	       bit_offset = 0 }
 
-    val ws = writeNextInteger(ws, 1, 0, 69)
+    val ws = writeNextInteger(ws, 4, 0, 0xdeadbeef)
+    val ws = writeNextInteger(ws, 1, 0, 0x69)
     val ws = writeNextInteger(ws, 2, 0, 0x102)
+    val ws = writeNextInteger(ws, 2, 0, 0xffaa)
     val ws = writeNextInteger(ws, 0, 4, 0xa)
     val ws = writeNextInteger(ws, 0, 4, 0x5)
+    val ws = writeNextInteger(ws, 0, 4, 0xc)
+    val ws = writeNextInteger(ws, 0, 4, 0xd)
+    val ws = writeNextInteger(ws, 2, 0, 0xbbcc)
 
-    val s = { cs = (#cs/marshall_type ws),
-	      byte_offset = 0,
+    val () = print [result = [chars-tohexstring (growarray-array (#writebuffer/marshall_type ws))]\n] 
+
+    val s = { readbuffer = {| chr 69, chr 1, chr 2, chr 0xa5 |},
+    	      writebuffer = growarray-new (chr 0),
+    	      byte_offset = 0,
 	      bit_offset = 0 }
-
-(*     val s = { cs = {| chr 69, chr 1, chr 2, chr 0xa5 |}, *)
-(*     	      byte_offset = 0, *)
-(* 	      bit_offset = 0 } *)
 
     val (i1, s) = readNextInteger(s, 1, 0)
     val (i2, s) = readNextInteger(s, 2, 0)
