@@ -1,5 +1,6 @@
 val require-array = provide-array
 val require-growarray = provide-growarray
+val require-string = provide-string
 
 type marshall_type = 
      { readbuffer : char array,
@@ -8,6 +9,24 @@ type marshall_type =
        bit_offset : int }
 
 exception Marshall
+
+(* string has to be null terminated *)
+fun readNextString s =
+    let
+	val byte_offset = #byte_offset/marshall_type s
+	val bit_offset = #bit_offset/marshall_type s
+	val cs = #readbuffer/marshall_type s
+	val writebuffer = #writebuffer/marshall_type s
+	val scanner = array-findfrom byte_offset (fn x => (ord x) = 0)  
+	val () = print [finding from [int-tostring byte_offset]\n]
+    in
+	case (scanner cs) of SOME i => ( substring (cs, byte_offset, (i - byte_offset + 1)),
+					 { readbuffer = cs,
+					   writebufer = writebuffer,
+					   byte_offset = byte_offset + (i - byte_offset + 1),
+					   bit_offset = bit_offset } )
+			   | NONE => raise Marshall
+    end
 
 fun readNextInteger (s, bytes, bits) = 
     let
@@ -87,6 +106,25 @@ fun readNextInteger (s, bytes, bits) =
 				     end
 				   | _ => raise Marshall )
 		    | _ => raise Marshall
+    end
+
+(* string will be null terminated *)
+fun writeNextString (s, src) =
+    let
+	val byte_offset = #byte_offset/marshall_type s
+	val bit_offset = #bit_offset/marshall_type s
+	val cs = #writebuffer/marshall_type s
+	val readbuffer = #readbuffer/marshall_type s
+	val ln = length src
+	fun writer s i = if i = ln then ( growarray-push (cs, (chr 0)) ;
+					  { readbuffer = readbuffer, 
+					    writebuffer = cs,
+					    byte_offset = byte_offset + ln + 1, 
+					    bit_offset = bit_offset } )
+			 else ( growarray-push (cs, sub(src, i)) ;
+				writer s (i+1) )
+    in
+	writer s 0
     end
 
 fun writeNextInteger (s, bytes, bits, i) =
