@@ -83,10 +83,10 @@ class outputEngine:
         return r
 
 def integerFromString(d, name):
-    return ('readNextInteger (s, %d, %d)' % ( intGetBytes(d, name), intGetBits(d, name) ))
+    return ('marshall-readnextinteger (s, %d, %d)' % ( intGetBytes(d, name), intGetBits(d, name) ))
 
 def stringFromString(d, name):
-    return ('readNextString s')
+    return ('marshall-readnextstring s')
     
 def arrayFromString(d, name):
     oe = outputEngine()
@@ -154,12 +154,12 @@ def targetRecordName(x, name):
     return '#%s/%s r' % (x, recordName(name))
 
 def integerToString(d, x, name):
-    return ('writeNextInteger (s, %d, %d, %s)' % ( intGetBytes(d, x), 
-                                                   intGetBits(d, x),
-                                                   targetRecordName(x, name) ))
+    return ('marshall-writenextinteger (s, %d, %d, %s)' % ( intGetBytes(d, x), 
+                                                            intGetBits(d, x),
+                                                            targetRecordName(x, name) ))
 
 def stringToString(d, x, name):
-    return ('writeNextString (s, %s)' % targetRecordName(x, name))
+    return ('marshall-writenextstring (s, %s)' % targetRecordName(x, name))
 
 def arrayToString(d, x, name):
     oe = outputEngine()
@@ -287,17 +287,7 @@ if __name__ == '__main__':
     d, ks = importRecords(ls) 
 
     oe = outputEngine()
-    oe.add('let \n')
-    oe.increaseIndent()
-
-    oe.add('import "std.uh"')
-    oe.add('import "list.uh"')
-    oe.add('import "string.uh"')
-    oe.add('import "int.uh"')
-    oe.add('import "array.uh"')
-    oe.add('import "char.uh"')
-    oe.add('import "growarray.uh"')
-    oe.add('import "marshall.uh"')
+    oe.add('val require-marshall = provide-marshall')
     oe.add('\n')
 
     composites = [x for x in ks if getType(d, x) == 'composite']
@@ -312,11 +302,6 @@ if __name__ == '__main__':
         oe.add(createToStringFunction(d, c))
         oe.add('\n')
 
-    oe.decreaseIndent()
-    oe.add('in \n')
-    oe.increaseIndent()
-    oe.add('print [hello world\\n]')
-    oe.decreaseIndent()
     oe.add('end \n')
 
     print oe.dump()

@@ -1,6 +1,7 @@
 val require-array = provide-array
 val require-growarray = provide-growarray
 val require-string = provide-string
+val provide-marshall = ()
 
 type marshall_type = 
      { readbuffer : char array,
@@ -11,7 +12,7 @@ type marshall_type =
 exception Marshall
 
 (* string has to be null terminated *)
-fun readNextString s =
+fun marshall-readnextstring s =
     let
 	val byte_offset = #byte_offset/marshall_type s
 	val bit_offset = #bit_offset/marshall_type s
@@ -28,7 +29,7 @@ fun readNextString s =
 			   | NONE => raise Marshall
     end
 
-fun readNextInteger (s, bytes, bits) = 
+fun marshall-readnextinteger (s, bytes, bits) = 
     let
 	val byte_offset = #byte_offset/marshall_type s
 	val bit_offset = #bit_offset/marshall_type s
@@ -109,7 +110,7 @@ fun readNextInteger (s, bytes, bits) =
     end
 
 (* string will be null terminated *)
-fun writeNextString (s, src) =
+fun marshall-writenextstring (s, src) =
     let
 	val byte_offset = #byte_offset/marshall_type s
 	val bit_offset = #bit_offset/marshall_type s
@@ -127,7 +128,7 @@ fun writeNextString (s, src) =
 	writer s 0
     end
 
-fun writeNextInteger (s, bytes, bits, i) =
+fun marshall-writenextinteger (s, bytes, bits, i) =
     let
 	val byte_offset = #byte_offset/marshall_type s
 	val bit_offset = #bit_offset/marshall_type s
@@ -189,4 +190,5 @@ fun writeNextInteger (s, bytes, bits, i) =
 
     end
     handle Subscript => ( growarray-push ( (#writebuffer/marshall_type s), chr 0) ;
-			  writeNextInteger (s, bytes, bits, i) )
+			  marshall-writenextinteger (s, bytes, bits, i) )
+

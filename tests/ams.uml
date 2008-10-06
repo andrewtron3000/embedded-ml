@@ -5,52 +5,10 @@ let
     import "int.uh"
     import "array.uh"
     import "char.uh"
-    import "descriptorio.uh"
-    import "socket.uh"
-    import "recordpack.uh"
+    import "growarray.uh"
+    import "marshall.uh" 
     import "ams.uh"
 
-    type crap_test =
-         { string1 : string,
-           string2 : string }
-
-    fun client () =
-        let 
-            val s = socket-open ()
-            val () = socket-connect (s, "127.0.0.1", 40004)
-                             
-            fun ploop i =
-                let
-                    val b = descriptor-bytes-avail s
-                in 
-                    if b > 0 
-                    then print [<[descriptor-read (s, b)]>\n]
-                    else ploop (i + 1)
-                end
-        in
-            ( ploop 1 ;
-              socket-close s )
-        end
-
-    fun server () = 
-        let
-            val s = socket-open ()
-            val () = socket-bind (s, 40005)
-            val () = socket-listen (s, 1)
-            val s2 = socket-accept s
-        in
-            ( descriptor-write (s2, "greetings from FP land.  I'm glad to see you.") ;
-              socket-close s ;
-              socket-close s2 )
-        end
-
-    val t1 = { string1 = "hi", string2 = "there" }
-
-    fun s r = string-concat ((#string1/crap_test r) :: 
-                             (#string2/crap_test r) :: nil)
-
-    fun fill-f r v = { string1 = v, string2 = "crazy" }
-
 in
-    print (s (fill-f t1 "crappy"))
+    print [hello world\n]
 end
