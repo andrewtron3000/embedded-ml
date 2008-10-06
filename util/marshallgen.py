@@ -302,6 +302,4 @@ if __name__ == '__main__':
         oe.add(createToStringFunction(d, c))
         oe.add('\n')
 
-    oe.add('end \n')
-
     print oe.dump()

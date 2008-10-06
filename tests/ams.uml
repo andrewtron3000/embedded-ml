@@ -9,6 +9,9 @@ let
     import "marshall.uh" 
     import "ams.uh"
 
+    val r = { subject=1, continuum=2, unit=3, role=4, delivery_vector_num=5, priority=6, flow=7 }
+    val s = subscription_assert_tostring r
+
 in
-    print [hello world\n]
+    print [hello world: [chars-tohexstring s]\n]
 end

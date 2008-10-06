@@ -1,5 +1,5 @@
 val require-marshall = provide-marshall
-(* type subscription_assert_type =
+type subscription_assert_type =
     {
         subject : int,
         continuum : int,
@@ -846,6 +846,4 @@ fun reconnect_struct_tostring r =
     in
         growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s))
     end
-end 
 
-*)
