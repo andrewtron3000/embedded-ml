@@ -2,13 +2,13 @@
 
 val provide-descriptorio = ()
 
-type descType = int
+type descriptor = int
 
-native descriptor-bytes-avail = "descriptorBytesAvailable" : descType -> int
+native descriptor-bytes-avail = "descriptorBytesAvailable" : descriptor -> int
 
-native descriptor-read = "descriptorRead" : descType * int -> string
+native descriptor-read = "descriptorRead" : descriptor * int -> string
 
-native descriptor-write = "descriptorWrite" : descType * string -> unit
+native descriptor-write = "descriptorWrite" : descriptor * string -> unit
 
-native descriptor-close = "descriptorClose" : descType -> unit
+native descriptor-close = "descriptorClose" : descriptor -> unit
  

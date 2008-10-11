@@ -22,13 +22,42 @@
 
 #define HOSTNAME_LEN 256
 
-uint32_t *socketOpen( uint32_t context_len, uint32_t *stackvar )
+uint32_t *socketOpenTCP( uint32_t context_len, uint32_t *stackvar )
 {
   int sd;
   int status;
   int enabled = 1;
 
   sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (-1 == sd)
+  {
+    perror("socket:");
+    exit(1);
+  }
+
+  status = setsockopt(sd, 
+                      SOL_SOCKET,
+                      SO_REUSEADDR,
+                      (const char *) &enabled, 
+                      sizeof(enabled));
+
+  if (-1 == status)
+  {
+    perror("setsockopt(...,SO_REUSEADDR,...)");
+  }
+ 
+  /* SUSP -- add the NODELAY one too */
+
+  return boxUnsigned( context_len, (uint32_t) sd);
+}
+
+uint32_t *socketOpenUDP( uint32_t context_len, uint32_t *stackvar )
+{
+  int sd;
+  int status;
+  int enabled = 1;
+
+  sd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (-1 == sd)
   {
     perror("socket:");

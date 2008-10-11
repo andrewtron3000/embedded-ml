@@ -6,23 +6,26 @@ val provide-socket = ()
 (* client calls *)
 
 (* opens a network stream socket *)
-native socket-open = "socketOpen" : unit -> descType
+native socket-open-tcp = "socketOpenTCP" : unit -> descriptor
 
-(* socket-connect <descType> <hostname> <port> *)
-native socket-connect = "socketConnect" : descType * string * int -> unit
+(* opens a network datagram socket *)
+native socket-open-udp = "socketOpenUDP" : unit -> descriptor
+
+(* socket-connect <descriptor> <hostname> <port> *)
+native socket-connect = "socketConnect" : descriptor * string * int -> unit
 
 (* server calls *)
 
 (* opens a network stream socket *)
-native socket-set-nonblocking = "socketSetNonBlocking" : descType -> unit
+native socket-set-nonblocking = "socketSetNonBlocking" : descriptor -> unit
 
-(* socket-bind <descType> <port> *)
-native socket-bind = "socketBind" : descType * int -> unit
+(* socket-bind <descriptor> <port> *)
+native socket-bind = "socketBind" : descriptor * int -> unit
 
-(* socket-listen <descType> <queuesize> *)
-native socket-listen = "socketListen" : descType * int -> unit
+(* socket-listen <descriptor> <queuesize> *)
+native socket-listen = "socketListen" : descriptor * int -> unit
 
-(* socket-accept <descType> *)
-native socket-accept = "socketAccept" : descType -> descType
-(* socket-close <descType> *)
+(* socket-accept <descriptor> *)
+native socket-accept = "socketAccept" : descriptor -> descriptor
+(* socket-close <descriptor> *)
 val socket-close = descriptor-close

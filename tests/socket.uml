@@ -6,9 +6,17 @@ let
     import "descriptorio.uh"
     import "socket.uh"
 
-    fun client () =
+    fun udp-client () =
+        let
+            val s = socket-open-udp ()
+            val () = socket-connect (s, "192.168.1.5", 51423)
+        in
+            descriptor-write (s, "hi from udp land")
+        end
+
+    fun tcp-client () =
         let 
-            val s = socket-open ()
+            val s = socket-open-tcp ()
             val () = socket-connect (s, "127.0.0.1", 40004)
                              
             fun ploop i =
@@ -24,9 +32,9 @@ let
               socket-close s )
         end
 
-    fun server () = 
+    fun tcp-server () = 
         let
-            val s = socket-open ()
+            val s = socket-open-tcp ()
             val () = socket-bind (s, 40005)
             val () = socket-listen (s, 1)
             val s2 = socket-accept s
@@ -37,5 +45,5 @@ let
         end
 
 in
-    server ()
+    udp-client ()
 end
