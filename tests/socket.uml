@@ -11,7 +11,8 @@ let
             val s = socket-open-udp ()
             val () = socket-connect (s, "192.168.1.5", 51423)
         in
-            descriptor-write (s, "hi from udp land")
+            ( descriptor-write (s, "hi from udp land") ;
+              socket-close s )
         end
 
     fun tcp-client () =

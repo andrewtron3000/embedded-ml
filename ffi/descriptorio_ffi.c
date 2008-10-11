@@ -45,9 +45,6 @@ uint32_t *descriptorRead( uint32_t context_len, uint32_t *tuple )
     bytes_read += i;
   }
 
-  /* null terminate the result */
-  d_buffer[bytes_read] = (uint8_t) 0;
-
   return boxString( context_len, 
                     (char *) d_buffer, 
                     bytes_read );
@@ -57,15 +54,13 @@ uint32_t *descriptorWrite( uint32_t context_len, uint32_t *tuple )
 {
   int d;
   int bytes_written;
-  int bytes_to_write;
+  uint32_t bytes_to_write;
   int i;
 
   d = (int) unboxUnsigned( unboxTuple(tuple, 0) );
   assert( d != 0 );
 
-  unboxString( unboxTuple(tuple, 1), (char *) d_buffer, sizeof(d_buffer) );
-
-  bytes_to_write = strnlen((char *) d_buffer, sizeof(d_buffer));
+  unboxString( unboxTuple(tuple, 1), (char *) d_buffer, sizeof(d_buffer), &bytes_to_write);
 
   bytes_written = 0;
   while(bytes_to_write > 0)

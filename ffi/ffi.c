@@ -5,19 +5,6 @@
 #include "ffi.h"
 #include "runtime-c.h"
 
-int strnlen(char *s, int n)
-{
-  int i;
-
-  for (i = 0; i < n; i++)
-  {
-    if (s[i] == (char) 0)
-      break;
-  }
-
-  return i;
-}
-
 /* unboxUnsigned : hptr -> int */
 uint32_t unboxUnsigned( uint32_t *hptr )
 {
@@ -37,10 +24,10 @@ uint32_t *boxUnsigned( uint32_t context_len, uint32_t x )
 }
 
 /* unboxString : hptr -> char * */
-void unboxString( uint32_t *hptr, char *buf, uint32_t buf_len )
+void unboxString( uint32_t *hptr, char *buf, uint32_t buf_len, uint32_t *str_len )
 {
-  uint32_t string_len;
   uint32_t i;
+  uint32_t string_len;
   uint32_t *boxed_char;
 
   /*
@@ -58,8 +45,7 @@ void unboxString( uint32_t *hptr, char *buf, uint32_t buf_len )
     buf[i] = (char) Intval(boxed_char);
   }
 
-  /* null terminate the string */
-  buf[i] = (char) 0;
+  *str_len = string_len;
 }
 
 /* boxString : contextlen * string -> hptr */

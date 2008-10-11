@@ -99,6 +99,7 @@ uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
 {
   int sd;
   char hostname[HOSTNAME_LEN];
+  uint32_t hostname_len;
   int port;
   int status;
   struct hostent *hostPtr = NULL;
@@ -106,15 +107,15 @@ uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
 
   sd = (int) unboxUnsigned( unboxTuple(tuple, 0) );
 
-  unboxString( unboxTuple(tuple, 1), hostname, HOSTNAME_LEN );
+  unboxString( unboxTuple(tuple, 1), hostname, HOSTNAME_LEN, &hostname_len );
 
   port = (int) unboxUnsigned( unboxTuple(tuple, 2) );
 
   hostPtr = gethostbyname(hostname);
   if (NULL == hostPtr)
   {
-    hostPtr = gethostbyaddr(hostname, 
-                            strnlen(hostname, sizeof(hostname)), 
+    hostPtr = gethostbyaddr(hostname,
+                            hostname_len,
                             AF_INET);
     if (NULL == hostPtr)
     {
