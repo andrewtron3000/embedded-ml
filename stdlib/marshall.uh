@@ -19,7 +19,6 @@ fun marshall-readnextstring s =
 	val cs = #readbuffer/marshall_type s
 	val writebuffer = #writebuffer/marshall_type s
 	val scanner = array-findfrom byte_offset (fn x => (ord x) = 0)  
-	val () = print [finding from [int-tostring byte_offset]\n]
     in
 	case (scanner cs) of SOME i => ( substring (cs, byte_offset, (i - byte_offset + 1)),
 					 { readbuffer = cs,
@@ -35,6 +34,25 @@ fun marshall-readnextinteger (s, bytes, bits) =
 	val bit_offset = #bit_offset/marshall_type s
 	val cs = #readbuffer/marshall_type s
 	val writebuffer = #writebuffer/marshall_type s
+
+        fun readbits (s, bits) = 
+            let
+                val emb = 8 - bits
+                val () = if bit_offset > emb then raise Marshall else ()
+                                                                      
+                val p2m1 = 0xff shr emb 
+                           
+                val mask = (p2m1 shl emb) shr bit_offset
+	        val x = ord (sub (cs, byte_offset)) andb mask
+	        val a = x shr (emb - bit_offset)
+	        val bito = (bit_offset + bits) mod 8
+	        val byteo = if bito = 0
+		            then byte_offset + 1
+		            else byte_offset
+            in
+	        ( a, 
+                  {readbuffer = cs, writebuffer = writebuffer, byte_offset = byteo, bit_offset = bito} )
+            end
     in
 	case bytes of 4 =>  
 		      ( four-chars-to-int ( sub (cs, byte_offset),
@@ -62,50 +80,7 @@ fun marshall-readnextinteger (s, bytes, bits) =
 			{ readbuffer = cs, writebuffer = writebuffer,
 			  byte_offset = byte_offset + 1,
 			  bit_offset = bit_offset } )
-		    | 0 =>
-		      ( case bits of 4 =>
-				     let
-					 val mask = 0xf0 shr bit_offset
-					 val x = ord (sub (cs, byte_offset)) andb mask
-					 val a = if bit_offset > 4 
-						 then raise Marshall
-						 else x shr (4 - bit_offset)
-					 val bito = (bit_offset + 4) mod 8
-					 val byteo = if bito = 0
-						     then byte_offset + 1
-						     else byte_offset
-				     in
-					 ( a, {readbuffer = cs, writebuffer = writebuffer, byte_offset = byteo, bit_offset = bito} )
-				     end
-				   | 2 => 
-				     let
-					 val mask = 0xc0 shr bit_offset
-					 val x = ord (sub (cs, byte_offset)) andb mask
-					 val a = if bit_offset > 6 
-						 then raise Marshall
-						 else x shr (6 - bit_offset)
-					 val bito = (bit_offset + 2) mod 8
-					 val byteo = if bito = 0
-						     then byte_offset + 1
-						     else byte_offset
-				     in
-					 ( a, {readbuffer = cs, writebuffer = writebuffer, byte_offset = byteo, bit_offset = bito} )
-				     end
-				   | 1 =>
-				     let
-					 val mask = 0x80 shr bit_offset
-					 val x = ord (sub (cs, byte_offset)) andb mask
-					 val a = if bit_offset > 7
-						 then raise Marshall
-						 else x shr (7 - bit_offset)
-					 val bito = (bit_offset + 1) mod 8
-					 val byteo = if bito = 0
-						     then byte_offset + 1
-						     else byte_offset
-				     in
-					 ( a, {readbuffer = cs, writebuffer = writebuffer, byte_offset = byteo, bit_offset = bito} )
-				     end
-				   | _ => raise Marshall )
+		    | 0 => readbits (s, bits)
 		    | _ => raise Marshall
     end
 
@@ -134,6 +109,24 @@ fun marshall-writenextinteger (s, bytes, bits, i) =
 	val bit_offset = #bit_offset/marshall_type s
 	val cs = #writebuffer/marshall_type s
 	val readbuffer = #readbuffer/marshall_type s
+
+        fun writebits (s, bits, i) =
+            let
+                val emb = 8 - bits
+                val p2m1 = 0xff shr emb 
+                           
+                val mask = (p2m1 shl emb) shr bit_offset
+	        val z = (notb mask) andb (ord (growarray-sub (cs, byte_offset)))
+	        val y = (i andb p2m1) shl (emb - bit_offset)
+	        val a = (z orb y) andb 0xff
+	        val bito = (bit_offset + bits) mod 8
+	        val byteo = if bito = 0
+		            then byte_offset + 1
+		            else byte_offset
+            in
+	        ( growarray-update (cs, byte_offset, chr a) ;
+	          { readbuffer = readbuffer, writebuffer = cs, byte_offset = byteo, bit_offset = bito } )
+            end
     in
 	( case bytes of 4 =>
 			let
@@ -169,23 +162,7 @@ fun marshall-writenextinteger (s, bytes, bits, i) =
 			    ( growarray-push (cs, c1) ;
 			      { readbuffer = readbuffer, writebuffer = cs, byte_offset = byte_offset + 1, bit_offset = bit_offset } )
 			end  
-		      | 0 =>
-			( case bits of 4 =>
-				       if bit_offset > 4 then raise Marshall
-				       else
-					   ( let
-						val z = (0xf0 shr (4 - bit_offset)) andb (ord (growarray-sub (cs, byte_offset)))
-						val y = (i andb 0xf) shl (4 - bit_offset)
-						val a = (z orb y) andb 0xff
-						val bito = (bit_offset + 4) mod 8
-						val byteo = if bito = 0
-							    then byte_offset + 1
-							    else byte_offset
-					    in
-						( growarray-update (cs, byte_offset, chr a) ;
-						  { readbuffer = readbuffer, writebuffer = cs, byte_offset = byteo, bit_offset = bito } )
-					    end ) 
-				     | _ => raise Marshall ) 
+		      | 0 => writebits (s, bits, i)
 		      | _ => raise Marshall )
 
     end

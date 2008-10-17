@@ -14,13 +14,30 @@ let
     val k = socket-open-udp ()
     val () = socket-connect (k, "192.168.1.5", 51423)
 
-(*    val r = { subject=1, continuum=2, unit=3, role=4, delivery_vector_num=5, priority=6, flow=7 }
-    val s = subscription_assert_tostring r *)
+    val r = { subject=1, continuum=2, unit=3, role=4, delivery_vector_num=5, priority=6, flow=7 }
+    val s = subscription_assert_tostring r
 
     val r2 = { unit=1, mams_endpoint_name = "goodie tooshoes" }
     val s2 = cell_descriptor_tostring r2
 
+(* node sends a node registration MPDU to the registrar *)
+(* node could receive back a rejection MPDU *)
+(* or, node the registrar will assign a node number to the node and return it in a you_are_in MPDU *)
+(* when node gets the you_are_in MPDU, *)
+(* node and registrar will commence an n4-second heartbeat cycle *)
+
+(* node should be prepared to receive an I_am_starting or node_has_started MDPU for other nodes that have started *)
+(* node receives an I_am_starting should note info and send an I_am_here message back *)
+(* node receives a node_has_started, should note info *)
+
+(* node receives an I_am_here *)
+(* delivery vectors should be noted *)
+(* for each subscription and invitation, these should be noted *)
+(* node should respond to source of I_am_here with a declaration MDPU containing all subs and invs *)
+
+(* node receives a declaration MPDU *)
+(* subscriptions and invitations are noted *)
 in
-    ( descriptor-write (k, s2) ;
+    ( descriptor-write (k, s) ;
       socket-close k )
 end
