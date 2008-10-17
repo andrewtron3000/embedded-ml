@@ -13,16 +13,16 @@ let
 	       byte_offset = 0,
 	       bit_offset = 0 }
 
-    val ws = writeNextInteger(ws, 4, 0, 0xdeadbeef)
-    val ws = writeNextInteger(ws, 1, 0, 0x69)
-    val ws = writeNextInteger(ws, 2, 0, 0x102)
-    val ws = writeNextInteger(ws, 2, 0, 0xffaa)
-    val ws = writeNextInteger(ws, 0, 4, 0xa)
-    val ws = writeNextInteger(ws, 0, 4, 0x5)
-    val ws = writeNextInteger(ws, 0, 4, 0xc)
-    val ws = writeNextInteger(ws, 0, 4, 0xd)
-    val ws = writeNextInteger(ws, 2, 0, 0xbbcc)
-    val ws = writeNextString(ws, {| chr 0x10, chr 0x11, chr 0x12, chr 0x13, chr 0x14, chr 0x15, chr 0x16|})
+    val ws = marshall-writenextinteger(ws, 4, 0, 0xdeadbeef)
+    val ws = marshall-writenextinteger(ws, 1, 0, 0x69)
+    val ws = marshall-writenextinteger(ws, 2, 0, 0x102)
+    val ws = marshall-writenextinteger(ws, 2, 0, 0xffaa)
+    val ws = marshall-writenextinteger(ws, 0, 4, 0xa)
+    val ws = marshall-writenextinteger(ws, 0, 4, 0x5)
+    val ws = marshall-writenextinteger(ws, 0, 4, 0xc)
+    val ws = marshall-writenextinteger(ws, 0, 4, 0xd)
+    val ws = marshall-writenextinteger(ws, 2, 0, 0xbbcc)
+    val ws = marshall-writenextstring(ws, {| chr 0x10, chr 0x11, chr 0x12, chr 0x13, chr 0x14, chr 0x15, chr 0x16|})
 
     val () = print [result = [chars-tohexstring (growarray-array (#writebuffer/marshall_type ws))]\n] 
 
@@ -31,12 +31,12 @@ let
     	      byte_offset = 0,
 	      bit_offset = 0 }
 
-    val (i1, s) = readNextInteger(s, 1, 0)
-    val (i2, s) = readNextInteger(s, 2, 0)
-    val (i3, s) = readNextInteger(s, 0, 4)
-    val (i4, s) = readNextInteger(s, 0, 4)
-    val (st, s) = readNextString s
-    val (i5, s) = readNextInteger(s, 1, 0)
+    val (i1, s) = marshall-readnextinteger(s, 1, 0)
+    val (i2, s) = marshall-readnextinteger(s, 2, 0)
+    val (i3, s) = marshall-readnextinteger(s, 0, 4)
+    val (i4, s) = marshall-readnextinteger(s, 0, 4)
+    val (st, s) = marshall-readnextstring s
+    val (i5, s) = marshall-readnextinteger(s, 1, 0)
 
 in
     print [[st] [int-tostring i1], [int-tostring i2], [int-tostring i3], [int-tostring i4], [int-tostring i5]\n]
