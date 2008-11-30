@@ -2,25 +2,27 @@ let
   import "std.uh"
   import "list.uh"
   import "string.uh"
-  import "threads.uh"
   import "queues.uh"
-  import "tasks.uh"
+  
+  fun pr m = case m of SOME s => print [message is: [s]\n]
+                     | NONE => print [no message: <no more messages>\n]
 
-  exception Raw of string
-
-  val a-queue = queue-create ()
-
-  fun task-a-hook v = case v of Raw s => print [message is: [s]\n]
-                              | _ => print "unknown message" 
-
-  fun pr s () = 
-      (queue-send a-queue (Raw "greetings");
-       queue-send a-queue (Raw "my name is andrew");
-       queue-send a-queue (Raw "what is yours?");
-       queue-send a-queue (Raw "how are you");
-       pr s ())
-
+  fun t () =
+      let
+          val q' = queue-create ()
+          val q' = queue-send q' "greetings" 
+          val q' = queue-send q' "my name is andrew" 
+          val q' = queue-send q' "what is yours" 
+          val q' = queue-send q' "how are you" 
+          val (x1, q') = queue-receive q'
+          val (x2, q') = queue-receive q'
+          val (x3, q') = queue-receive q'
+          val (x4, q') = queue-receive q'
+          val (x5, q') = queue-receive q'
+          val () = (pr x1; pr x2; pr x3; pr x4; pr x5)
+      in
+          ()
+      end
 in
-    task-create a-queue task-a-hook ; 
-    pr "A" ()
+    t ()
 end
