@@ -2,12 +2,19 @@ val provide-tasks = ()
 val require-threads = provide-threads
 val require-queues = provide-queues
 
-fun task-create q f = 
+(* arguments: message queue, function to call, initial state *)
+(* function fu should return just the next state *)
+fun task-create q fu st = 
     let
-        fun looper () = 
-            ( f (queue-receive q) ;
-              yield () ;
-              looper () )
+        fun looper q s () =
+            let 
+                val (x, q') = queue-receive q
+                val s' = case x of NONE => s
+                                 | SOME m => fu s m
+            in
+                ( yield () ;
+                  looper q' s' () )
+            end
     in
-        fork looper
+        fork (looper q st)
     end
