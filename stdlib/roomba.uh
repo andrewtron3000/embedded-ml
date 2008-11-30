@@ -172,16 +172,6 @@ fun roomba-drivedirect (left, right) =
       s0-output {| chr 145, righthigh, rightlow, lefthigh, leftlow |}
     end
 
-fun roomba-beep note =
-    let val note = if note < 31 then 31
-                   else if note chk 127 then 127
-                   else note
-    in
-        s0-output {| chr 140, chr 0, chr 1, chr note, chr 8, chr 141, chr 0 |}
-    end
-
-fun wall-signal-to-beep v = (v + 31) divs 2 (* hacky *)
-
 (* Some simple but useful projections... *)
 fun roomba-wheeldrop_caster sens = #wheeldrop_caster/sensors sens
 fun roomba-wheeldrop_left sens = #wheeldrop_left/sensors sens
@@ -189,64 +179,4 @@ fun roomba-wheeldrop_right sens = #wheeldrop_right/sensors sens
 fun roomba-bumper_left sens = #bumper_left/sensors sens
 fun roomba-bumper_right sens = #bumper_right/sensors sens
 fun roomba-wall sens = #wall/sensors sens
-
-(*
-other data to consider...
-
-\ packet id 14 group
-cell: .overcurrents
-cell: .left_wheel_overcurrent \ 1A limit
-cell: .right_wheel_overcurrent \ 1A limit
-cell: .lowside_driver2_overcurrent \ 1.5A limit
-cell: .lowside_driver0_overcurrent \ 0.5A limit
-cell: .lowside_driver1_overcurrent \ 0.5A limit
-
-cell: .unused_bytes
-cell: .ir_byte
-
-\ packet id 18 group
-cell: .buttons
-cell: .advance_pressed
-cell: .play_pressed
-
-cell: .distance
-cell: .angle
-cell: .charging_state
-cell: .voltage
-cell: .current
-cell: .batt_temp
-cell: .batt_charge
-cell: .batt_capacity
-cell: .wall_signal
-cell: .left_cliff_signal
-cell: .front_left_cliff_signal
-cell: .front_right_cliff_signal
-cell: .right_cliff_signal
-
-\ packet id 32 group
-cell: .user_digital_inputs
-cell: .baud_rate_change
-cell: .digital_input_3
-cell: .digital_input_2
-cell: .digital_input_1
-cell: .digital_input_0
-
-cell: .user_analog_input
-
-\ packet id 34 group
-cell: .available_charging_sources
-cell: .home_base_powered_and_charging
-cell: .internal_charger_powered_and_charging
-
-cell: .OI_mode
-cell: .song_number
-cell: .song_playing
-cell: .num_stream_packets
-cell: .requested_velocity
-cell: .requested_radius
-cell: .requested_right_wheel_velocity
-cell: .requested_left_wheel_velocity
-endstructure
-*)
-
 
