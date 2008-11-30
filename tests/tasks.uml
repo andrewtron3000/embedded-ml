@@ -7,26 +7,34 @@ let
   import "queues.uh"
   import "tasks.uh"
 
-  exception Raw of string
-
   val a-queue = queue-create ()
   val b-queue = queue-create ()
   val c-queue = queue-create ()
 
-  fun task-hook name nq v = case v of Raw s => ( print [[name]: message is: [s]\n] ;
-                                                 queue-send nq (Raw s) ) 
-                                    | _ => print "unknown message" 
+(*  fun task-hook name nq s = 
+      let
+          val () =  print [[name]: message is: [s]\n]
+          val nq' = queue-send nq s
+      in
+          task-hook name nq'
+      end *)
 
-  fun terminal-hook name v = case v of Raw s => print [[name](terminal): message is [s]\n]
-                                     | _ => print "unknown message"
+  fun terminal-hook name s = ( print [[name](terminal): message is [s]\n] ;
+                               terminal-hook name )
 
-  fun main i () = ( ( if (i mod 1000000) = 0 
-                      then queue-send a-queue (Raw (int-tostring (queue-length a-queue)))
-                      else yield () ) ; 
-                    main (i+1) () )
+  fun main (i, q) () =
+      let
+          val q' = if (i mod 1000000) = 0 
+                   then queue-send q (int-tostring (queue-length q))
+                   else q 
+      in
+          ( yield () ;
+            main (i+1, q') () )
+      end
 in
-    task-create c-queue (terminal-hook "taskC") ;
-    task-create b-queue (task-hook "taskB" c-queue) ;
+    ( task-create c-queue (terminal-hook "taskC") ;
+      main (0, c-queue) () )
+(*    task-create b-queue (task-hook "taskB" c-queue) ;
     task-create a-queue (task-hook "taskA" b-queue) ;
-    main 0 ()
+    main (0, a-queue) () *)
 end
