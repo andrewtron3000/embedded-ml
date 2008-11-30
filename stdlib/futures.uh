@@ -1,6 +1,5 @@
 val require-list = provide-list
 val require-threads = provide-threads
-
 val provide-futures = ()
 
 (* ( result option reference, waiter list ) *)
