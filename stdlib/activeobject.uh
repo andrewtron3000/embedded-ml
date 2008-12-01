@@ -1,0 +1,30 @@
+val require-queues = provide-queues
+val require-futures = provide-futures
+val require-threads = provide-threads
+
+(* pf : (state, msg) -> (state, result) *)
+fun activeobject-create pf initialstate =
+    let
+        val q = queue-create ()
+
+        fun looper st () =
+            let
+                val (fu, a) = queue-receive q
+                val (st', result) = pf (st, a)
+            in
+                ( future-complete fu result ;
+                  looper st' () )
+            end
+
+        fun dispatch a =
+            let
+                val fu = future-create ()
+                val msg = (fu, a)
+            in
+                ( queue-send q msg ;
+                  fu )
+            end
+    in
+        ( fork (looper initialstate) ;
+          dispatch )
+    end

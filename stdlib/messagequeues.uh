@@ -1,0 +1,22 @@
+val provide-messagequeues = ()
+val require-queues = provide-queues
+
+(* message queues are useful for intertask communication *)
+
+fun mq-create () = ref (queue-create ())
+
+fun mq-send mq m = mq := queue-send (!mq) m
+
+fun mq-receive mq = 
+    let
+        val (v, q') = queue-receive (!mq)
+    in
+        ( mq := q' ;
+          v )
+    end
+
+fun mq-length mq = queue-length (!mq)
+
+fun mq-empty mq = queue-empty (!mq)
+
+fun mq-purge mq = mq := queue-purge (!mq)
