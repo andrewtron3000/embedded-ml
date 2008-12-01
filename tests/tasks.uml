@@ -5,19 +5,37 @@ let
   import "int.uh"
   import "threads.uh"
   import "queues.uh"
+  import "messagequeues.uh"
   import "tasks.uh"
 
-  val q = queue-create ()
-          
-  val a-queue = queue-send q "hihi"
+  val a-queue = mq-create ()
+  val b-queue = mq-create ()
+  val c-queue = mq-create ()
+
+  fun task-hook (name, mq) m = 
+      let
+          val () = print [[name]: message is: [m]\n]
+          val () = mq-send mq m
+      in
+          (name, mq)
+      end
 
   fun terminal-hook name m = ( print [[name](terminal): message is [m]\n] ;
                                name )
-                             
-  val () = task-create a-queue terminal-hook "taskA"
-           
-  fun idle () = ( yield () ; 
-                  idle () )
+
+  fun main (i, mq) () =
+      let
+          fun f () = mq-send mq (int-tostring (mq-length mq))
+          val () = if (i mod 1000000) = 0 
+                   then (f (); f (); f ())
+                   else () 
+      in
+          ( yield () ;
+            main (i+1, mq) () )
+      end
 in
-    idle ()
+    ( task-create c-queue terminal-hook "taskC" ;
+      task-create b-queue task-hook ("taskB", c-queue) ;
+      task-create a-queue task-hook ("taskA", b-queue) ;
+      main (0, a-queue) () )
 end
