@@ -1,0 +1,29 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "array.uh"
+    import "char.uh"
+    import "threads.uh"
+    import "queues.uh"
+    import "messagequeues.uh"
+    import "futures.uh"
+    import "activeobject.uh"
+
+    fun task-a-hook (st, m) = 
+        ( print [message is: [m] and state is [int-tostring st]\n] ; 
+          (st+1, true) )
+
+    val ao = activeobject-create task-a-hook 1
+
+    fun idle () = ( yield (); idle () )
+
+    fun task1 () = ( ao ("greetings") ;
+                     ao ("goodbye!") ;
+                     ao ("hihihi") )
+
+    val () = fork task1
+in
+    idle ()
+end
