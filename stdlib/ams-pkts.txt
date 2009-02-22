@@ -29,3 +29,14 @@ node_status_list, array, num_node_statuses, node_status
 subscription_cancellation, composite, subject, continuum, unit, role
 invitation_cancellation, composite, subscription_cancellation
 reconnect_struct, composite, node_number, contact_summary, node_list
+mams_version, int, 0, 2
+mams_checksum, int, 0, 1
+mams_mpdu_type, int, 0, 5
+mams_sender_venture, int, 1, 0
+mams_sender_unit, int, 2, 0
+mams_role, int, 1, 0
+mams_signature_length, int, 1, 0
+mams_supp_data_length, int, 2, 0
+mams_reference, int, 4, 0
+mams_time_tag, int, 4, 0
+mams_pdu_header, composite, mams_version, mams_checksum, mams_mpdu_type, mams_sender_venture, mams_sender_unit, mams_role, mams_signature_length, mams_supp_data_length, mams_reference, mams_time_tag
