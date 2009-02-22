@@ -1,17 +1,27 @@
 val require-ams-pkts = provide-ams-pkts
 val require-marshall = provide-marshall
 
-datatype ams-primitive = 
-         Register
-       | Unregister
-       | Subscription
-       | Unsubscription
-       | Publish of (int, int, string) (* subjectID, application data length, data *)
+datatype ams-primitive =
+         AMSRegister
+       | AMSUnregister
+       | AMSSubscription
+       | AMSUnsubscription
+       | AMSPublish of int * int * string (* subjectID, application data length, data *)
 
+(* ams-process-function : (st, msg) -> (st, result) *)
 fun ams-process-function (st, msg) =
     let
     in
-        case msg of Register => ( print "got a registration")
-                  | Unregister => (print "got an unregistration request")
-                  | Publish (s, l, xs) => ( print "" )
+        case msg of AMSRegister =>
+                    ( print "got a registration" ;
+                      (st, true) )
+                  | AMSUnregister =>
+                    ( print "got an unregistration request" ;
+                      (st, true) )
+                  | AMSPublish (s, l, xs) =>
+                    ( print "got a publish request" ;
+                      (st, true) )
+                  | _ => 
+                    ( print "some other crap" ;
+                      (st, true) )
     end
