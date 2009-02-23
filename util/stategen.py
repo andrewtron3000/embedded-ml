@@ -1,3 +1,4 @@
+import sys
 # this function generates a record that represents state, along with state accessor functions.
 
 # ams
@@ -52,6 +53,9 @@ class outputEngine:
         self.s = ''
         return r
 
+def getType(d, x):
+    return d[x][0]
+
 def importRecords(ls):
     ''' ls specifies the packet structures '''
     d = {}
@@ -65,25 +69,50 @@ def importRecords(ls):
         keys.append(name)
     return (d, keys)
 
-def createRecordDefinition(d, name):
+def createDatatypeDefinition(d, prefix):
     oe = outputEngine()
-    oe.add("datatype %s =\n" % recordName(name))
+    oe.add("datatype %s-statetype =\n" % prefix)
     oe.increaseIndent()
     zs = []
-    for x in compositeGetElements(d, name):
+    for x in d.keys():
         t = getType(d, x)
-        if t == 'composite':
-            zs.append('%s : %s' % (x, recordName(x)))
-        elif t == 'array':
-            e = arrayGetComposite(d, x)
-            zs.append('%s : %s array' % (x, recordName(e))) 
-        elif t == 'int':
-            zs.append('%s : int' % x)
+        if t == 'int':
+            zs.append('%s of int' % x)
         elif t == 'string':
-            zs.append('%s : string' % x)
+            zs.append('%s of string' % x)
         else:
             sys.exit('invalid type in a record: %s' % t)
-    oe.interleave(zs, ',\n')
+    oe.interleave(zs, ' |\n')
+    oe.add('\n')
+    oe.decreaseIndent()
+    return oe.dump()
+
+def recordPicker(d, prefix, y):
+    oe = outputEngine()
+    oe.increaseIndent()
+    es = []
+    for x in d.keys():
+        if x == y:
+            es.append('%s = v' % x.lower())
+        else:
+            es.append('%s = #%s/%s-statetype st' % (x.lower(), x.lower(), prefix))
+    oe.interleave(es, ',\n')
+    oe.decreaseIndent()
+    return oe.dump()
+
+def createUpdateDefinition(d, prefix):
+    oe = outputEngine()
+    oe.add("fun %s-update-state tv st =\n" % prefix)
+    oe.increaseIndent()
+    oe.add("case tv of ")
+    oe.increaseIndent()
+    zs = []
+    for x in d.keys():
+        s = '%s v => {\n' % x
+        s += recordPicker(d, prefix, x)
+        s += ' }'
+        zs.append(s)
+    oe.interleave(zs, '\n| ')
     oe.add('\n')
     oe.decreaseIndent()
     return oe.dump()
@@ -96,5 +125,7 @@ if __name__ == '__main__':
     ls = f.readlines()
     f.close()
 
+    prefix = ls[0].strip()
     d, ks = importRecords(ls[1:]) 
-
+    print createDatatypeDefinition(d, prefix)
+    print createUpdateDefinition(d, prefix)
