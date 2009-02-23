@@ -7,6 +7,7 @@ import sys
 
 # the program is called as such:  python marshallgen.py inputfile > auto-code.uml
 
+# when using an int, the two subsequent integers are number of bytes and number of bits.
 # subject, int, 2, 0
 # continuum, int, 3, 0
 # unit, int, 2, 0
