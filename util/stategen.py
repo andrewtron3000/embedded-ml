@@ -8,20 +8,36 @@ import sys
 
 # results in
 #
+# type ams-recordtype =
+#     {
+#         continuumid : int,
+#         roleid : int,
+#         unitid : int
+#     }
+#
 # datatype ams-statetype =
-#    roleID of int
-#  | unitID of int
-#  | continuumID of int
+#     continuumID of int |
+#     roleID of int |
+#     unitID of int
 #
 # fun ams-update-state tv st =
-#    case tv of roleID v => { roleid = v, unitid = #unitid/ams-statetype st, continuumid = #continuumID/ams-statetype st }
-#             | unitID v => { roleid = #roleID/ams-statetype st, unitid = v, continuumid = #continuumID/ams-statetype st }
-#             | continuumID v => { roleid = #roleID/ams-statetype st, unitid = #unitid/ams-statetype st, continuumid = v }
-#
-# fun ams-query-state t st =
-#    case t of roleID => roleID (#roleid/ams-statetype st)
-#            | unitID => unitID (#unitid/ams-statetype st)
-#            | continuumID => continuumID (#continuumID/ams-statetype st)
+#     case tv of 
+#         continuumID v => {
+#             continuumid = v,
+#             roleid = #roleid/ams-recordtype st,
+#             unitid = #unitid/ams-recordtype st
+#          }
+#         | roleID v => {
+#             continuumid = #continuumid/ams-recordtype st,
+#             roleid = v,
+#             unitid = #unitid/ams-recordtype st
+#          }
+#         | unitID v => {
+#             continuumid = #continuumid/ams-recordtype st,
+#             roleid = #roleid/ams-recordtype st,
+#             unitid = v
+#          }
+# queries can be performed by using the record selectors
 
 
 class outputEngine:
