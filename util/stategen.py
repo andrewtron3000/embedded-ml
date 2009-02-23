@@ -87,6 +87,28 @@ def createDatatypeDefinition(d, prefix):
     oe.decreaseIndent()
     return oe.dump()
 
+def createRecordDefinition(d, prefix):
+    oe = outputEngine()
+    oe.add("type %s-recordtype =\n" % prefix)
+    oe.increaseIndent()
+    oe.add("{\n")
+    oe.increaseIndent()
+    zs = []
+    for x in d.keys():
+        t = getType(d, x)
+        if t == 'int':
+            zs.append('%s : int' % x.lower())
+        elif t == 'string':
+            zs.append('%s : string' % x.lower())
+        else:
+            sys.exit('invalid type in a record: %s' % t)
+    oe.interleave(zs, ',\n')
+    oe.add('\n')
+    oe.decreaseIndent()
+    oe.add("}\n")
+    oe.decreaseIndent()
+    return oe.dump()
+
 def recordPicker(d, prefix, y):
     oe = outputEngine()
     oe.increaseIndent()
@@ -95,7 +117,7 @@ def recordPicker(d, prefix, y):
         if x == y:
             es.append('%s = v' % x.lower())
         else:
-            es.append('%s = #%s/%s-statetype st' % (x.lower(), x.lower(), prefix))
+            es.append('%s = #%s/%s-recordtype st' % (x.lower(), x.lower(), prefix))
     oe.interleave(es, ',\n')
     oe.decreaseIndent()
     return oe.dump()
@@ -117,21 +139,6 @@ def createUpdateDefinition(d, prefix):
     oe.decreaseIndent()
     return oe.dump()
 
-def createQueryDefinition(d, prefix):
-    oe = outputEngine()
-    oe.add("fun %s-query-state t st =\n" % prefix)
-    oe.increaseIndent()
-    oe.add("case t of ")
-    oe.increaseIndent()
-    zs = []
-    for x in d.keys():
-        s = '%s => %s (#%s/%s-statetype st)\n' % (x, x, x.lower(), prefix)
-        zs.append(s)
-    oe.interleave(zs, '\n| ')
-    oe.add('\n')
-    oe.decreaseIndent()
-    return oe.dump()
-
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit('usage: %s inputfile\n' % sys.argv[0])
@@ -142,6 +149,6 @@ if __name__ == '__main__':
 
     prefix = ls[0].strip()
     d, ks = importRecords(ls[1:]) 
+    print createRecordDefinition(d, prefix)
     print createDatatypeDefinition(d, prefix)
     print createUpdateDefinition(d, prefix)
-    print createQueryDefinition(d, prefix)
