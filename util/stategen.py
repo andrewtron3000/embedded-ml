@@ -117,6 +117,21 @@ def createUpdateDefinition(d, prefix):
     oe.decreaseIndent()
     return oe.dump()
 
+def createQueryDefinition(d, prefix):
+    oe = outputEngine()
+    oe.add("fun %s-query-state t st =\n" % prefix)
+    oe.increaseIndent()
+    oe.add("case t of ")
+    oe.increaseIndent()
+    zs = []
+    for x in d.keys():
+        s = '%s => %s (#%s/%s-statetype st)\n' % (x, x, x.lower(), prefix)
+        zs.append(s)
+    oe.interleave(zs, '\n| ')
+    oe.add('\n')
+    oe.decreaseIndent()
+    return oe.dump()
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit('usage: %s inputfile\n' % sys.argv[0])
@@ -129,3 +144,4 @@ if __name__ == '__main__':
     d, ks = importRecords(ls[1:]) 
     print createDatatypeDefinition(d, prefix)
     print createUpdateDefinition(d, prefix)
+    print createQueryDefinition(d, prefix)
