@@ -1,0 +1,18 @@
+val provide-map = ()
+val require-list = provide-list
+
+exception Map
+
+fun map-new () = nil
+
+fun map-manage keymatchf notfoundf foundf m (k, d) =
+    let
+        val (ts, fs) = list-partition keymatchf m
+        val new = case ts of 
+                      nil => notfoundf ()
+                    | x :: nil => foundf x
+                    | _ => raise Map (* should be impossible *)
+    in
+        new :: fs
+    end
+
