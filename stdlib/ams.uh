@@ -1,20 +1,47 @@
-val require-ams-pkts = provide-ams-pkts
 val require-marshall = provide-marshall
+val require-ams-pkts = provide-ams-pkts
+val require-ams-state = provide-ams-states
 
 datatype ams-primitive =
-         AMSRegister
-       | AMSUnregister
-       | AMSSubscription
-       | AMSUnsubscription
+         AMSRegister of string * string * int * int (* app name, auth name, unitID, roleID *)
+       | AMSUnregister of int (* node number *)
+       | AMSSubscribe of int * int * int * int * int (* subjectID, servicemode, continuumID, unitID, roleID *)
+       | AMSUnsubscribe of int * int * int * int (* subjectID, continuumID, unitID, roleID *)
        | AMSPublish of int * int * string (* subjectID, application data length, data *)
+       | AMSInboundAAMS of string
+       | AMSInboundMAMS of string
+
+val AMS_REGISTRATION_PDU = 19
 
 (* ams-process-function : (st, msg) -> (st, result) *)
 fun ams-process-function (st, msg) =
     let
+        fun process-registration (app, auth, unit, role) =
+            let
+                val h = { mams_version = 0,
+                          mams_checksum = 0, (* this will be updated *)
+                          mams_mpdu_type = AMS_REGISTRATION_PDU,
+                          mams_sender_venture = #venture/ams-recordtype st,
+                          mams_sender_unit = #unit/ams-recordtype st,
+                          mams_role = #role/ams-recordtype st,
+                          mams_signature_length = 0,
+                          mams_supp_data_length = 0, (* this will be updated *)
+                          mams_reference = #query_number/ams-recordtype st,
+                          mams_time_tag = 0 }
+                val cs = { mams_endpoint_name = "127.0.0.1:6969",
+                           delivery_vector_list = nil }
+                val p = { mams_pdu_header = h,
+                          contact_summary = cs }
+            in
+                (* this is where we'd update the state *)
+                ( print [[app],[auth]\n] ;
+                  (st, true) )
+            end
+
     in
-        case msg of AMSRegister =>
+        case msg of AMSRegister d =>
                     ( print "got a registration" ;
-                      (st, true) )
+                      process-registration d )
                   | AMSUnregister =>
                     ( print "got an unregistration request" ;
                       (st, true) )

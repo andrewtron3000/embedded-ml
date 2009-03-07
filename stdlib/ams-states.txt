@@ -1,0 +1,17 @@
+>val provide-ams-states = ()
+> 
+>datatype MAMS_state_type =
+>     MAMS_WAITING_FOR_YOU_ARE_IN
+>   | MAMS_YOU_ARE_IN
+> 
+ams
+node_id, int
+query_number, int
+mams_host, string
+mams_port, int
+venture, int
+role, int
+unit, int
+app_name, string
+auth_name, string
+state,  MAMS_state_type

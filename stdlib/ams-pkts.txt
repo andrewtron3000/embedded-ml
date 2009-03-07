@@ -1,3 +1,5 @@
+>val provide-ams-pkts = ()
+> 
 subject, int, 2, 0
 continuum, int, 3, 0
 unit, int, 2, 0
@@ -40,3 +42,4 @@ mams_supp_data_length, int, 2, 0
 mams_reference, int, 4, 0
 mams_time_tag, int, 4, 0
 mams_pdu_header, composite, mams_version, mams_checksum, mams_mpdu_type, mams_sender_venture, mams_sender_unit, mams_role, mams_signature_length, mams_supp_data_length, mams_reference, mams_time_tag
+ams_registration, composite, mams_pdu_header, contact_summary

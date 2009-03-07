@@ -1,6 +1,6 @@
 val provide-ams-pkts = ()
+ 
 val require-marshall = provide-marshall
-
 type subscription_assert_type =
     {
         subject : int,
@@ -83,6 +83,11 @@ type mams_pdu_header_type =
         mams_supp_data_length : int,
         mams_reference : int,
         mams_time_tag : int
+    }
+type ams_registration_type =
+    {
+        mams_pdu_header : mams_pdu_header_type,
+        contact_summary : contact_summary_type
     }
 fun subscription_assert_fromstring_cont a s = 
     let 
@@ -965,4 +970,134 @@ fun mams_pdu_header_tostring_cont a r =
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
 val mams_pdu_header_tostring = mams_pdu_header_tostring_cont NONE 
+fun ams_registration_fromstring_cont a s = 
+    let 
+        val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val (r, s) =
+        let
+            val (mams_pdu_header, s) =
+                let
+                    val (mams_version, s) = marshall-readnextinteger (s, 0, 2)
+                    val (mams_checksum, s) = marshall-readnextinteger (s, 0, 1)
+                    val (mams_mpdu_type, s) = marshall-readnextinteger (s, 0, 5)
+                    val (mams_sender_venture, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_sender_unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_role, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
+                in
+                    (
+                        {
+                            mams_version = mams_version,
+                            mams_checksum = mams_checksum,
+                            mams_mpdu_type = mams_mpdu_type,
+                            mams_sender_venture = mams_sender_venture,
+                            mams_sender_unit = mams_sender_unit,
+                            mams_role = mams_role,
+                            mams_signature_length = mams_signature_length,
+                            mams_supp_data_length = mams_supp_data_length,
+                            mams_reference = mams_reference,
+                            mams_time_tag = mams_time_tag
+                        },
+                        s
+                    )
+                end
+            val (contact_summary, s) =
+                let
+                    val (mams_endpoint_name, s) = marshall-readnextstring s
+                    val (delivery_vector_list, s) =
+                        let 
+                            val (n, s) = marshall-readnextinteger (s, 1, 0) 
+                            fun f (i, s) = 
+                                let
+                                    val (delivery_vector_num, s) = marshall-readnextinteger (s, 0, 4)
+                                    val (number_delivery_vectors, s) = marshall-readnextinteger (s, 0, 4)
+                                    val (delivery_point_names, s) = marshall-readnextstring s
+                                in
+                                    (
+                                        {
+                                            delivery_vector_num = delivery_vector_num,
+                                            number_delivery_vectors = number_delivery_vectors,
+                                            delivery_point_names = delivery_point_names
+                                        },
+                                        s
+                                    )
+                                end
+                        in
+                            array-tabulate-st n f s 
+                        end 
+                in
+                    (
+                        {
+                            mams_endpoint_name = mams_endpoint_name,
+                            delivery_vector_list = delivery_vector_list
+                        },
+                        s
+                    )
+                end
+        in
+            (
+                {
+                    mams_pdu_header = mams_pdu_header,
+                    contact_summary = contact_summary
+                },
+                s
+            )
+        end
+    in
+        (s, r)
+    end
+val ams_registration_fromstring = ams_registration_fromstring_cont NONE 
+fun ams_registration_tostring_cont a r = 
+    let 
+        val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val s =
+        let
+            val s =
+                let
+                    val r = #mams_pdu_header/ams_registration_type r
+                    val s = marshall-writenextinteger (s, 0, 2, #mams_version/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 1, #mams_checksum/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 5, #mams_mpdu_type/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_sender_venture/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_sender_unit/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_role/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
+                in
+                    s
+                end
+            val s =
+                let
+                    val r = #contact_summary/ams_registration_type r
+                    val s = marshall-writenextstring (s, #mams_endpoint_name/contact_summary_type r)
+                    val s =
+                        let 
+                            fun f (r, s) = 
+                                let
+                                    val s = marshall-writenextinteger (s, 0, 4, #delivery_vector_num/delivery_vector_type r)
+                                    val s = marshall-writenextinteger (s, 0, 4, #number_delivery_vectors/delivery_vector_type r)
+                                    val s = marshall-writenextstring (s, #delivery_point_names/delivery_vector_type r)
+                                in
+                                    s
+                                end
+                        in
+                            array-app-st f (#delivery_vector_list/contact_summary_type r) s 
+                        end 
+                in
+                    s
+                end
+        in
+            s
+        end
+    in
+        (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
+    end
+val ams_registration_tostring = ams_registration_tostring_cont NONE 
 
