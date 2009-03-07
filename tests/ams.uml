@@ -18,9 +18,18 @@ let
     import "futures.uh"
     import "activeobject.uh"
 
-    val s = "hi"
-
-    val ams = activeobject-create ams-process-function true
+    val initial_state = { app_name = "myapp",
+                          auth_name = "myauth",
+                          mams_host = "localhost",
+                          mams_port = 6969,
+                          node_id = 1001,
+                          query_number = 0,
+                          role = 1,
+                          state = MAMS_WAITING_FOR_YOU_ARE_IN,
+                          unit = 1,
+                          venture = 1 }
+ 
+    val ams = activeobject-create ams-process-function initial_state
 in
     ( future-force (ams (AMSRegister ("app", "auth", (* unit *) 1, (* role *) 100))) ;
       future-force (ams (AMSUnregister (* node id *) 9)) ;
