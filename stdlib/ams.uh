@@ -45,9 +45,11 @@ fun ams-process-function (st, msg) =
                   ds )
             end
 
+        (* *)
         fun update-seq (x :: xs) st = update-seq xs (ams-update-state x st)
           | update-seq nil st = st
 
+        (* *)
         fun process-registration (app, auth, u, r) =
             let
                 val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) ::
@@ -76,22 +78,44 @@ fun ams-process-function (st, msg) =
                   (st, true) )
             end
 
+        (* *)
         fun extract-mpdu-id ds = (ord (sub(ds, 0))) andb 0x1f
 
+        (* *)
         fun process-inbound-mams ds =
             let
                 val checksum-valid = true (* SUSP - fix this *)
+
+                fun process-youarein ds =
+                    let
+                        val (s, yai) = ams_you_are_in_fromstring ds
+                        val id = (#node_number/ams_you_are_in_type yai)
+                        val st = update-seq (state MAMS_YOU_ARE_IN ::
+                                             node_id id :: nil) st
+                    in
+                        (st, true)
+                    end
+
+                fun process-iamstarting ds =
+                    let
+                        val (s, ias) = ams_i_am_starting_fromstring ds
+                        val h = #mams_pdu_header/ams_i_am_starting_type ias
+                        val cs = #contact_summary/ams_i_am_starting_type ias
+                    in
+                        (st, true)
+                    end
+                                           
             in
                 if checksum-valid then 
-                    ( let
-                         val mpdu-id = extract-mpdu-id ds
-                     in 
-                         if mpdu-id = AMS_YOU_ARE_IN then ()
-                         else if mpdu-id = AMS_I_AM_STARTING then ()
-                         else if mpdu-id = AMS_HEARTBEAT then ()
-                         else ()
-                     end )
-                else ()
+                    let
+                        val mpdu-id = extract-mpdu-id ds
+                    in 
+                        if mpdu-id = AMS_YOU_ARE_IN then process-youarein ds
+                        else if mpdu-id = AMS_I_AM_STARTING then process-iamstarting ds
+                        else if mpdu-id = AMS_HEARTBEAT then (st, true)
+                        else (st, false)
+                    end
+                else (st, false)
             end
     in
         case msg of AMSRegister d =>
@@ -106,8 +130,7 @@ fun ams-process-function (st, msg) =
                   | AMSInboundMAMS ds =>
                     ( print "inbound mams message: " ;
                       print [[chars-tohexstring ds]\n] ;
-                      process-inbound-mams ds ;
-                      (st, true) )
+                      process-inbound-mams ds )
                   | _ => 
                     ( print "got some other crap\n" ;
                       (st, true) )
