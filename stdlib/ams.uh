@@ -16,10 +16,36 @@ val AMS_REGISTRATION_PDU = 19
 (* ams-process-function : (st, msg) -> (st, result) *)
 fun ams-process-function (st, msg) =
     let
+        (* this is broken!  needs to deal with 16 bit numbers and the
+        array needs to be padded if of an odd size, and checksum
+        should be returned or should it be inserted? *)
+        fun generate-checksum ds =
+            let
+                fun upd s idx acc =
+                    if idx <= (length s) - 2 then
+                        let
+                            val x1 = sub(s, idx)
+                            val x2 = sub(s, idx + 1)
+                        in
+                            upd s (idx + 2) acc + x1 + x2
+                        end
+                    else if idx = length(s) - 1 then
+                        let
+                            val x1 = sub(s, idx)
+                        in
+                            (acc + x1) andb 0xffff
+                        end
+                    else
+                       (acc andb 0xffff)
+            in
+                ( upd ds 0 0 ;
+                  ds )
+            end
+
         fun process-registration (app, auth, unit, role) =
             let
                 val h = { mams_version = 0,
-                          mams_checksum = 0, (* this will be updated *)
+                          mams_checksum = 1, 
                           mams_mpdu_type = AMS_REGISTRATION_PDU,
                           mams_sender_venture = #venture/ams-statetype st,
                           mams_sender_unit = #unit/ams-statetype st,
@@ -29,25 +55,26 @@ fun ams-process-function (st, msg) =
                           mams_reference = #query_number/ams-statetype st,
                           mams_time_tag = 0 }
                 val cs = { mams_endpoint_name = "127.0.0.1:6969",
-                           delivery_vector_list = nil }
+                           delivery_vector_list = {| |} }
                 val p = { mams_pdu_header = h,
                           contact_summary = cs }
+                val (s, ds) = ams_registration_tostring p
             in
                 (* this is where we'd update the state *)
-                ( print [[app],[auth]\n] ;
+                ( (#mams_sender/ams-statetype st) ds ;
                   (st, true) )
             end
     in
         case msg of AMSRegister d =>
-                    ( print "got a registration" ;
+                    ( print "got a registration\n" ;
                       process-registration d )
                   | AMSUnregister s =>
-                    ( print "got an unregistration request" ;
+                    ( print "got an unregistration\n" ;
                       (st, true) )
                   | AMSPublish (s, l, xs) =>
-                    ( print "got a publish request" ;
+                    ( print "got a publish request\n" ;
                       (st, true) )
                   | _ => 
-                    ( print "some other crap" ;
+                    ( print "got some other crap\n" ;
                       (st, true) )
     end

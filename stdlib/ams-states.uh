@@ -8,6 +8,7 @@ type ams-statetype =
     {
         mams_port : int,
         app_name : string,
+        aams_sender : (string -> unit),
         auth_name : string,
         state : MAMS_state_type,
         node_id : int,
@@ -15,12 +16,14 @@ type ams-statetype =
         venture : int,
         query_number : int,
         mams_host : string,
+        mams_sender : (string -> unit),
         unit : int
     }
 
 datatype ams-optype =
     mams_port of int |
     app_name of string |
+    aams_sender of (string -> unit) |
     auth_name of string |
     state of MAMS_state_type |
     node_id of int |
@@ -28,6 +31,7 @@ datatype ams-optype =
     venture of int |
     query_number of int |
     mams_host of string |
+    mams_sender of (string -> unit) |
     unit of int
 
 fun ams-update-state tv st =
@@ -35,6 +39,7 @@ fun ams-update-state tv st =
         mams_port v => {
             mams_port = v,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -42,11 +47,13 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | app_name v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = v,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -54,11 +61,27 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
+            unit = #unit/ams-statetype st
+         }
+        | aams_sender v => {
+            mams_port = #mams_port/ams-statetype st,
+            app_name = #app_name/ams-statetype st,
+            aams_sender = v,
+            auth_name = #auth_name/ams-statetype st,
+            state = #state/ams-statetype st,
+            node_id = #node_id/ams-statetype st,
+            role = #role/ams-statetype st,
+            venture = #venture/ams-statetype st,
+            query_number = #query_number/ams-statetype st,
+            mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | auth_name v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = v,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -66,11 +89,13 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | state v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = v,
             node_id = #node_id/ams-statetype st,
@@ -78,11 +103,13 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | node_id v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = v,
@@ -90,11 +117,13 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | role v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -102,11 +131,13 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | venture v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -114,11 +145,13 @@ fun ams-update-state tv st =
             venture = v,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | query_number v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -126,11 +159,13 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = v,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
         | mams_host v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -138,11 +173,13 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = v,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = #unit/ams-statetype st
          }
-        | unit v => {
+        | mams_sender v => {
             mams_port = #mams_port/ams-statetype st,
             app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
             auth_name = #auth_name/ams-statetype st,
             state = #state/ams-statetype st,
             node_id = #node_id/ams-statetype st,
@@ -150,6 +187,21 @@ fun ams-update-state tv st =
             venture = #venture/ams-statetype st,
             query_number = #query_number/ams-statetype st,
             mams_host = #mams_host/ams-statetype st,
+            mams_sender = v,
+            unit = #unit/ams-statetype st
+         }
+        | unit v => {
+            mams_port = #mams_port/ams-statetype st,
+            app_name = #app_name/ams-statetype st,
+            aams_sender = #aams_sender/ams-statetype st,
+            auth_name = #auth_name/ams-statetype st,
+            state = #state/ams-statetype st,
+            node_id = #node_id/ams-statetype st,
+            role = #role/ams-statetype st,
+            venture = #venture/ams-statetype st,
+            query_number = #query_number/ams-statetype st,
+            mams_host = #mams_host/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
             unit = v
          }
 

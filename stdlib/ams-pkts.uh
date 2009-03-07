@@ -29,7 +29,7 @@ type declaration_struct_type =
 type delivery_vector_type =
     {
         delivery_vector_num : int,
-        number_delivery_vectors : int,
+        number_delivery_point_names : int,
         delivery_point_names : string
     }
 type contact_summary_type =
@@ -322,13 +322,13 @@ fun delivery_vector_fromstring_cont a s =
         val (r, s) =
         let
             val (delivery_vector_num, s) = marshall-readnextinteger (s, 0, 4)
-            val (number_delivery_vectors, s) = marshall-readnextinteger (s, 0, 4)
+            val (number_delivery_point_names, s) = marshall-readnextinteger (s, 0, 4)
             val (delivery_point_names, s) = marshall-readnextstring s
         in
             (
                 {
                     delivery_vector_num = delivery_vector_num,
-                    number_delivery_vectors = number_delivery_vectors,
+                    number_delivery_point_names = number_delivery_point_names,
                     delivery_point_names = delivery_point_names
                 },
                 s
@@ -345,7 +345,7 @@ fun delivery_vector_tostring_cont a r =
         val s =
         let
             val s = marshall-writenextinteger (s, 0, 4, #delivery_vector_num/delivery_vector_type r)
-            val s = marshall-writenextinteger (s, 0, 4, #number_delivery_vectors/delivery_vector_type r)
+            val s = marshall-writenextinteger (s, 0, 4, #number_delivery_point_names/delivery_vector_type r)
             val s = marshall-writenextstring (s, #delivery_point_names/delivery_vector_type r)
         in
             s
@@ -367,13 +367,13 @@ fun contact_summary_fromstring_cont a s =
                     fun f (i, s) = 
                         let
                             val (delivery_vector_num, s) = marshall-readnextinteger (s, 0, 4)
-                            val (number_delivery_vectors, s) = marshall-readnextinteger (s, 0, 4)
+                            val (number_delivery_point_names, s) = marshall-readnextinteger (s, 0, 4)
                             val (delivery_point_names, s) = marshall-readnextstring s
                         in
                             (
                                 {
                                     delivery_vector_num = delivery_vector_num,
-                                    number_delivery_vectors = number_delivery_vectors,
+                                    number_delivery_point_names = number_delivery_point_names,
                                     delivery_point_names = delivery_point_names
                                 },
                                 s
@@ -407,7 +407,7 @@ fun contact_summary_tostring_cont a r =
                     fun f (r, s) = 
                         let
                             val s = marshall-writenextinteger (s, 0, 4, #delivery_vector_num/delivery_vector_type r)
-                            val s = marshall-writenextinteger (s, 0, 4, #number_delivery_vectors/delivery_vector_type r)
+                            val s = marshall-writenextinteger (s, 0, 4, #number_delivery_point_names/delivery_vector_type r)
                             val s = marshall-writenextstring (s, #delivery_point_names/delivery_vector_type r)
                         in
                             s
@@ -440,13 +440,13 @@ fun node_status_fromstring_cont a s =
                             fun f (i, s) = 
                                 let
                                     val (delivery_vector_num, s) = marshall-readnextinteger (s, 0, 4)
-                                    val (number_delivery_vectors, s) = marshall-readnextinteger (s, 0, 4)
+                                    val (number_delivery_point_names, s) = marshall-readnextinteger (s, 0, 4)
                                     val (delivery_point_names, s) = marshall-readnextstring s
                                 in
                                     (
                                         {
                                             delivery_vector_num = delivery_vector_num,
-                                            number_delivery_vectors = number_delivery_vectors,
+                                            number_delivery_point_names = number_delivery_point_names,
                                             delivery_point_names = delivery_point_names
                                         },
                                         s
@@ -567,7 +567,7 @@ fun node_status_tostring_cont a r =
                             fun f (r, s) = 
                                 let
                                     val s = marshall-writenextinteger (s, 0, 4, #delivery_vector_num/delivery_vector_type r)
-                                    val s = marshall-writenextinteger (s, 0, 4, #number_delivery_vectors/delivery_vector_type r)
+                                    val s = marshall-writenextinteger (s, 0, 4, #number_delivery_point_names/delivery_vector_type r)
                                     val s = marshall-writenextstring (s, #delivery_point_names/delivery_vector_type r)
                                 in
                                     s
@@ -810,13 +810,13 @@ fun reconnect_struct_fromstring_cont a s =
                             fun f (i, s) = 
                                 let
                                     val (delivery_vector_num, s) = marshall-readnextinteger (s, 0, 4)
-                                    val (number_delivery_vectors, s) = marshall-readnextinteger (s, 0, 4)
+                                    val (number_delivery_point_names, s) = marshall-readnextinteger (s, 0, 4)
                                     val (delivery_point_names, s) = marshall-readnextstring s
                                 in
                                     (
                                         {
                                             delivery_vector_num = delivery_vector_num,
-                                            number_delivery_vectors = number_delivery_vectors,
+                                            number_delivery_point_names = number_delivery_point_names,
                                             delivery_point_names = delivery_point_names
                                         },
                                         s
@@ -881,7 +881,7 @@ fun reconnect_struct_tostring_cont a r =
                             fun f (r, s) = 
                                 let
                                     val s = marshall-writenextinteger (s, 0, 4, #delivery_vector_num/delivery_vector_type r)
-                                    val s = marshall-writenextinteger (s, 0, 4, #number_delivery_vectors/delivery_vector_type r)
+                                    val s = marshall-writenextinteger (s, 0, 4, #number_delivery_point_names/delivery_vector_type r)
                                     val s = marshall-writenextstring (s, #delivery_point_names/delivery_vector_type r)
                                 in
                                     s
@@ -1014,13 +1014,13 @@ fun ams_registration_fromstring_cont a s =
                             fun f (i, s) = 
                                 let
                                     val (delivery_vector_num, s) = marshall-readnextinteger (s, 0, 4)
-                                    val (number_delivery_vectors, s) = marshall-readnextinteger (s, 0, 4)
+                                    val (number_delivery_point_names, s) = marshall-readnextinteger (s, 0, 4)
                                     val (delivery_point_names, s) = marshall-readnextstring s
                                 in
                                     (
                                         {
                                             delivery_vector_num = delivery_vector_num,
-                                            number_delivery_vectors = number_delivery_vectors,
+                                            number_delivery_point_names = number_delivery_point_names,
                                             delivery_point_names = delivery_point_names
                                         },
                                         s
@@ -1082,7 +1082,7 @@ fun ams_registration_tostring_cont a r =
                             fun f (r, s) = 
                                 let
                                     val s = marshall-writenextinteger (s, 0, 4, #delivery_vector_num/delivery_vector_type r)
-                                    val s = marshall-writenextinteger (s, 0, 4, #number_delivery_vectors/delivery_vector_type r)
+                                    val s = marshall-writenextinteger (s, 0, 4, #number_delivery_point_names/delivery_vector_type r)
                                     val s = marshall-writenextstring (s, #delivery_point_names/delivery_vector_type r)
                                 in
                                     s
