@@ -1,6 +1,7 @@
 val require-marshall = provide-marshall
 val require-ams-pkts = provide-ams-pkts
 val require-ams-state = provide-ams-states
+val require-map = provide-map
 
 datatype ams-primitive =
          AMSRegister of string * string * int * int (* app name, auth name, unitID, roleID *)
@@ -77,6 +78,24 @@ fun ams-process-function (st, msg) =
                 ( (#mams_sender/ams-statetype st) ds ;
                   (st, true) )
             end
+
+        (* *)
+        fun add-to-subject-map m (newsubject, newnodeid) =
+            ( map-manage (fn (k, d) => k = newsubject)
+                         (fn () => (newsubject, newnodeid :: nil))
+                         (fn (k1, d1) => if (list-exists (fn n => n = newnodeid) d1)
+                                         then (k1, d1)
+                                         else (k1, newnodeid :: d1))
+                         m
+                         (newsubject, newnodeid) )
+
+        (* *)
+        fun remove-from-subject-map m (subject, nodeid) =
+            ( map-manage (fn (k, d) => k = subject)
+                         (fn () => (subject, nil))
+                         (fn (k1, d1) => (k1, list-filter (fn n => if n = nodeid then false else true) d1))
+                         m
+                         (subject, nodeid) )
 
         (* *)
         fun extract-mpdu-id ds = (ord (sub(ds, 0))) andb 0x1f

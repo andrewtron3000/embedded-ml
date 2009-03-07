@@ -17,3 +17,4 @@ auth_name, string
 state,  MAMS_state_type
 aams_sender, (string -> unit)
 mams_sender, (string -> unit)
+subject_node_map, (int * int list) list
