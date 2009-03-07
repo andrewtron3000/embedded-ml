@@ -87,17 +87,12 @@ def importRecords(ls):
 
 def createDatatypeDefinition(d, prefix):
     oe = outputEngine()
-    oe.add("datatype %s-statetype =\n" % prefix)
+    oe.add("datatype %s-optype =\n" % prefix)
     oe.increaseIndent()
     zs = []
     for x in d.keys():
         t = getType(d, x)
-        if t == 'int':
-            zs.append('%s of int' % x)
-        elif t == 'string':
-            zs.append('%s of string' % x)
-        else:
-            sys.exit('invalid type in a record: %s' % t)
+        zs.append('%s of %s' % (x, t))
     oe.interleave(zs, ' |\n')
     oe.add('\n')
     oe.decreaseIndent()
@@ -105,19 +100,14 @@ def createDatatypeDefinition(d, prefix):
 
 def createRecordDefinition(d, prefix):
     oe = outputEngine()
-    oe.add("type %s-recordtype =\n" % prefix)
+    oe.add("type %s-statetype =\n" % prefix)
     oe.increaseIndent()
     oe.add("{\n")
     oe.increaseIndent()
     zs = []
     for x in d.keys():
         t = getType(d, x)
-        if t == 'int':
-            zs.append('%s : int' % x.lower())
-        elif t == 'string':
-            zs.append('%s : string' % x.lower())
-        else:
-            sys.exit('invalid type in a record: %s' % t)
+        zs.append('%s : %s' % (x.lower(), t))
     oe.interleave(zs, ',\n')
     oe.add('\n')
     oe.decreaseIndent()
@@ -133,7 +123,7 @@ def recordPicker(d, prefix, y):
         if x == y:
             es.append('%s = v' % x.lower())
         else:
-            es.append('%s = #%s/%s-recordtype st' % (x.lower(), x.lower(), prefix))
+            es.append('%s = #%s/%s-statetype st' % (x.lower(), x.lower(), prefix))
     oe.interleave(es, ',\n')
     oe.decreaseIndent()
     return oe.dump()
@@ -155,6 +145,12 @@ def createUpdateDefinition(d, prefix):
     oe.decreaseIndent()
     return oe.dump()
 
+def literal(s):
+    return (s[0] == '>')
+
+def notliteral(s):
+    return not (literal(s))
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit('usage: %s inputfile\n' % sys.argv[0])
@@ -163,6 +159,13 @@ if __name__ == '__main__':
     ls = f.readlines()
     f.close()
 
+    # print the raw code
+    cs = filter(literal, ls)
+    for c in cs:
+        print c[1:],
+
+    # now handle the non literal code, lines that don't start with '>'
+    ls = filter(notliteral, ls)
     prefix = ls[0].strip()
     d, ks = importRecords(ls[1:]) 
     print createRecordDefinition(d, prefix)
