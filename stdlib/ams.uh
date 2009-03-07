@@ -42,8 +42,17 @@ fun ams-process-function (st, msg) =
                   ds )
             end
 
-        fun process-registration (app, auth, unit, role) =
+        fun update-seq (x :: xs) st = update-seq xs (ams-update-state x st)
+          | update-seq nil st = st
+
+        fun process-registration (app, auth, u, r) =
             let
+                val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) ::
+                                      app_name app ::
+                                      auth_name auth ::
+                                      unit u ::
+                                      role r :: nil ) st
+
                 val h = { mams_version = 0,
                           mams_checksum = 1, 
                           mams_mpdu_type = AMS_REGISTRATION_PDU,
@@ -60,7 +69,6 @@ fun ams-process-function (st, msg) =
                           contact_summary = cs }
                 val (s, ds) = ams_registration_tostring p
             in
-                (* this is where we'd update the state *)
                 ( (#mams_sender/ams-statetype st) ds ;
                   (st, true) )
             end
