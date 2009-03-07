@@ -21,12 +21,12 @@ fun ams-process-function (st, msg) =
                 val h = { mams_version = 0,
                           mams_checksum = 0, (* this will be updated *)
                           mams_mpdu_type = AMS_REGISTRATION_PDU,
-                          mams_sender_venture = #venture/ams-recordtype st,
-                          mams_sender_unit = #unit/ams-recordtype st,
-                          mams_role = #role/ams-recordtype st,
+                          mams_sender_venture = #venture/ams-statetype st,
+                          mams_sender_unit = #unit/ams-statetype st,
+                          mams_role = #role/ams-statetype st,
                           mams_signature_length = 0,
                           mams_supp_data_length = 0, (* this will be updated *)
-                          mams_reference = #query_number/ams-recordtype st,
+                          mams_reference = #query_number/ams-statetype st,
                           mams_time_tag = 0 }
                 val cs = { mams_endpoint_name = "127.0.0.1:6969",
                            delivery_vector_list = nil }
@@ -37,12 +37,11 @@ fun ams-process-function (st, msg) =
                 ( print [[app],[auth]\n] ;
                   (st, true) )
             end
-
     in
         case msg of AMSRegister d =>
                     ( print "got a registration" ;
                       process-registration d )
-                  | AMSUnregister =>
+                  | AMSUnregister s =>
                     ( print "got an unregistration request" ;
                       (st, true) )
                   | AMSPublish (s, l, xs) =>
