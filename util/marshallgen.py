@@ -281,6 +281,12 @@ def createToStringFunction(d, name):
     oe.add('val %s_tostring = %s_tostring_cont NONE \n' % (name, name))
     return oe.dump()
 
+def literal(s):
+    return (s[0] == '>')
+
+def notliteral(s):
+    return not (literal(s))
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit('usage: %s inputfile\n' % sys.argv[0])
@@ -288,6 +294,14 @@ if __name__ == '__main__':
     f = open(sys.argv[1], 'r')
     ls = f.readlines()
     f.close()
+
+    # print the raw code
+    cs = filter(literal, ls)
+    for c in cs:
+        print c[1:],
+
+    # now handle the non literal code, lines that don't start with '>'
+    ls = filter(notliteral, ls)
 
     d, ks = importRecords(ls) 
 
