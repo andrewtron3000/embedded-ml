@@ -6,6 +6,7 @@ let
     import "array.uh"
     import "char.uh"
     import "growarray.uh"
+    import "map.uh"
     import "marshall.uh"
     import "ams-pkts.uh"
     import "ams-states.uh"
@@ -18,8 +19,40 @@ let
     import "futures.uh"
     import "activeobject.uh"
 
+    fun add-to-subject-map m (newsubject, newnodeid) =
+        ( map-manage (fn (k, d) => k = newsubject)
+                     (fn () => (newsubject, newnodeid :: nil))
+                     (fn (k1, d1) => if (list-exists (fn n => n = newnodeid) d1)
+                                     then (k1, d1)
+                                     else (k1, newnodeid :: d1))
+                     m
+                     (newsubject, newnodeid) )
+
+    fun remove-from-subject-map m (subject, nodeid) =
+        ( map-manage (fn (k, d) => k = subject)
+                     (fn () => (subject, nil))
+                     (fn (k1, d1) => (k1, list-filter (fn n => if n = nodeid then false else true) d1))
+                     m
+                     (subject, nodeid) )
+
+    fun AAMSSender ds = 
+        let
+            val hs = chars-tohexstring ds
+        in
+            print [AAMS Sender: [hs]\n]
+        end
+
+    fun MAMSSender ds = 
+        let
+            val hs = chars-tohexstring ds
+        in
+            print [MAMS Sender: [hs]\n]
+        end
+
     val initial_state = { app_name = "myapp",
                           auth_name = "myauth",
+                          aams_sender = AAMSSender,
+                          mams_sender = MAMSSender,
                           mams_host = "localhost",
                           mams_port = 6969,
                           node_id = 1001,
@@ -30,6 +63,7 @@ let
                           venture = 1 }
  
     val ams = activeobject-create ams-process-function initial_state
+
 in
     ( future-force (ams (AMSRegister ("app", "auth", (* unit *) 1, (* role *) 100))) ;
       future-force (ams (AMSUnregister (* node id *) 9)) ;
