@@ -12,6 +12,9 @@ datatype ams-primitive =
        | AMSInboundMAMS of string
 
 val AMS_REGISTRATION_PDU = 19
+val AMS_YOU_ARE_IN = 20
+val AMS_I_AM_STARTING = 21
+val AMS_HEARTBEAT = 1
 
 (* ams-process-function : (st, msg) -> (st, result) *)
 fun ams-process-function (st, msg) =
@@ -72,6 +75,24 @@ fun ams-process-function (st, msg) =
                 ( (#mams_sender/ams-statetype st) ds ;
                   (st, true) )
             end
+
+        fun extract-mpdu-id ds = (ord (sub(ds, 0))) andb 0x1f
+
+        fun process-inbound-mams ds =
+            let
+                val checksum-valid = true (* SUSP - fix this *)
+            in
+                if checksum-valid then 
+                    ( let
+                         val mpdu-id = extract-mpdu-id ds
+                     in 
+                         if mpdu-id = AMS_YOU_ARE_IN then ()
+                         else if mpdu-id = AMS_I_AM_STARTING then ()
+                         else if mpdu-id = AMS_HEARTBEAT then ()
+                         else ()
+                     end )
+                else ()
+            end
     in
         case msg of AMSRegister d =>
                     ( print "got a registration\n" ;
@@ -81,6 +102,11 @@ fun ams-process-function (st, msg) =
                       (st, true) )
                   | AMSPublish (s, l, xs) =>
                     ( print "got a publish request\n" ;
+                      (st, true) )
+                  | AMSInboundMAMS ds =>
+                    ( print "inbound mams message: " ;
+                      print [[chars-tohexstring ds]\n] ;
+                      process-inbound-mams ds ;
                       (st, true) )
                   | _ => 
                     ( print "got some other crap\n" ;
