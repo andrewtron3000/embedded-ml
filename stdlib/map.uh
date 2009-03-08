@@ -3,16 +3,27 @@ val require-list = provide-list
 
 exception Map
 
-fun map-new () = nil
+type (a, b) map = ( (a -> a -> bool) * ((a * b) list) )
 
-fun map-manage keymatchf notfoundf foundf m (k, d) =
+fun map-new keymatchf = (keymatchf, nil)
+
+fun map-manage notfoundf foundf (keymatchf, m) k =
     let
-        val (ts, fs) = list-partition keymatchf m
+        val (ts, fs) = list-partition (keymatchf k) m
         val new = case ts of 
                       nil => notfoundf ()
                     | x :: nil => foundf x
                     | _ => raise Map (* should be impossible *)
     in
-        new :: fs
+        (keymatchf, new :: fs)
+    end
+
+fun map-lookup (keymatchf, m) k = 
+    let
+        val x = list-find (keymatchf k) m
+    in
+        case x of
+            SOME (k, d) => SOME d
+          | NONE => NONE
     end
 
