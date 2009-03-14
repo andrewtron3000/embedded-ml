@@ -49,8 +49,11 @@ let
  
     val ams = activeobject-create ams-process-function initial_state
 
+    val hbs = array-map chr {| 0x01, 0x01, 0x00, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00 |}
+
 in
     ( future-force (ams (AMSRegister ("app", "auth", (* unit *) 1, (* role *) 100))) ;
+      future-force (ams (AMSInboundMAMS hbs)) ;
       future-force (ams (AMSUnregister (* node id *) 9)) ;
       print "hi" )
 end
