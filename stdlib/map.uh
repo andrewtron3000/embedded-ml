@@ -5,7 +5,7 @@ exception Map
 
 type (a, b) map = ( (a -> a -> bool) * ((a * b) list) )
 
-fun map-new keymatchf = (keymatchf, nil)
+fun map-create keymatchf = (keymatchf, nil)
 
 fun map-manage notfoundf foundf (keymatchf, m) k =
     let
