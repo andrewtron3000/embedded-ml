@@ -211,8 +211,7 @@ def compositeToString(d, name, last=''):
     oe.add('end\n')
     return oe.dump()
 
-
-def createRecordDefinition(d, name):
+def createCompositeRecordDefinition(d, name):
     oe = outputEngine()
     oe.add("type %s =\n" % recordName(name))
     oe.increaseIndent()
@@ -224,8 +223,7 @@ def createRecordDefinition(d, name):
         if t == 'composite':
             zs.append('%s : %s' % (x, recordName(x)))
         elif t == 'array':
-            e = arrayGetComposite(d, x)
-            zs.append('%s : %s array' % (x, recordName(e))) 
+            zs.append('%s : %s' % (x, recordName(x)))
         elif t == 'int':
             zs.append('%s : int' % x)
         elif t == 'string':
@@ -238,6 +236,37 @@ def createRecordDefinition(d, name):
     oe.add("}\n")
     oe.decreaseIndent()
     return oe.dump()
+
+def createArrayRecordDefinition(d, name):
+    oe = outputEngine()
+    oe.add("type %s =\n" % recordName(name))
+    oe.increaseIndent()
+    oe.add("{\n")
+    oe.increaseIndent()
+    zs = []
+    for x in compositeGetElements(d, name):
+        t = getType(d, x)
+        if t == 'composite':
+            zs.append('%s : %s array' % (x, recordName(x)))
+        elif t == 'int':
+            zs.append('%s : int' % x)
+        else:
+            sys.exit('invalid type in an array record: %s' % t)
+    oe.interleave(zs, ',\n')
+    oe.add('\n')
+    oe.decreaseIndent()
+    oe.add("}\n")
+    oe.decreaseIndent()
+    return oe.dump()
+
+def createRecordDefinition(d, name):
+    t = getType(d, name)
+    if t == 'composite':
+        return createCompositeRecordDefinition(d, name)
+    elif t == 'array':
+        return createArrayRecordDefinition(d, name)
+    else:
+        sys.exit('invalid type in a record: %s' % t)
 
 def createFromStringFunction(d, name):
     oe = outputEngine()
