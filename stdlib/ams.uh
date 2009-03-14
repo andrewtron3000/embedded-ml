@@ -147,6 +147,15 @@ fun ams-process-function (st, msg) =
                     in
                         (st, true)
                     end
+
+                fun process-heartbeat ds =
+                    let
+                        val (s, hb) = ams_heartbeat_fromstring ds
+                        val h = #mams_pdu_header/ams_heartbeat_type hb
+                    in
+                        ( print [[int-tostring (#mams_role/mams_pdu_header_type h)] <- hb role\n] ;
+                          (st, true) )
+                    end
                                            
             in
                 if checksum-valid then 
@@ -155,7 +164,7 @@ fun ams-process-function (st, msg) =
                     in 
                         if mpdu-id = AMS_YOU_ARE_IN then process-youarein ds
                         else if mpdu-id = AMS_I_AM_STARTING then process-iamstarting ds
-                        else if mpdu-id = AMS_HEARTBEAT then (st, true)
+                        else if mpdu-id = AMS_HEARTBEAT then process-heartbeat ds
                         else (st, false)
                     end
                 else (st, false)
