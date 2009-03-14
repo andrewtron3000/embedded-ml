@@ -8,7 +8,7 @@ let
     import "growarray.uh"
     import "map.uh"
 
-    val initial-map = map-new (fn desiredk (k1, d1) => desiredk = k1)
+    val initial-map = map-create (fn desiredk (k1, d1) => desiredk = k1)
 
     val m = map-add (1, 100) initial-map
     val m = map-add (1, 101) m
