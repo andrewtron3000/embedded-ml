@@ -88,6 +88,10 @@ type mams_pdu_header_type =
         mams_reference : int,
         mams_time_tag : int
     }
+type ams_heartbeat_type =
+    {
+        mams_pdu_header : mams_pdu_header_type
+    }
 type ams_registration_type =
     {
         mams_pdu_header : mams_pdu_header_type,
@@ -992,6 +996,82 @@ fun mams_pdu_header_tostring_cont a r =
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
 val mams_pdu_header_tostring = mams_pdu_header_tostring_cont NONE 
+fun ams_heartbeat_fromstring_cont a s = 
+    let 
+        val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val (r, s) =
+        let
+            val (mams_pdu_header, s) =
+                let
+                    val (mams_version, s) = marshall-readnextinteger (s, 0, 2)
+                    val (mams_checksum, s) = marshall-readnextinteger (s, 0, 1)
+                    val (mams_mpdu_type, s) = marshall-readnextinteger (s, 0, 5)
+                    val (mams_sender_venture, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_sender_unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_role, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
+                in
+                    (
+                        {
+                            mams_version = mams_version,
+                            mams_checksum = mams_checksum,
+                            mams_mpdu_type = mams_mpdu_type,
+                            mams_sender_venture = mams_sender_venture,
+                            mams_sender_unit = mams_sender_unit,
+                            mams_role = mams_role,
+                            mams_signature_length = mams_signature_length,
+                            mams_supp_data_length = mams_supp_data_length,
+                            mams_reference = mams_reference,
+                            mams_time_tag = mams_time_tag
+                        },
+                        s
+                    )
+                end
+        in
+            (
+                {
+                    mams_pdu_header = mams_pdu_header
+                },
+                s
+            )
+        end
+    in
+        (s, r)
+    end
+val ams_heartbeat_fromstring = ams_heartbeat_fromstring_cont NONE 
+fun ams_heartbeat_tostring_cont a r = 
+    let 
+        val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val s =
+        let
+            val s =
+                let
+                    val r = #mams_pdu_header/ams_heartbeat_type r
+                    val s = marshall-writenextinteger (s, 0, 2, #mams_version/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 1, #mams_checksum/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 5, #mams_mpdu_type/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_sender_venture/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_sender_unit/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_role/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
+                in
+                    s
+                end
+        in
+            s
+        end
+    in
+        (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
+    end
+val ams_heartbeat_tostring = ams_heartbeat_tostring_cont NONE 
 fun ams_registration_fromstring_cont a s = 
     let 
         val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
