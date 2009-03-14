@@ -27,17 +27,17 @@ type invitation_assert_type =
 type subscription_list_type =
     {
         num_assertion_structs : int,
-        subscription_assert : subscription_assert_type
+        subscription_assert : subscription_assert_type array
     }
 type invitation_list_type =
     {
         num_assertion_structs : int,
-        invitation_assert : invitation_assert_type
+        invitation_assert : invitation_assert_type array
     }
 type declaration_struct_type =
     {
-        subscription_list : subscription_assert_type array,
-        invitation_list : invitation_assert_type array
+        subscription_list : subscription_list_type,
+        invitation_list : invitation_list_type
     }
 type delivery_vector_type =
     {
@@ -48,12 +48,12 @@ type delivery_vector_type =
 type delivery_vector_list_type =
     {
         number_list_delivery_vectors : int,
-        delivery_vector : delivery_vector_type
+        delivery_vector : delivery_vector_type array
     }
 type contact_summary_type =
     {
         mams_endpoint_name : string,
-        delivery_vector_list : delivery_vector_type array
+        delivery_vector_list : delivery_vector_list_type
     }
 type node_status_type =
     {
@@ -70,7 +70,7 @@ type node_numbers_type =
 type node_list_type =
     {
         num_nodes : int,
-        node_numbers : node_numbers_type
+        node_numbers : node_numbers_type array
     }
 type cell_descriptor_type =
     {
@@ -80,7 +80,7 @@ type cell_descriptor_type =
 type node_status_list_type =
     {
         num_node_statuses : int,
-        node_status : node_status_type
+        node_status : node_status_type array
     }
 type subscription_cancellation_type =
     {
@@ -97,7 +97,7 @@ type reconnect_struct_type =
     {
         node_number : int,
         contact_summary : contact_summary_type,
-        node_list : node_numbers_type array
+        node_list : node_list_type
     }
 type mams_pdu_header_type =
     {
