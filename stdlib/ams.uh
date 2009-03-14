@@ -70,7 +70,11 @@ fun ams-process-function (st, msg) =
                           mams_reference = #query_number/ams-statetype st,
                           mams_time_tag = 0 }
                 val cs = { mams_endpoint_name = "127.0.0.1:6969",
-                           delivery_vector_list = {| |} }
+                           delivery_vector_list = {| 
+                                                   { delivery_vector_num = 9,
+                                                     number_delivery_point_names = 1,
+                                                     delivery_point_names = "udp=127.0.0.1:6970" }
+                                                  |} }
                 val p = { mams_pdu_header = h,
                           contact_summary = cs }
                 val (s, ds) = ams_registration_tostring p
