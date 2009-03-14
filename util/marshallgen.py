@@ -170,6 +170,9 @@ def arrayToString(d, x, name):
     oe.increaseIndent()
     oe.add(compositeToString(d, arrayGetComposite(d, x)))
     oe.decreaseIndent()
+    oe.add('val s = marshall-writenextinteger (s, %d, %d, length (%s)) \n' % ( intGetBytes(d, arrayGetCountVariable(d, x)),
+                                                                               intGetBits(d, arrayGetCountVariable(d, x)),
+                                                                               targetRecordName(x, name) ))
     oe.decreaseIndent()
     oe.add('in\n')
     oe.increaseIndent()
@@ -211,7 +214,8 @@ def compositeToString(d, name, last=''):
     oe.add('end\n')
     return oe.dump()
 
-def createCompositeRecordDefinition(d, name):
+
+def createRecordDefinition(d, name):
     oe = outputEngine()
     oe.add("type %s =\n" % recordName(name))
     oe.increaseIndent()
@@ -223,7 +227,8 @@ def createCompositeRecordDefinition(d, name):
         if t == 'composite':
             zs.append('%s : %s' % (x, recordName(x)))
         elif t == 'array':
-            zs.append('%s : %s' % (x, recordName(x)))
+            e = arrayGetComposite(d, x)
+            zs.append('%s : %s array' % (x, recordName(e))) 
         elif t == 'int':
             zs.append('%s : int' % x)
         elif t == 'string':
@@ -236,37 +241,6 @@ def createCompositeRecordDefinition(d, name):
     oe.add("}\n")
     oe.decreaseIndent()
     return oe.dump()
-
-def createArrayRecordDefinition(d, name):
-    oe = outputEngine()
-    oe.add("type %s =\n" % recordName(name))
-    oe.increaseIndent()
-    oe.add("{\n")
-    oe.increaseIndent()
-    zs = []
-    for x in compositeGetElements(d, name):
-        t = getType(d, x)
-        if t == 'composite':
-            zs.append('%s : %s array' % (x, recordName(x)))
-        elif t == 'int':
-            zs.append('%s : int' % x)
-        else:
-            sys.exit('invalid type in an array record: %s' % t)
-    oe.interleave(zs, ',\n')
-    oe.add('\n')
-    oe.decreaseIndent()
-    oe.add("}\n")
-    oe.decreaseIndent()
-    return oe.dump()
-
-def createRecordDefinition(d, name):
-    t = getType(d, name)
-    if t == 'composite':
-        return createCompositeRecordDefinition(d, name)
-    elif t == 'array':
-        return createArrayRecordDefinition(d, name)
-    else:
-        sys.exit('invalid type in a record: %s' % t)
 
 def createFromStringFunction(d, name):
     oe = outputEngine()
@@ -335,8 +309,10 @@ if __name__ == '__main__':
     d, ks = importRecords(ls) 
 
     oe = outputEngine()
+    oe.add('val require-marshall = provide-marshall')
+    oe.add('\n')
 
-    composites = [x for x in ks if (getType(d, x) == 'composite' or getType(d, x) == 'array')]
+    composites = [x for x in ks if getType(d, x) == 'composite']
 
     for c in composites:
         oe.add(createRecordDefinition(d, c))
