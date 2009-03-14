@@ -306,10 +306,8 @@ if __name__ == '__main__':
     d, ks = importRecords(ls) 
 
     oe = outputEngine()
-    oe.add('val require-marshall = provide-marshall')
-    oe.add('\n')
 
-    composites = [x for x in ks if getType(d, x) == 'composite']
+    composites = [x for x in ks if (getType(d, x) == 'composite' or getType(d, x) == 'array')]
 
     for c in composites:
         oe.add(createRecordDefinition(d, c))
