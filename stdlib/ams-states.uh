@@ -15,7 +15,7 @@ type ams-statetype =
         contact_summary : contact_summary_type,
         node_id : int,
         role : int,
-        subject_to_nodes_map : (int, int list) map,
+        subject_to_nodes_map : (int, (int * subscription_assert_type) list) map,
         venture : int,
         query_number : int,
         last_registrar_hb_time : int * int,
@@ -34,7 +34,7 @@ datatype ams-optype =
     contact_summary of contact_summary_type |
     node_id of int |
     role of int |
-    subject_to_nodes_map of (int, int list) map |
+    subject_to_nodes_map of (int, (int * subscription_assert_type) list) map |
     venture of int |
     query_number of int |
     last_registrar_hb_time of int * int |

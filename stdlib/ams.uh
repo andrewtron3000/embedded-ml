@@ -17,6 +17,7 @@ datatype ams-primitive =
 val AMS_REGISTRATION = 19
 val AMS_YOU_ARE_IN = 20
 val AMS_I_AM_STARTING = 21
+val AMS_I_AM_HERE = 22
 val AMS_HEARTBEAT = 1
 val AMS_N3 = (10, 0)
 
@@ -53,8 +54,9 @@ fun ams-process-function (st, msg) =
         fun update-seq (x :: xs) st = update-seq xs (ams-update-state x st)
           | update-seq nil st = st
 
+
         (* *)
-        fun process-registration st (app, auth, u, r) =
+        fun process-registration (app, auth, u, r) =
             let
                 val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) ::
                                       app_name app ::
@@ -86,7 +88,7 @@ fun ams-process-function (st, msg) =
         (* *)
         fun generate-heartbeat st () =
             let
-                val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) :: nil ) st
+                val st = ams-update-state (query_number ((#query_number/ams-statetype st) + 1)) st
 
                 val h = { mams_version = 0,
                           mams_checksum = 0, 
@@ -108,25 +110,30 @@ fun ams-process-function (st, msg) =
         (* *)
         fun generate-i-am-here st () =
             let
-                val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) :: nil ) st
-
                 val h = { mams_version = 0,
                           mams_checksum = 0, 
-                          mams_mpdu_type = AMS_HEARTBEAT,
+                          mams_mpdu_type = AMS_I_AM_HERE,
                           mams_sender_venture = #venture/ams-statetype st,
                           mams_sender_unit = #unit/ams-statetype st,
                           mams_role = #role/ams-statetype st,
                           mams_signature_length = 0,
                           mams_supp_data_length = 0,
-                          mams_reference = #query_number/ams-statetype st,
+                          mams_reference = 0,
                           mams_time_tag = 0 }
-                val hb = { mams_pdu_header = h }
-                val (s, ds) = ams_heartbeat_tostring hb
+                val ds = { subscription_list = list-toarray (#subscriptions/ams-statetype st),
+                           invitation_list = {| |} }
+                val ns = { unit = #unit/ams-statetype st,
+                           node_number = #node_id/ams-statetype st,
+                           role = #role/ams-statetype st,
+                           contact_summary = #contact_summary/ams-statetype st,
+                           declaration_struct = ds }
+                val iah = { mams_pdu_header = h,
+                            node_status_list = {| ns |} }
+                val (s, ds) = ams_i_am_here_tostring iah 
             in
                 ( (#mams_sender/ams-statetype st) ds ;
                   (st, true) )
             end
-
 
         fun process-time-tick () =
             let
@@ -151,13 +158,78 @@ fun ams-process-function (st, msg) =
                         (st, true)
                     end
 
+                fun add-to-contact-map (node, cs) st = 
+                    ams-update-state (node_to_contact_summary_map 
+                                          (map-add (node, cs) 
+                                                   (#node_to_contact_summary_map/ams-statetype st))) st
+
+                (* *)
+
+                (* note we don't pass (key, data) in here, it's only
+                    data.  this is because we can get the key (the
+                    subject) from within the subscription assertion
+                    that's passed in. *)
+
+                fun add-to-subject-map node sa st =
+                    let
+                        val subject = #subject/subscription_assert_type sa
+                        val r = (node, sa)
+                        fun r-eq (n1, s1) (n2, s2) =
+                            let
+                                val b1 = n1 = n2
+                                val b2 = (#subject/subscription_assert_type s1) = 
+                                         (#subject/subscription_assert_type s2)
+                            in
+                                b1 andalso b2
+                            end
+                        val m = #subject_to_nodes_map/ams-statetype st
+                        val others = 
+                            case map-lookup subject m of 
+                                SOME rs => 
+                                let
+                                    val (ts, fs) = list-partition (r-eq r) rs
+                                in
+                                    fs
+                                end
+                              | NONE => nil
+                    in
+                        ams-update-state (subject_to_nodes_map
+                                          (map-add (subject, r :: others)
+                                                   (#subject_to_nodes_map/ams-statetype st))) st
+                    end
+
                 fun process-iamstarting ds =
                     let
                         val (s, ias) = ams_i_am_starting_fromstring ds
                         val h = #mams_pdu_header/ams_i_am_starting_type ias
+                        val node = #mams_reference/mams_pdu_header_type h
                         val cs = #contact_summary/ams_i_am_starting_type ias
                     in
-                        (st, true)
+                        (add-to-contact-map (node, cs) st,
+                         true)
+                    end
+
+                (* *)
+               fun process-iamhere ds =
+                    let
+                        val (s, iah) = ams_i_am_here_fromstring ds
+                        val h = #mams_pdu_header/ams_i_am_here_type iah
+                        val nsl = #node_status_list/ams_i_am_here_type iah
+                    in
+                        (* SUSP in theory we should only see one entry in the nsl *)
+                        if (length nsl) = 1 then
+                            let
+                                val ns = sub (nsl, 0)
+                                val node = #node_number/node_status_type ns
+                                val cs = #contact_summary/node_status_type ns
+                                val ds = #declaration_struct/node_status_type ns
+                                val subs = #subscription_list/declaration_struct_type ds
+                                val invs = #invitation_list/declaration_struct_type ds
+                                val st = add-to-contact-map (node, cs) st
+                            in
+                                (st, true)
+                            end
+                        else (st, false)
                     end
 
                 fun process-heartbeat ds =
@@ -166,7 +238,8 @@ fun ams-process-function (st, msg) =
                         val h = #mams_pdu_header/ams_heartbeat_type hb
                         val (st1, rc1) = generate-heartbeat st ()
                     in
-                        (ams-update-state (last_registrar_hb_time (clock-gettime ())) st1, rc1)
+                        (ams-update-state (last_registrar_hb_time (clock-gettime ())) st1, 
+                         rc1)
                     end
                                            
             in
@@ -175,8 +248,14 @@ fun ams-process-function (st, msg) =
                         val mpdu-id = extract-mpdu-id ds
                     in 
                         if mpdu-id = AMS_YOU_ARE_IN then process-youarein ds
-                        else if mpdu-id = AMS_I_AM_STARTING then process-iamstarting ds
                         else if mpdu-id = AMS_HEARTBEAT then process-heartbeat ds
+                        else if mpdu-id = AMS_I_AM_HERE then process-iamhere ds 
+                        else if mpdu-id = AMS_I_AM_STARTING then 
+                            let
+                                val (s, r) = process-iamstarting ds
+                            in
+                                generate-i-am-here s ()
+                            end
                         else (st, false)
                     end
                 else (st, false)
@@ -185,9 +264,8 @@ fun ams-process-function (st, msg) =
         case msg of AMSRegister d =>
                     let
                         val () = print "got a registration\n"
-                        val (s1, rc1) = process-registration st d
                     in
-                        (s1, rc1)
+                        process-registration d
                     end
                   | AMSUnregister s =>
                     ( print "got an unregistration\n" ;
