@@ -78,7 +78,7 @@ def importRecords(ls):
     keys = []
     for l in ls:
         l = l.strip()
-        xs = l.split(',')
+        xs = l.split('=')
         xs = map( lambda x: x.strip(), xs )
         name = xs[0]
         d[name] = xs[1:]
