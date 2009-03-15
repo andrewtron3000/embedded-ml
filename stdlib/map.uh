@@ -18,22 +18,18 @@ fun map-manage notfoundf foundf (keymatchf, m) k =
         (keymatchf, new :: fs)
     end
 
-(* *)
 fun map-add (k, nd) m =
-    ( map-manage (fn () => (k, nd :: nil))
-                 (fn (k1, d1) => if (list-exists (fn n => n = nd) d1)
-                                 then (k1, d1)
-                                 else (k1, nd :: d1))
+    ( map-manage (fn () => (k, nd))
+                 (fn (k1, d1) => (k1, nd))
                  m
                  k )
-    
-(* *)
-fun map-remove (k, d) m =
+
+fun map-remove (k, nd) m =
     ( map-manage (fn () => (k, nil))
-                 (fn (k1, d1) => (k1, list-filter (fn n => if n = d then false else true) d1))
+                 (fn (k1, d1) => (k1, nil))
                  m
                  k )
-    
+
 fun map-lookup k (keymatchf, m) = 
     let
         val x = list-find (keymatchf k) m

@@ -2,6 +2,7 @@ val require-marshall = provide-marshall
 val require-ams-pkts = provide-ams-pkts
 val require-ams-state = provide-ams-states
 val require-map = provide-map
+val require-clock = provide-clock
 
 datatype ams-primitive =
          AMSRegister of string * string * int * int (* app name, auth name, unitID, roleID *)
@@ -11,11 +12,13 @@ datatype ams-primitive =
        | AMSPublish of int * int * string (* subjectID, application data length, data *)
        | AMSInboundAAMS of string
        | AMSInboundMAMS of string
+       | AMSTimeTick
 
 val AMS_REGISTRATION = 19
 val AMS_YOU_ARE_IN = 20
 val AMS_I_AM_STARTING = 21
 val AMS_HEARTBEAT = 1
+val AMS_N3 = (10, 0)
 
 (* ams-process-function : (st, msg) -> (st, result) *)
 fun ams-process-function (st, msg) =
@@ -84,22 +87,6 @@ fun ams-process-function (st, msg) =
             end
 
         (* *)
-        fun add-to-subject-map m (newsubject, newnodeid) =
-            ( map-manage (fn () => (newsubject, newnodeid :: nil))
-                         (fn (k1, d1) => if (list-exists (fn n => n = newnodeid) d1)
-                                         then (k1, d1)
-                                         else (k1, newnodeid :: d1))
-                         m
-                         newsubject )
-        
-        (* *)
-        fun remove-from-subject-map m (subject, nodeid) =
-            ( map-manage (fn () => (subject, nil))
-                         (fn (k1, d1) => (k1, list-filter (fn n => if n = nodeid then false else true) d1))
-                         m
-                         subject )
-
-        (* *)
         fun extract-mpdu-id ds = (ord (sub(ds, 0))) andb 0x1f
 
         (* *)
@@ -122,6 +109,14 @@ fun ams-process-function (st, msg) =
             in
                 ( (#mams_sender/ams-statetype st) ds ;
                   (st, true) )
+            end
+
+        fun process-time-tick () =
+            let
+                val curr-time = clock-gettime ()
+                val dt = clock-sub curr-time (#last_registrar_hb_time/ams-statetype st) 
+            in
+                if clock-lt AMS_N3 dt then ams-update-state (registrar_dead true) st else st
             end
 
         (* *)
@@ -152,9 +147,9 @@ fun ams-process-function (st, msg) =
                     let
                         val (s, hb) = ams_heartbeat_fromstring ds
                         val h = #mams_pdu_header/ams_heartbeat_type hb
+                        val (st1, rc1) = generate-heartbeat st ()
                     in
-                        ( print [[int-tostring (#mams_role/mams_pdu_header_type h)] <- hb role\n] ;
-                          (st, true) )
+                        (ams-update-state (last_registrar_hb_time (clock-gettime ())) st1, rc1)
                     end
                                            
             in
@@ -174,9 +169,8 @@ fun ams-process-function (st, msg) =
                     let
                         val () = print "got a registration\n"
                         val (s1, rc1) = process-registration st d
-                        val (s2, rc2) = generate-heartbeat s1 ()
                     in
-                        (s2, rc2)
+                        (s1, rc1)
                     end
                   | AMSUnregister s =>
                     ( print "got an unregistration\n" ;
@@ -185,9 +179,16 @@ fun ams-process-function (st, msg) =
                     ( print "got a publish request\n" ;
                       (st, true) )
                   | AMSInboundMAMS ds =>
-                    ( print "inbound mams message: " ;
+                    ( print "inbound mams message\n" ;
                       print [[chars-tohexstring ds]\n] ;
                       process-inbound-mams ds )
+                  | AMSTimeTick =>
+                    let
+                        val () = print "time tick\n"
+                        val st' = process-time-tick ()
+                    in
+                        (st', true)
+                    end
                   | _ => 
                     ( print "got some other crap\n" ;
                       (st, true) )

@@ -5,16 +5,19 @@
 >   | MAMS_YOU_ARE_IN
 > 
 ams
-node_id, int
-query_number, int
-mams_host, string
-mams_port, int
-venture, int
-role, int
-unit, int
-app_name, string
-auth_name, string
-state,  MAMS_state_type
-aams_sender, (string -> unit)
-mams_sender, (string -> unit)
-subject_node_map, (int * int list) list
+node_id= int
+query_number= int
+mams_host= string
+mams_port= int
+venture= int
+role= int
+unit= int
+app_name= string
+auth_name= string
+state=  MAMS_state_type
+aams_sender= (string -> unit)
+mams_sender= (string -> unit)
+subject_to_nodes_map= (int, int) map
+node_to_contact_summary_map= (int, contact_summary_type) map
+last_registrar_hb_time= int * int
+registrar_dead= bool
