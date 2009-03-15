@@ -7,28 +7,19 @@ type (a, b) map = ( (a -> a -> bool) * ((a * b) list) )
 
 fun map-create keymatchf = (keymatchf, nil)
 
-fun map-manage notfoundf foundf (keymatchf, m) k =
+fun map-add (r as (k, nd)) (keymatchf, m) =
     let
         val (ts, fs) = list-partition (keymatchf k) m
-        val new = case ts of 
-                      nil => notfoundf ()
-                    | x :: nil => foundf x
-                    | _ => raise Map (* should be impossible *)
     in
-        (keymatchf, new :: fs)
+        (keymatchf, r :: fs)
     end
 
-fun map-add (k, nd) m =
-    ( map-manage (fn () => (k, nd))
-                 (fn (k1, d1) => (k1, nd))
-                 m
-                 k )
-
-fun map-remove (k, nd) m =
-    ( map-manage (fn () => (k, nil))
-                 (fn (k1, d1) => (k1, nil))
-                 m
-                 k )
+fun map-remove (k, nd) (keymatchf, m) =
+    let
+        val (ts, fs) = list-partition (keymatchf k) m
+    in
+        (keymatchf, fs)
+    end
 
 fun map-lookup k (keymatchf, m) = 
     let
