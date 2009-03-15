@@ -50,3 +50,4 @@ ams_heartbeat, composite, mams_pdu_header
 ams_registration, composite, mams_pdu_header, contact_summary
 ams_you_are_in, composite, mams_pdu_header, node_number
 ams_i_am_starting, composite, mams_pdu_header, contact_summary
+ams_i_am_here, composite, mams_pdu_header, node_status_list

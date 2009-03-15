@@ -72,14 +72,8 @@ fun ams-process-function (st, msg) =
                           mams_supp_data_length = 0, (* this will be updated *)
                           mams_reference = #query_number/ams-statetype st,
                           mams_time_tag = 0 }
-                val cs = { mams_endpoint_name = "127.0.0.1:6969",
-                           delivery_vector_list = {| 
-                                                   { delivery_vector_num = 9,
-                                                     number_delivery_point_names = 1,
-                                                     delivery_point_names = "udp=127.0.0.1:6970" }
-                                                  |} }
                 val p = { mams_pdu_header = h,
-                          contact_summary = cs }
+                          contact_summary = #contact_summary/ams-statetype st }
                 val (s, ds) = ams_registration_tostring p
             in
                 ( (#mams_sender/ams-statetype st) ds ;
@@ -110,6 +104,29 @@ fun ams-process-function (st, msg) =
                 ( (#mams_sender/ams-statetype st) ds ;
                   (st, true) )
             end
+
+        (* *)
+        fun generate-i-am-here st () =
+            let
+                val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) :: nil ) st
+
+                val h = { mams_version = 0,
+                          mams_checksum = 0, 
+                          mams_mpdu_type = AMS_HEARTBEAT,
+                          mams_sender_venture = #venture/ams-statetype st,
+                          mams_sender_unit = #unit/ams-statetype st,
+                          mams_role = #role/ams-statetype st,
+                          mams_signature_length = 0,
+                          mams_supp_data_length = 0,
+                          mams_reference = #query_number/ams-statetype st,
+                          mams_time_tag = 0 }
+                val hb = { mams_pdu_header = h }
+                val (s, ds) = ams_heartbeat_tostring hb
+            in
+                ( (#mams_sender/ams-statetype st) ds ;
+                  (st, true) )
+            end
+
 
         fun process-time-tick () =
             let
