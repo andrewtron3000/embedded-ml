@@ -54,34 +54,6 @@ fun ams-process-function (st, msg) =
         fun update-seq (x :: xs) st = update-seq xs (ams-update-state x st)
           | update-seq nil st = st
 
-
-        (* *)
-        fun process-registration (app, auth, u, r) =
-            let
-                val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) ::
-                                      app_name app ::
-                                      auth_name auth ::
-                                      unit u ::
-                                      role r :: nil ) st
-
-                val h = { mams_version = 0,
-                          mams_checksum = 0, 
-                          mams_mpdu_type = AMS_REGISTRATION,
-                          mams_sender_venture = #venture/ams-statetype st,
-                          mams_sender_unit = #unit/ams-statetype st,
-                          mams_role = #role/ams-statetype st,
-                          mams_signature_length = 0,
-                          mams_supp_data_length = 0, (* this will be updated *)
-                          mams_reference = #query_number/ams-statetype st,
-                          mams_time_tag = 0 }
-                val p = { mams_pdu_header = h,
-                          contact_summary = #contact_summary/ams-statetype st }
-                val (s, ds) = ams_registration_tostring p
-            in
-                ( (#mams_sender/ams-statetype st) ds ;
-                  (st, true) )
-            end
-
         (* *)
         fun extract-mpdu-id ds = (ord (sub(ds, 0))) andb 0x1f
 
@@ -135,6 +107,34 @@ fun ams-process-function (st, msg) =
                   (st, true) )
             end
 
+        (* *)
+        fun process-registration (app, auth, u, r) =
+            let
+                val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) ::
+                                      app_name app ::
+                                      auth_name auth ::
+                                      unit u ::
+                                      role r :: nil ) st
+
+                val h = { mams_version = 0,
+                          mams_checksum = 0, 
+                          mams_mpdu_type = AMS_REGISTRATION,
+                          mams_sender_venture = #venture/ams-statetype st,
+                          mams_sender_unit = #unit/ams-statetype st,
+                          mams_role = #role/ams-statetype st,
+                          mams_signature_length = 0,
+                          mams_supp_data_length = 0, (* this will be updated *)
+                          mams_reference = #query_number/ams-statetype st,
+                          mams_time_tag = 0 }
+                val p = { mams_pdu_header = h,
+                          contact_summary = #contact_summary/ams-statetype st }
+                val (s, ds) = ams_registration_tostring p
+            in
+                ( (#mams_sender/ams-statetype st) ds ;
+                  (st, true) )
+            end
+
+        (* *)
         fun process-time-tick () =
             let
                 val curr-time = clock-gettime ()
@@ -170,7 +170,7 @@ fun ams-process-function (st, msg) =
                     subject) from within the subscription assertion
                     that's passed in. *)
 
-                fun add-to-subject-map node sa st =
+                fun add-to-subject-map node (sa, st) =
                     let
                         val subject = #subject/subscription_assert_type sa
                         val r = (node, sa)
@@ -226,6 +226,7 @@ fun ams-process-function (st, msg) =
                                 val subs = #subscription_list/declaration_struct_type ds
                                 val invs = #invitation_list/declaration_struct_type ds
                                 val st = add-to-contact-map (node, cs) st
+                                val st = array-app-st (add-to-subject-map node) subs st
                             in
                                 (st, true)
                             end
@@ -236,10 +237,9 @@ fun ams-process-function (st, msg) =
                     let
                         val (s, hb) = ams_heartbeat_fromstring ds
                         val h = #mams_pdu_header/ams_heartbeat_type hb
-                        val (st1, rc1) = generate-heartbeat st ()
                     in
-                        (ams-update-state (last_registrar_hb_time (clock-gettime ())) st1, 
-                         rc1)
+                        (ams-update-state (last_registrar_hb_time (clock-gettime ())) st, 
+                         true)
                     end
                                            
             in
@@ -248,8 +248,13 @@ fun ams-process-function (st, msg) =
                         val mpdu-id = extract-mpdu-id ds
                     in 
                         if mpdu-id = AMS_YOU_ARE_IN then process-youarein ds
-                        else if mpdu-id = AMS_HEARTBEAT then process-heartbeat ds
                         else if mpdu-id = AMS_I_AM_HERE then process-iamhere ds 
+                        else if mpdu-id = AMS_HEARTBEAT then 
+                            let
+                                val (s, r) = process-heartbeat ds
+                            in
+                                generate-heartbeat s ()
+                            end
                         else if mpdu-id = AMS_I_AM_STARTING then 
                             let
                                 val (s, r) = process-iamstarting ds
