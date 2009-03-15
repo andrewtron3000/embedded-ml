@@ -6,6 +6,7 @@ let
     import "array.uh"
     import "char.uh"
     import "growarray.uh"
+    import "clock.uh"
     import "map.uh"
     import "marshall.uh"
     import "ams-pkts.uh"
@@ -39,17 +40,20 @@ let
                           mams_sender = MAMSSender,
                           mams_host = "localhost",
                           mams_port = 6969,
-                          subject_node_map = nil,
+                          subject_to_nodes_map = map-create (fn desiredk (k1, d1) => desiredk = k1),
+                          node_to_contact_summary_map = map-create (fn desiredk (k1, d1) => desiredk = k1), 
                           node_id = 1001,
                           query_number = 0,
                           role = 1,
                           state = MAMS_WAITING_FOR_YOU_ARE_IN,
                           unit = 1,
+                          last_registrar_hb_time = clock-gettime (),
+                          registrar_dead = true,
                           venture = 1 }
  
     val ams = activeobject-create ams-process-function initial_state
 
-    val hbs = array-map chr {| 0x01, 0x01, 0x00, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00 |}
+    val hbs = array-map chr {| 0x01, 0x01, 0x00, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0x00, 0x00, 0x00, 0x00 |}
 
 in
     ( future-force (ams (AMSRegister ("app", "auth", (* unit *) 1, (* role *) 100))) ;
