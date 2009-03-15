@@ -14,11 +14,13 @@ datatype ams-primitive =
        | AMSInboundMAMS of string
        | AMSTimeTick
 
+val AMS_HEARTBEAT = 1
 val AMS_REGISTRATION = 19
 val AMS_YOU_ARE_IN = 20
 val AMS_I_AM_STARTING = 21
 val AMS_I_AM_HERE = 22
-val AMS_HEARTBEAT = 1
+val AMS_SUBSCRIBE = 24
+val AMS_UNSUBSCRIBE = 24
 val AMS_N3 = (10, 0)
 
 (* ams-process-function : (st, msg) -> (st, result) *)
@@ -198,6 +200,27 @@ fun ams-process-function (st, msg) =
                                                    (#subject_to_nodes_map/ams-statetype st))) st
                     end
 
+                (* *)
+                fun remove-from-subject-map node (sc, st) =
+                    let
+                        val subject = #subject/subscription_cancel_type sc
+                        fun r-eq (n1, s1) (n2, s2) = n1 = n2
+                        val m = #subject_to_nodes_map/ams-statetype st
+                        val others = 
+                            case map-lookup subject m of 
+                                SOME rs => 
+                                let
+                                    val (ts, fs) = list-partition (r-eq (node, subject)) rs
+                                in
+                                    fs
+                                end
+                              | NONE => nil
+                    in
+                        ams-update-state (subject_to_nodes_map
+                                          (map-add (subject, others)
+                                                   (#subject_to_nodes_map/ams-statetype st))) st
+                    end
+
                 fun process-iamstarting ds =
                     let
                         val (s, ias) = ams_i_am_starting_fromstring ds
@@ -210,7 +233,7 @@ fun ams-process-function (st, msg) =
                     end
 
                 (* *)
-               fun process-iamhere ds =
+                fun process-iamhere ds =
                     let
                         val (s, iah) = ams_i_am_here_fromstring ds
                         val h = #mams_pdu_header/ams_i_am_here_type iah
@@ -222,17 +245,44 @@ fun ams-process-function (st, msg) =
                                 val ns = sub (nsl, 0)
                                 val node = #node_number/node_status_type ns
                                 val cs = #contact_summary/node_status_type ns
-                                val ds = #declaration_struct/node_status_type ns
-                                val subs = #subscription_list/declaration_struct_type ds
-                                val invs = #invitation_list/declaration_struct_type ds
+                                val decs = #declaration_struct/node_status_type ns
+                                val subs = #subscription_list/declaration_struct_type decs
+                                val invs = #invitation_list/declaration_struct_type decs
                                 val st = add-to-contact-map (node, cs) st
                                 val st = array-app-st (add-to-subject-map node) subs st
                             in
                                 (st, true)
                             end
-                        else (st, false)
+                        else 
+                            (print "saw more than one entry in nsl...\n";
+                             (st, false))
                     end
 
+                (* *)
+                fun process-subscription ds =
+                    let
+                        val (s, sub) = ams_subscription_fromstring ds
+                        val h = #mams_pdu_header/ams_subscription_type sub
+                        val sa = #subscription_assert/ams_subscription_type sub
+                        val node = #mams_reference/mams_pdu_header_type h
+                    in
+                        (add-to-subject-map node (sa, st),
+                         true)
+                    end
+
+                (* *)
+                fun process-unsubscribe ds =
+                    let
+                        val (s, unsub) = ams_unsubscribe_fromstring ds
+                        val h = #mams_pdu_header/ams_unsubscribe_type unsub
+                        val sc = #subscription_cancel/ams_unsubscribe_type unsub
+                        val node = #mams_reference/mams_pdu_header_type h
+                    in
+                        (remove-from-subject-map node (sc, st),
+                         true)
+                    end
+
+                (* *)
                 fun process-heartbeat ds =
                     let
                         val (s, hb) = ams_heartbeat_fromstring ds
@@ -249,6 +299,8 @@ fun ams-process-function (st, msg) =
                     in 
                         if mpdu-id = AMS_YOU_ARE_IN then process-youarein ds
                         else if mpdu-id = AMS_I_AM_HERE then process-iamhere ds 
+                        else if mpdu-id = AMS_SUBSCRIBE then process-subscription ds 
+                        else if mpdu-id = AMS_UNSUBSCRIBE then process-unsubscribe ds 
                         else if mpdu-id = AMS_HEARTBEAT then 
                             let
                                 val (s, r) = process-heartbeat ds

@@ -32,8 +32,8 @@ node_list, array, num_nodes, node_numbers
 cell_descriptor, composite, unit, mams_endpoint_name
 num_node_statuses, int, 4, 0
 node_status_list, array, num_node_statuses, node_status
-subscription_cancellation, composite, subject, continuum, unit, role
-invitation_cancellation, composite, subscription_cancellation
+subscription_cancel, composite, subject, continuum, unit, role
+invitation_cancel, composite, subject, continuum, unit, role
 reconnect_struct, composite, node_number, contact_summary, node_list
 mams_version, int, 0, 2
 mams_checksum, int, 0, 1
@@ -51,3 +51,5 @@ ams_registration, composite, mams_pdu_header, contact_summary
 ams_you_are_in, composite, mams_pdu_header, node_number
 ams_i_am_starting, composite, mams_pdu_header, contact_summary
 ams_i_am_here, composite, mams_pdu_header, node_status_list
+ams_subscription, composite, mams_pdu_header, subscription_assert
+ams_unsubscribe, composite, mams_pdu_header, subscription_cancel

@@ -58,16 +58,19 @@ type cell_descriptor_type =
         unit : int,
         mams_endpoint_name : string
     }
-type subscription_cancellation_type =
+type subscription_cancel_type =
     {
         subject : int,
         continuum : int,
         unit : int,
         role : int
     }
-type invitation_cancellation_type =
+type invitation_cancel_type =
     {
-        subscription_cancellation : subscription_cancellation_type
+        subject : int,
+        continuum : int,
+        unit : int,
+        role : int
     }
 type reconnect_struct_type =
     {
@@ -111,6 +114,16 @@ type ams_i_am_here_type =
     {
         mams_pdu_header : mams_pdu_header_type,
         node_status_list : node_status_type array
+    }
+type ams_subscription_type =
+    {
+        mams_pdu_header : mams_pdu_header_type,
+        subscription_assert : subscription_assert_type
+    }
+type ams_unsubscribe_type =
+    {
+        mams_pdu_header : mams_pdu_header_type,
+        subscription_cancel : subscription_cancel_type
     }
 fun subscription_assert_fromstring_cont a s = 
     let 
@@ -723,7 +736,7 @@ fun cell_descriptor_tostring_cont a r =
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
 val cell_descriptor_tostring = cell_descriptor_tostring_cont NONE 
-fun subscription_cancellation_fromstring_cont a s = 
+fun subscription_cancel_fromstring_cont a s = 
     let 
         val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
                         | SOME x => x 
@@ -747,51 +760,41 @@ fun subscription_cancellation_fromstring_cont a s =
     in
         (s, r)
     end
-val subscription_cancellation_fromstring = subscription_cancellation_fromstring_cont NONE 
-fun subscription_cancellation_tostring_cont a r = 
+val subscription_cancel_fromstring = subscription_cancel_fromstring_cont NONE 
+fun subscription_cancel_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
                         | SOME x => x 
         val s =
         let
-            val s = marshall-writenextinteger (s, 2, 0, #subject/subscription_cancellation_type r)
-            val s = marshall-writenextinteger (s, 3, 0, #continuum/subscription_cancellation_type r)
-            val s = marshall-writenextinteger (s, 2, 0, #unit/subscription_cancellation_type r)
-            val s = marshall-writenextinteger (s, 1, 0, #role/subscription_cancellation_type r)
+            val s = marshall-writenextinteger (s, 2, 0, #subject/subscription_cancel_type r)
+            val s = marshall-writenextinteger (s, 3, 0, #continuum/subscription_cancel_type r)
+            val s = marshall-writenextinteger (s, 2, 0, #unit/subscription_cancel_type r)
+            val s = marshall-writenextinteger (s, 1, 0, #role/subscription_cancel_type r)
         in
             s
         end
     in
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
-val subscription_cancellation_tostring = subscription_cancellation_tostring_cont NONE 
-fun invitation_cancellation_fromstring_cont a s = 
+val subscription_cancel_tostring = subscription_cancel_tostring_cont NONE 
+fun invitation_cancel_fromstring_cont a s = 
     let 
         val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
                         | SOME x => x 
         val (r, s) =
         let
-            val (subscription_cancellation, s) =
-                let
-                    val (subject, s) = marshall-readnextinteger (s, 2, 0)
-                    val (continuum, s) = marshall-readnextinteger (s, 3, 0)
-                    val (unit, s) = marshall-readnextinteger (s, 2, 0)
-                    val (role, s) = marshall-readnextinteger (s, 1, 0)
-                in
-                    (
-                        {
-                            subject = subject,
-                            continuum = continuum,
-                            unit = unit,
-                            role = role
-                        },
-                        s
-                    )
-                end
+            val (subject, s) = marshall-readnextinteger (s, 2, 0)
+            val (continuum, s) = marshall-readnextinteger (s, 3, 0)
+            val (unit, s) = marshall-readnextinteger (s, 2, 0)
+            val (role, s) = marshall-readnextinteger (s, 1, 0)
         in
             (
                 {
-                    subscription_cancellation = subscription_cancellation
+                    subject = subject,
+                    continuum = continuum,
+                    unit = unit,
+                    role = role
                 },
                 s
             )
@@ -799,30 +802,24 @@ fun invitation_cancellation_fromstring_cont a s =
     in
         (s, r)
     end
-val invitation_cancellation_fromstring = invitation_cancellation_fromstring_cont NONE 
-fun invitation_cancellation_tostring_cont a r = 
+val invitation_cancel_fromstring = invitation_cancel_fromstring_cont NONE 
+fun invitation_cancel_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
                         | SOME x => x 
         val s =
         let
-            val s =
-                let
-                    val r = #subscription_cancellation/invitation_cancellation_type r
-                    val s = marshall-writenextinteger (s, 2, 0, #subject/subscription_cancellation_type r)
-                    val s = marshall-writenextinteger (s, 3, 0, #continuum/subscription_cancellation_type r)
-                    val s = marshall-writenextinteger (s, 2, 0, #unit/subscription_cancellation_type r)
-                    val s = marshall-writenextinteger (s, 1, 0, #role/subscription_cancellation_type r)
-                in
-                    s
-                end
+            val s = marshall-writenextinteger (s, 2, 0, #subject/invitation_cancel_type r)
+            val s = marshall-writenextinteger (s, 3, 0, #continuum/invitation_cancel_type r)
+            val s = marshall-writenextinteger (s, 2, 0, #unit/invitation_cancel_type r)
+            val s = marshall-writenextinteger (s, 1, 0, #role/invitation_cancel_type r)
         in
             s
         end
     in
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
-val invitation_cancellation_tostring = invitation_cancellation_tostring_cont NONE 
+val invitation_cancel_tostring = invitation_cancel_tostring_cont NONE 
 fun reconnect_struct_fromstring_cont a s = 
     let 
         val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1697,4 +1694,221 @@ fun ams_i_am_here_tostring_cont a r =
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
 val ams_i_am_here_tostring = ams_i_am_here_tostring_cont NONE 
+fun ams_subscription_fromstring_cont a s = 
+    let 
+        val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val (r, s) =
+        let
+            val (mams_pdu_header, s) =
+                let
+                    val (mams_version, s) = marshall-readnextinteger (s, 0, 2)
+                    val (mams_checksum, s) = marshall-readnextinteger (s, 0, 1)
+                    val (mams_mpdu_type, s) = marshall-readnextinteger (s, 0, 5)
+                    val (mams_sender_venture, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_sender_unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_role, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
+                in
+                    (
+                        {
+                            mams_version = mams_version,
+                            mams_checksum = mams_checksum,
+                            mams_mpdu_type = mams_mpdu_type,
+                            mams_sender_venture = mams_sender_venture,
+                            mams_sender_unit = mams_sender_unit,
+                            mams_role = mams_role,
+                            mams_signature_length = mams_signature_length,
+                            mams_supp_data_length = mams_supp_data_length,
+                            mams_reference = mams_reference,
+                            mams_time_tag = mams_time_tag
+                        },
+                        s
+                    )
+                end
+            val (subscription_assert, s) =
+                let
+                    val (subject, s) = marshall-readnextinteger (s, 2, 0)
+                    val (continuum, s) = marshall-readnextinteger (s, 3, 0)
+                    val (unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (role, s) = marshall-readnextinteger (s, 1, 0)
+                    val (delivery_vector_num, s) = marshall-readnextinteger (s, 0, 4)
+                    val (priority, s) = marshall-readnextinteger (s, 0, 4)
+                    val (flow, s) = marshall-readnextinteger (s, 1, 0)
+                in
+                    (
+                        {
+                            subject = subject,
+                            continuum = continuum,
+                            unit = unit,
+                            role = role,
+                            delivery_vector_num = delivery_vector_num,
+                            priority = priority,
+                            flow = flow
+                        },
+                        s
+                    )
+                end
+        in
+            (
+                {
+                    mams_pdu_header = mams_pdu_header,
+                    subscription_assert = subscription_assert
+                },
+                s
+            )
+        end
+    in
+        (s, r)
+    end
+val ams_subscription_fromstring = ams_subscription_fromstring_cont NONE 
+fun ams_subscription_tostring_cont a r = 
+    let 
+        val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val s =
+        let
+            val s =
+                let
+                    val r = #mams_pdu_header/ams_subscription_type r
+                    val s = marshall-writenextinteger (s, 0, 2, #mams_version/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 1, #mams_checksum/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 5, #mams_mpdu_type/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_sender_venture/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_sender_unit/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_role/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
+                in
+                    s
+                end
+            val s =
+                let
+                    val r = #subscription_assert/ams_subscription_type r
+                    val s = marshall-writenextinteger (s, 2, 0, #subject/subscription_assert_type r)
+                    val s = marshall-writenextinteger (s, 3, 0, #continuum/subscription_assert_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #unit/subscription_assert_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #role/subscription_assert_type r)
+                    val s = marshall-writenextinteger (s, 0, 4, #delivery_vector_num/subscription_assert_type r)
+                    val s = marshall-writenextinteger (s, 0, 4, #priority/subscription_assert_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #flow/subscription_assert_type r)
+                in
+                    s
+                end
+        in
+            s
+        end
+    in
+        (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
+    end
+val ams_subscription_tostring = ams_subscription_tostring_cont NONE 
+fun ams_unsubscribe_fromstring_cont a s = 
+    let 
+        val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val (r, s) =
+        let
+            val (mams_pdu_header, s) =
+                let
+                    val (mams_version, s) = marshall-readnextinteger (s, 0, 2)
+                    val (mams_checksum, s) = marshall-readnextinteger (s, 0, 1)
+                    val (mams_mpdu_type, s) = marshall-readnextinteger (s, 0, 5)
+                    val (mams_sender_venture, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_sender_unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_role, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
+                in
+                    (
+                        {
+                            mams_version = mams_version,
+                            mams_checksum = mams_checksum,
+                            mams_mpdu_type = mams_mpdu_type,
+                            mams_sender_venture = mams_sender_venture,
+                            mams_sender_unit = mams_sender_unit,
+                            mams_role = mams_role,
+                            mams_signature_length = mams_signature_length,
+                            mams_supp_data_length = mams_supp_data_length,
+                            mams_reference = mams_reference,
+                            mams_time_tag = mams_time_tag
+                        },
+                        s
+                    )
+                end
+            val (subscription_cancel, s) =
+                let
+                    val (subject, s) = marshall-readnextinteger (s, 2, 0)
+                    val (continuum, s) = marshall-readnextinteger (s, 3, 0)
+                    val (unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (role, s) = marshall-readnextinteger (s, 1, 0)
+                in
+                    (
+                        {
+                            subject = subject,
+                            continuum = continuum,
+                            unit = unit,
+                            role = role
+                        },
+                        s
+                    )
+                end
+        in
+            (
+                {
+                    mams_pdu_header = mams_pdu_header,
+                    subscription_cancel = subscription_cancel
+                },
+                s
+            )
+        end
+    in
+        (s, r)
+    end
+val ams_unsubscribe_fromstring = ams_unsubscribe_fromstring_cont NONE 
+fun ams_unsubscribe_tostring_cont a r = 
+    let 
+        val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val s =
+        let
+            val s =
+                let
+                    val r = #mams_pdu_header/ams_unsubscribe_type r
+                    val s = marshall-writenextinteger (s, 0, 2, #mams_version/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 1, #mams_checksum/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 5, #mams_mpdu_type/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_sender_venture/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_sender_unit/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_role/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
+                in
+                    s
+                end
+            val s =
+                let
+                    val r = #subscription_cancel/ams_unsubscribe_type r
+                    val s = marshall-writenextinteger (s, 2, 0, #subject/subscription_cancel_type r)
+                    val s = marshall-writenextinteger (s, 3, 0, #continuum/subscription_cancel_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #unit/subscription_cancel_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #role/subscription_cancel_type r)
+                in
+                    s
+                end
+        in
+            s
+        end
+    in
+        (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
+    end
+val ams_unsubscribe_tostring = ams_unsubscribe_tostring_cont NONE 
 
