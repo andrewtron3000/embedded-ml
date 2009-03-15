@@ -3,7 +3,7 @@ val require-list = provide-list
 
 exception Map
 
-type (a, b) map = ( (a -> a -> bool) * ((a * b) list) )
+type (a, b) map = ( (a -> (a * b) -> bool) * ((a * b) list) )
 
 fun map-create keymatchf = (keymatchf, nil)
 
