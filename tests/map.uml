@@ -17,13 +17,9 @@ let
 
     val t1 = map-lookup 1 m
 
-    fun pis nil = print "\n"
-      | pis (i :: is) = ( print [ [int-tostring i] ] ;
-                          pis is )
-
     fun test t =
         case t of 
-            SOME ns => pis ns
+            SOME ns => print [[int-tostring ns]\n]
           | NONE => print [nothing found\n]
 
 in
