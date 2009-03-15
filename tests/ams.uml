@@ -34,12 +34,17 @@ let
             print [MAMS Sender: [hs]\n]
         end
 
+    val cs = { mams_endpoint_name = "udp=127.0.0.1:6969",
+               delivery_vector_list = {| { delivery_vector_num = 1,
+                                           number_delivery_point_names = 1,
+                                           delivery_point_names = "udp=127.0.0.1:6970" } |} }
+
     val initial_state = { app_name = "myapp",
                           auth_name = "myauth",
                           aams_sender = AAMSSender,
                           mams_sender = MAMSSender,
-                          mams_host = "localhost",
-                          mams_port = 6969,
+                          contact_summary = cs,
+                          subscriptions = nil,
                           subject_to_nodes_map = map-create (fn desiredk (k1, d1) => desiredk = k1),
                           node_to_contact_summary_map = map-create (fn desiredk (k1, d1) => desiredk = k1), 
                           node_id = 1001,
