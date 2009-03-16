@@ -125,6 +125,21 @@ type ams_unsubscribe_type =
         mams_pdu_header : mams_pdu_header_type,
         subscription_cancel : subscription_cancel_type
     }
+type aams_pdu_header_type =
+    {
+        aams_version : int,
+        aams_message_type : int,
+        aams_priority : int,
+        aams_reserved1 : int,
+        aams_checksum : int,
+        aams_continuum : int,
+        aams_unit : int,
+        aams_node : int,
+        aams_reserved2 : int,
+        aams_context : int,
+        aams_subject : int,
+        aams_app_data_len : int
+    }
 fun subscription_assert_fromstring_cont a s = 
     let 
         val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1911,4 +1926,70 @@ fun ams_unsubscribe_tostring_cont a r =
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
 val ams_unsubscribe_tostring = ams_unsubscribe_tostring_cont NONE 
+fun aams_pdu_header_fromstring_cont a s = 
+    let 
+        val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val (r, s) =
+        let
+            val (aams_version, s) = marshall-readnextinteger (s, 0, 2)
+            val (aams_message_type, s) = marshall-readnextinteger (s, 0, 2)
+            val (aams_priority, s) = marshall-readnextinteger (s, 0, 4)
+            val (aams_reserved1, s) = marshall-readnextinteger (s, 1, 0)
+            val (aams_checksum, s) = marshall-readnextinteger (s, 0, 1)
+            val (aams_continuum, s) = marshall-readnextinteger (s, 0, 15)
+            val (aams_unit, s) = marshall-readnextinteger (s, 2, 0)
+            val (aams_node, s) = marshall-readnextinteger (s, 1, 0)
+            val (aams_reserved2, s) = marshall-readnextinteger (s, 1, 0)
+            val (aams_context, s) = marshall-readnextinteger (s, 4, 0)
+            val (aams_subject, s) = marshall-readnextinteger (s, 2, 0)
+            val (aams_app_data_len, s) = marshall-readnextinteger (s, 2, 0)
+        in
+            (
+                {
+                    aams_version = aams_version,
+                    aams_message_type = aams_message_type,
+                    aams_priority = aams_priority,
+                    aams_reserved1 = aams_reserved1,
+                    aams_checksum = aams_checksum,
+                    aams_continuum = aams_continuum,
+                    aams_unit = aams_unit,
+                    aams_node = aams_node,
+                    aams_reserved2 = aams_reserved2,
+                    aams_context = aams_context,
+                    aams_subject = aams_subject,
+                    aams_app_data_len = aams_app_data_len
+                },
+                s
+            )
+        end
+    in
+        (s, r)
+    end
+val aams_pdu_header_fromstring = aams_pdu_header_fromstring_cont NONE 
+fun aams_pdu_header_tostring_cont a r = 
+    let 
+        val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val s =
+        let
+            val s = marshall-writenextinteger (s, 0, 2, #aams_version/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 0, 2, #aams_message_type/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 0, 4, #aams_priority/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 1, 0, #aams_reserved1/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 0, 1, #aams_checksum/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 0, 15, #aams_continuum/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 2, 0, #aams_unit/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 1, 0, #aams_node/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 1, 0, #aams_reserved2/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 4, 0, #aams_context/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 2, 0, #aams_subject/aams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 2, 0, #aams_app_data_len/aams_pdu_header_type r)
+        in
+            s
+        end
+    in
+        (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
+    end
+val aams_pdu_header_tostring = aams_pdu_header_tostring_cont NONE 
 

@@ -53,3 +53,16 @@ ams_i_am_starting, composite, mams_pdu_header, contact_summary
 ams_i_am_here, composite, mams_pdu_header, node_status_list
 ams_subscription, composite, mams_pdu_header, subscription_assert
 ams_unsubscribe, composite, mams_pdu_header, subscription_cancel
+aams_version, int, 0, 2
+aams_message_type, int, 0, 2
+aams_priority, int, 0, 4
+aams_reserved1, int, 1, 0
+aams_checksum, int, 0, 1
+aams_continuum, int, 0, 15
+aams_unit, int, 2, 0
+aams_node, int, 1, 0
+aams_reserved2, int, 1, 0
+aams_context, int, 4, 0
+aams_subject, int, 2, 0
+aams_app_data_len, int, 2, 0
+aams_pdu_header, composite, aams_version, aams_message_type, aams_priority, aams_reserved1, aams_checksum, aams_continuum, aams_unit, aams_node, aams_reserved2, aams_context, aams_subject, aams_app_data_len
