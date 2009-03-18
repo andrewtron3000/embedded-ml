@@ -41,6 +41,7 @@ let
 
     val initial_state = { app_name = "myapp",
                           auth_name = "myauth",
+                          desired_transport = "test",
                           aams_sender = AAMSSender,
                           mams_sender = MAMSSender,
                           contact_summary = cs,
@@ -66,6 +67,7 @@ in
     ( future-force (ams (AMSRegister ("app", "auth", (* unit *) 1, (* role *) 100))) ;
       future-force (ams (AMSInboundMAMS hbs)) ;
       future-force (ams (AMSInboundMAMS iahs)) ;
+      future-force (ams (AMSTimeTick)) ;
       future-force (ams (AMSUnregister (* node id *) 9)) ;
       print "hi" )
 end
