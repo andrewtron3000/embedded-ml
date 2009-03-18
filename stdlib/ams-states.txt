@@ -13,6 +13,7 @@ role= int
 unit= int
 app_name= string
 auth_name= string
+desired_transport= string
 state=  MAMS_state_type
 aams_sender= (string -> unit)
 mams_sender= (string -> unit)

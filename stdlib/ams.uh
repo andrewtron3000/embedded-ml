@@ -28,32 +28,6 @@ val AMS_UNARY = 0
 (* ams-process-function : (st, msg) -> (st, result) *)
 fun ams-process-function (st, msg) =
     let
-        (* this is broken!  needs to deal with 16 bit numbers and the
-        array needs to be padded if of an odd size, and checksum
-        should be returned or should it be inserted? *)
-        fun generate-checksum ds =
-            let
-                fun upd s idx acc =
-                    if idx <= (length s) - 2 then
-                        let
-                            val x1 = sub(s, idx)
-                            val x2 = sub(s, idx + 1)
-                        in
-                            upd s (idx + 2) acc + x1 + x2
-                        end
-                    else if idx = length(s) - 1 then
-                        let
-                            val x1 = sub(s, idx)
-                        in
-                            (acc + x1) andb 0xffff
-                        end
-                    else
-                       (acc andb 0xffff)
-            in
-                ( upd ds 0 0 ;
-                  ds )
-            end
-
         (* *)
         fun update-seq (x :: xs) st = update-seq xs (ams-update-state x st)
           | update-seq nil st = st
@@ -61,12 +35,9 @@ fun ams-process-function (st, msg) =
         (* *)
         fun extract-mpdu-id ds = (ord (sub(ds, 0))) andb 0x1f
 
-        (* *)
-
         (* note we don't pass (key, data) in here, it's only data.
            this is because we can get the key (the subject) from
            within the subscription assertion that's passed in. *)
-
         fun add-to-subject-map node (sa, st) =
             let
                 val subject = #subject/subscription_assert_type sa
@@ -104,6 +75,26 @@ fun ams-process-function (st, msg) =
                 ams-update-state (subject_to_nodes_map
                                       (map-add (subject, others)
                                                (#subject_to_nodes_map/ams-statetype st))) st
+            end
+
+        (* *)
+        fun get-dv-from-cs n transport cs =
+            let
+                fun dv-num-eq n dv = (#delivery_vector_num/delivery_vector_type dv) = n
+                val dvs = #delivery_vector_list/contact_summary_type cs
+            in
+                case array-find (dv-num-eq n) dvs of
+                    SOME i => 
+                    let
+                        val dpns = #delivery_point_names/delivery_vector_type (sub(dvs, i))
+                        val names = string-fields (fn ?, => true | _ => false) dpns
+                        val name = case list-find (fn x => string-prefix (transport, x)) names of
+                                       SOME v => v
+                                     | NONE => raise Subscript
+                    in
+                        name
+                    end
+                  | NONE => raise Subscript
             end
 
         (* *)
@@ -172,7 +163,7 @@ fun ams-process-function (st, msg) =
                           mams_sender_unit = #unit/ams-statetype st,
                           mams_role = #role/ams-statetype st,
                           mams_signature_length = 0,
-                          mams_supp_data_length = 0, (* this will be updated *)
+                          mams_supp_data_length = 0, 
                           mams_reference = #query_number/ams-statetype st,
                           mams_time_tag = 0 }
                 val p = { mams_pdu_header = h,
@@ -194,14 +185,14 @@ fun ams-process-function (st, msg) =
                           mams_sender_unit = #unit/ams-statetype st,
                           mams_role = #role/ams-statetype st,
                           mams_signature_length = 0,
-                          mams_supp_data_length = 0, (* this will be updated *)
+                          mams_supp_data_length = 0,
                           mams_reference = node,
                           mams_time_tag = 0 }
                 val sa = { subject = subj,
                            continuum = cont,
                            unit = unit,
                            role = role,
-                           delivery_vector_num = 1 (* SUSP hardcoded *),
+                           delivery_vector_num = 0, (* SUSP *)
                            priority = 1,
                            flow = 1 }
                 val sm = { mams_pdu_header = h,
@@ -224,7 +215,7 @@ fun ams-process-function (st, msg) =
                           mams_sender_unit = #unit/ams-statetype st,
                           mams_role = #role/ams-statetype st,
                           mams_signature_length = 0,
-                          mams_supp_data_length = 0, (* this will be updated *)
+                          mams_supp_data_length = 0, 
                           mams_reference = node,
                           mams_time_tag = 0 }
                 val sc = { subject = subj,
@@ -248,15 +239,8 @@ fun ams-process-function (st, msg) =
                     case map-lookup n (#node_to_contact_summary_map/ams-statetype st) of 
                         SOME cs => 
                         let
-                            val requesteddv = #delivery_vector_num/subscription_assert_type sa
-                            val dvl = #delivery_vector_list/contact_summary_type cs
-                            val dv = sub(dvl, 0) handle subscript => ( print "couldn't get a dv!\n" ;
-                                                                       raise subscript )
-                            val dvnames = string-fields (fn ?, => true | _ => false) 
-                                                        (#delivery_point_names/delivery_vector_type dv)
-                            val dvn = list-nth requesteddv dvnames 
-                                handle List => ( print "hmm.  requested dv is not available\n" ; 
-                                                 raise List )
+                            val t = #desired_transport/ams-statetype st
+                            val dv = get-dv-from-cs (#delivery_vector_num/subscription_assert_type sa) t cs 
                             val h = { aams_version = 0,
                                       aams_message_type = AMS_UNARY,
                                       aams_priority = #priority/subscription_assert_type sa,
