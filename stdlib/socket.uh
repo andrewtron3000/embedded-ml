@@ -11,6 +11,9 @@ native socket-open-tcp = "socketOpenTCP" : unit -> descriptor
 (* opens a network datagram socket *)
 native socket-open-udp = "socketOpenUDP" : unit -> descriptor
 
+(* converts a hostname to a standard xxx.xxx.xxx.xxx string *)
+native socket-gethostbyname = "socketGetHostByName" : string -> string
+
 (* socket-connect <descriptor> <hostname> <port> *)
 native socket-connect = "socketConnect" : descriptor * string * int -> unit
 
