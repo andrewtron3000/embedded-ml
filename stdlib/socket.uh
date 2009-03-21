@@ -1,5 +1,6 @@
 (* sockets interface *)
 
+val require-string = provide-string
 val require-descriptorio = provide-descriptorio
 val provide-socket = ()
 
@@ -32,3 +33,14 @@ native socket-listen = "socketListen" : descriptor * int -> unit
 native socket-accept = "socketAccept" : descriptor -> descriptor
 (* socket-close <descriptor> *)
 val socket-close = descriptor-close
+
+fun socket-is-ipaddr s =
+    let
+        val fs = string-fields (fn ?. => true | _ => false) s
+        fun is-non-integer x = case int-fromstring x of
+                                   SOME y => false
+                                 | NONE => true
+    in
+        ( (list-length fs) = 4 andalso
+          list-exists (not o is-non-integer) fs )
+    end
