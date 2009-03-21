@@ -15,6 +15,29 @@ let
               socket-close s )
         end
 
+    fun udp-sentence-client () =
+        let
+            val s = socket-open-udp ()
+            val () = socket-bind (s, 6970)
+            val s2 = socket-open-udp ()
+            val () = socket-bind (s2, 6970)
+            val () = socket-connect (s, "127.0.0.1", 6969)
+            val () = socket-connect (s2, "127.0.0.1", 6980)
+            fun get-new-sentence s = 
+                let
+                    val b = descriptor-bytes-avail s
+                in
+                    if b > 0 then print [got: <[descriptor-read (s, b)]>\n] else get-new-sentence s
+                end
+
+        in
+            ( descriptor-write (s, "hi from udp land") ;
+              get-new-sentence s ;
+              descriptor-write (s2, "hi again from udp land") ;
+              get-new-sentence s2 ;
+              socket-close s )
+        end
+
     fun tcp-client () =
         let 
             val s = socket-open-tcp ()
@@ -55,4 +78,5 @@ in
       print [[bool-tostring (socket-is-ipaddr "1232132")]\n] ;
       print [[bool-tostring (socket-is-ipaddr "1.2.3.4.5")]\n] )
     (* udp-client () *)
+    (* udp-sentence-client () *)
 end
