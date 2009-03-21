@@ -46,5 +46,6 @@ let
         end
 
 in
-    udp-client ()
+    print [ip address of google is: [socket-gethostbyname "www.google.com"]\n]
+    (* udp-client () *)
 end
