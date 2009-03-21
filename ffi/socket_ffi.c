@@ -21,6 +21,7 @@
 #include "ffi.h"
 
 #define HOSTNAME_LEN 256
+#define ADDRESS_LEN 16
 
 uint32_t *socketOpenTCP( uint32_t context_len, uint32_t *stackvar )
 {
@@ -93,6 +94,29 @@ uint32_t *socketSetNonBlocking(uint32_t context_len, uint32_t *hPtr)
   fcntl(sd, F_SETFL, flags | O_NONBLOCK);
 
   return (uint32_t *) NULL;
+}
+
+uint32_t *socketGetHostByName(uint32_t context_len, uint32_t *hPtr )
+{
+  char hostname[HOSTNAME_LEN];
+  uint32_t hostname_len;
+  struct hostent *hostPtr = NULL;
+  char *addr;
+
+  unboxString( hPtr, hostname, HOSTNAME_LEN, &hostname_len );
+
+  hostPtr = gethostbyname(hostname);
+  if (NULL == hostPtr)
+  {
+      perror("Error resolving server address:");
+      exit(1);
+  }
+
+  addr = inet_ntoa(*((struct in_addr *)hostPtr->h_addr));
+
+  return boxString( context_len, 
+                    addr, 
+                    strlen(addr) );
 }
 
 uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
