@@ -45,7 +45,14 @@ let
               socket-close s2 )
         end
 
+    fun bool-tostring b = if b then "true" else "false"
+
 in
-    print [ip address of google is: [socket-gethostbyname "www.google.com"]\n]
+    ( print [ip address of google is: [socket-gethostbyname "www.google.com"]\n] ;
+      print [[bool-tostring (socket-is-ipaddr "www.google.com")]\n] ;
+      print [[bool-tostring (socket-is-ipaddr "127.0.0.1")]\n] ;
+      print [[bool-tostring (socket-is-ipaddr "www.127.com")]\n] ;
+      print [[bool-tostring (socket-is-ipaddr "1232132")]\n] ;
+      print [[bool-tostring (socket-is-ipaddr "1.2.3.4.5")]\n] )
     (* udp-client () *)
 end
