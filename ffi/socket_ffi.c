@@ -117,8 +117,7 @@ uint32_t *socketGetHostByName(uint32_t context_len, uint32_t *hPtr )
       exit(1);
     }
 
-  error = getnameinfo(res->ai_addr, res->ai_addrlen, buf, sizeof(buf), NULL, 0,
-                      NI_NUMERICHOST);
+  error = getnameinfo(res->ai_addr, res->ai_addrlen, buf, sizeof(buf), NULL, 0, NI_NUMERICHOST);
   if(error != 0)
     {
       fprintf(stderr, "getnameinfo error: %s\n", gai_strerror(error));
@@ -139,8 +138,9 @@ uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
   uint32_t hostname_len;
   int port;
   int status;
-  struct hostent *hostPtr = NULL;
   struct sockaddr_in serverName = { 0 };
+  struct addrinfo hints, *res, *r;
+  int error;
 
   sd = (int) unboxUnsigned( unboxTuple(tuple, 0) );
 
@@ -149,35 +149,39 @@ uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
 
   port = (int) unboxUnsigned( unboxTuple(tuple, 2) );
 
-  hostPtr = gethostbyname(hostname);
-  if (NULL == hostPtr)
-  {
-    hostPtr = gethostbyaddr(hostname,
-                            hostname_len,
-                            AF_INET);
-    if (NULL == hostPtr)
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+
+  error = getaddrinfo(hostname, NULL, &hints, &res);
+  if(error != 0)
     {
-      perror("Connect: Error resolving server address:");
+      fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(error));
       exit(1);
     }
-  }
 
-  serverName.sin_family = AF_INET;
-  serverName.sin_port = htons(port);
+  for ( r=res; r != NULL; r=r->ai_next) 
+    {
+      memset(&serverName, 0x0, sizeof(serverName));
+      memcpy(&serverName, r->ai_addr, r->ai_addrlen);
+      serverName.sin_port = htons(port);
 
-  memcpy(&serverName.sin_addr,
-         hostPtr->h_addr,
-         hostPtr->h_length);
+      status = connect(sd, 
+                       (struct sockaddr *) &serverName,
+                       sizeof(serverName));
 
-  status = connect(sd, 
-                   (struct sockaddr *) &serverName,
-                   sizeof(serverName));
+      if (status == 0)
+        {
+          break;
+        }
+    }
 
-  if (-1 == status)
-  {
-    perror("connect:");
-    exit(1);
-  }
+  freeaddrinfo(res);
+
+  if (r == NULL) 
+    {
+      perror("connect:");
+      exit(1);
+    }
 
   return (uint32_t *) NULL;
 }
