@@ -19,6 +19,7 @@ aams_sender= (string -> unit)
 mams_sender= (string -> unit)
 subject_to_nodes_map= (int, (int * subscription_assert_type) list) map
 node_to_contact_summary_map= (int, contact_summary_type) map
+node_to_heartbeat_map= (int, int) map
 last_registrar_hb_time= int * int
 registrar_dead= bool
 subscriptions= subscription_assert_type list

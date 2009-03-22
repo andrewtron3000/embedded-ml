@@ -48,6 +48,7 @@ let
                           subscriptions = nil,
                           subject_to_nodes_map = map-create (fn desiredk (k1, d1) => desiredk = k1),
                           node_to_contact_summary_map = map-create (fn desiredk (k1, d1) => desiredk = k1), 
+                          node_to_heartbeat_map = map-create (fn desiredk (k1, d1) => desiredk = k1), 
                           node_id = 0xa5,
                           query_number = 0,
                           role = 1,

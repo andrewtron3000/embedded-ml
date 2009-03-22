@@ -22,7 +22,8 @@ type ams-statetype =
         last_registrar_hb_time : int * int,
         registrar_dead : bool,
         mams_sender : (string -> unit),
-        unit : int
+        unit : int,
+        node_to_heartbeat_map : (int, int) map
     }
 
 datatype ams-optype =
@@ -42,7 +43,8 @@ datatype ams-optype =
     last_registrar_hb_time of int * int |
     registrar_dead of bool |
     mams_sender of (string -> unit) |
-    unit of int
+    unit of int |
+    node_to_heartbeat_map of (int, int) map
 
 fun ams-update-state tv st =
     case tv of 
@@ -63,7 +65,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | app_name v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -82,7 +85,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | state v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -101,7 +105,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | subscriptions v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -120,7 +125,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | node_to_contact_summary_map v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -139,7 +145,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | desired_transport v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -158,7 +165,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | auth_name v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -177,7 +185,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | contact_summary v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -196,7 +205,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | node_id v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -215,7 +225,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | role v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -234,7 +245,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | subject_to_nodes_map v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -253,7 +265,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | venture v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -272,7 +285,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | query_number v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -291,7 +305,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | last_registrar_hb_time v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -310,7 +325,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = v,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | registrar_dead v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -329,7 +345,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = v,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | mams_sender v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -348,7 +365,8 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = v,
-            unit = #unit/ams-statetype st
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
          }
         | unit v => {
             aams_sender = #aams_sender/ams-statetype st,
@@ -367,6 +385,27 @@ fun ams-update-state tv st =
             last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
             registrar_dead = #registrar_dead/ams-statetype st,
             mams_sender = #mams_sender/ams-statetype st,
-            unit = v
+            unit = v,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
+         }
+        | node_to_heartbeat_map v => {
+            aams_sender = #aams_sender/ams-statetype st,
+            app_name = #app_name/ams-statetype st,
+            state = #state/ams-statetype st,
+            subscriptions = #subscriptions/ams-statetype st,
+            node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
+            desired_transport = #desired_transport/ams-statetype st,
+            auth_name = #auth_name/ams-statetype st,
+            contact_summary = #contact_summary/ams-statetype st,
+            node_id = #node_id/ams-statetype st,
+            role = #role/ams-statetype st,
+            subject_to_nodes_map = #subject_to_nodes_map/ams-statetype st,
+            venture = #venture/ams-statetype st,
+            query_number = #query_number/ams-statetype st,
+            last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
+            registrar_dead = #registrar_dead/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = v
          }
 

@@ -100,10 +100,8 @@ fun ams-process-function (st, msg) =
             end
 
         (* *)
-        fun generate-heartbeat st () =
+        fun generate-heartbeat node st =
             let
-                val st = ams-update-state (query_number ((#query_number/ams-statetype st) + 1)) st
-
                 val h = { mams_version = 0,
                           mams_checksum = 0, 
                           mams_mpdu_type = AMS_HEARTBEAT,
@@ -112,7 +110,7 @@ fun ams-process-function (st, msg) =
                           mams_role = #role/ams-statetype st,
                           mams_signature_length = 0,
                           mams_supp_data_length = 0,
-                          mams_reference = #query_number/ams-statetype st,
+                          mams_reference = node,
                           mams_time_tag = 0 }
                 val hb = { mams_pdu_header = h }
                 val (s, ds) = ams_heartbeat_tostring hb
@@ -289,10 +287,12 @@ fun ams-process-function (st, msg) =
                     let
                         val (s, yai) = ams_you_are_in_fromstring ds
                         val id = (#node_number/ams_you_are_in_type yai)
-                        val st = update-seq (state MAMS_YOU_ARE_IN ::
-                                             node_id id :: nil) st
                     in
-                        (st, true)
+                        case (#state/ams-statetype st) of 
+                            MAMS_WAITING_FOR_YOU_ARE_IN =>
+                            ( ( update-seq (state MAMS_YOU_ARE_IN ::
+                                            node_id id :: nil) st ), true )
+                          | _ => (st, false)
                     end
 
                 fun add-to-contact-map (node, cs) st = 
@@ -305,8 +305,16 @@ fun ams-process-function (st, msg) =
                     end
 
                 (* *)
+                fun add-to-heartbeat-map (node, tlast) st = 
+                    let
+                        val () = print [adding new entry into heartbeat table for node [int-tostring node]\n]
+                    in
+                        ams-update-state (node_to_heartbeat_map 
+                                              (map-add (node, tlast) 
+                                                       (#node_to_heartbeat_map/ams-statetype st))) st
+                    end
 
-
+                (* *)
                 fun process-iamstarting ds =
                     let
                         val (s, ias) = ams_i_am_starting_fromstring ds
@@ -373,9 +381,11 @@ fun ams-process-function (st, msg) =
                     let
                         val (s, hb) = ams_heartbeat_fromstring ds
                         val h = #mams_pdu_header/ams_heartbeat_type hb
+                        val node = (#mams_reference/mams_pdu_header_type h)
+                        val (curr-s, curr-ns) = clock-gettime ()
+                        val st = add-to-heartbeat-map (node, curr-s) st 
                     in
-                        (ams-update-state (last_registrar_hb_time (clock-gettime ())) st, 
-                         true)
+                        generate-heartbeat node st
                     end
                                            
             in
@@ -387,12 +397,7 @@ fun ams-process-function (st, msg) =
                         else if mpdu-id = AMS_I_AM_HERE then process-iamhere ds 
                         else if mpdu-id = AMS_SUBSCRIBE then process-subscription ds 
                         else if mpdu-id = AMS_UNSUBSCRIBE then process-unsubscribe ds 
-                        else if mpdu-id = AMS_HEARTBEAT then 
-                            let
-                                val (s, r) = process-heartbeat ds
-                            in
-                                generate-heartbeat s ()
-                            end
+                        else if mpdu-id = AMS_HEARTBEAT then process-heartbeat ds
                         else if mpdu-id = AMS_I_AM_STARTING then 
                             let
                                 val (s, r) = process-iamstarting ds
