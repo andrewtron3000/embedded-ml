@@ -107,8 +107,6 @@ uint32_t *socketGetHostByName(uint32_t context_len, uint32_t *hPtr )
   unboxString( hPtr, hostname, HOSTNAME_LEN, &hostname_len );
   hostname[hostname_len] = (char) 0;
 
-  printf("trying <%s>\n", hostname);
-
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
 
