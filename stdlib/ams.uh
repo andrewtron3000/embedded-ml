@@ -409,9 +409,7 @@ fun ams-process-function (st, msg) =
                   | AMSSubscribe s => generate-subscription s
                   | AMSUnsubscribe us => generate-unsubscribe us
                   | AMSPublish p => process-publish p
-                  | AMSInboundMAMS ds =>
-                    ( print [inbound mams: [chars-tohexstring ds]\n] ;
-                      process-inbound-mams ds )
+                  | AMSInboundMAMS ds => process-inbound-mams ds
                   | AMSTimeTick => (process-time-tick (), true)
                   | _ => 
                     ( print "got some other crap\n" ;

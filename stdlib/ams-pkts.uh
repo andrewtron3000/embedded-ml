@@ -170,7 +170,7 @@ fun subscription_assert_fromstring_cont a s =
     in
         (s, r)
     end
-val subscription_assert_fromstring = subscription_assert_fromstring_cont NONE 
+fun subscription_assert_fromstring s = subscription_assert_fromstring_cont NONE s handle Subscript => ( print [subscription_assert parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun subscription_assert_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -221,7 +221,7 @@ fun invitation_assert_fromstring_cont a s =
     in
         (s, r)
     end
-val invitation_assert_fromstring = invitation_assert_fromstring_cont NONE 
+fun invitation_assert_fromstring s = invitation_assert_fromstring_cont NONE s handle Subscript => ( print [invitation_assert parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun invitation_assert_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -318,7 +318,7 @@ fun declaration_struct_fromstring_cont a s =
     in
         (s, r)
     end
-val declaration_struct_fromstring = declaration_struct_fromstring_cont NONE 
+fun declaration_struct_fromstring s = declaration_struct_fromstring_cont NONE s handle Subscript => ( print [declaration_struct parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun declaration_struct_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -390,7 +390,7 @@ fun delivery_vector_fromstring_cont a s =
     in
         (s, r)
     end
-val delivery_vector_fromstring = delivery_vector_fromstring_cont NONE 
+fun delivery_vector_fromstring s = delivery_vector_fromstring_cont NONE s handle Subscript => ( print [delivery_vector parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun delivery_vector_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -447,7 +447,7 @@ fun contact_summary_fromstring_cont a s =
     in
         (s, r)
     end
-val contact_summary_fromstring = contact_summary_fromstring_cont NONE 
+fun contact_summary_fromstring s = contact_summary_fromstring_cont NONE s handle Subscript => ( print [contact_summary parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun contact_summary_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -602,7 +602,7 @@ fun node_status_fromstring_cont a s =
     in
         (s, r)
     end
-val node_status_fromstring = node_status_fromstring_cont NONE 
+fun node_status_fromstring s = node_status_fromstring_cont NONE s handle Subscript => ( print [node_status parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun node_status_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -700,7 +700,7 @@ fun node_numbers_fromstring_cont a s =
     in
         (s, r)
     end
-val node_numbers_fromstring = node_numbers_fromstring_cont NONE 
+fun node_numbers_fromstring s = node_numbers_fromstring_cont NONE s handle Subscript => ( print [node_numbers parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun node_numbers_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -735,7 +735,7 @@ fun cell_descriptor_fromstring_cont a s =
     in
         (s, r)
     end
-val cell_descriptor_fromstring = cell_descriptor_fromstring_cont NONE 
+fun cell_descriptor_fromstring s = cell_descriptor_fromstring_cont NONE s handle Subscript => ( print [cell_descriptor parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun cell_descriptor_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -775,7 +775,7 @@ fun subscription_cancel_fromstring_cont a s =
     in
         (s, r)
     end
-val subscription_cancel_fromstring = subscription_cancel_fromstring_cont NONE 
+fun subscription_cancel_fromstring s = subscription_cancel_fromstring_cont NONE s handle Subscript => ( print [subscription_cancel parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun subscription_cancel_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -817,7 +817,7 @@ fun invitation_cancel_fromstring_cont a s =
     in
         (s, r)
     end
-val invitation_cancel_fromstring = invitation_cancel_fromstring_cont NONE 
+fun invitation_cancel_fromstring s = invitation_cancel_fromstring_cont NONE s handle Subscript => ( print [invitation_cancel parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun invitation_cancel_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -905,7 +905,7 @@ fun reconnect_struct_fromstring_cont a s =
     in
         (s, r)
     end
-val reconnect_struct_fromstring = reconnect_struct_fromstring_cont NONE 
+fun reconnect_struct_fromstring s = reconnect_struct_fromstring_cont NONE s handle Subscript => ( print [reconnect_struct parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun reconnect_struct_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -989,7 +989,7 @@ fun mams_pdu_header_fromstring_cont a s =
     in
         (s, r)
     end
-val mams_pdu_header_fromstring = mams_pdu_header_fromstring_cont NONE 
+fun mams_pdu_header_fromstring s = mams_pdu_header_fromstring_cont NONE s handle Subscript => ( print [mams_pdu_header parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun mams_pdu_header_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1059,7 +1059,7 @@ fun ams_heartbeat_fromstring_cont a s =
     in
         (s, r)
     end
-val ams_heartbeat_fromstring = ams_heartbeat_fromstring_cont NONE 
+fun ams_heartbeat_fromstring s = ams_heartbeat_fromstring_cont NONE s handle Subscript => ( print [ams_heartbeat parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun ams_heartbeat_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1169,7 +1169,7 @@ fun ams_registration_fromstring_cont a s =
     in
         (s, r)
     end
-val ams_registration_fromstring = ams_registration_fromstring_cont NONE 
+fun ams_registration_fromstring s = ams_registration_fromstring_cont NONE s handle Subscript => ( print [ams_registration parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun ams_registration_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1268,7 +1268,7 @@ fun ams_you_are_in_fromstring_cont a s =
     in
         (s, r)
     end
-val ams_you_are_in_fromstring = ams_you_are_in_fromstring_cont NONE 
+fun ams_you_are_in_fromstring s = ams_you_are_in_fromstring_cont NONE s handle Subscript => ( print [ams_you_are_in parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun ams_you_are_in_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1379,7 +1379,7 @@ fun ams_i_am_starting_fromstring_cont a s =
     in
         (s, r)
     end
-val ams_i_am_starting_fromstring = ams_i_am_starting_fromstring_cont NONE 
+fun ams_i_am_starting_fromstring s = ams_i_am_starting_fromstring_cont NONE s handle Subscript => ( print [ams_i_am_starting parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun ams_i_am_starting_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1602,7 +1602,7 @@ fun ams_i_am_here_fromstring_cont a s =
     in
         (s, r)
     end
-val ams_i_am_here_fromstring = ams_i_am_here_fromstring_cont NONE 
+fun ams_i_am_here_fromstring s = ams_i_am_here_fromstring_cont NONE s handle Subscript => ( print [ams_i_am_here parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun ams_i_am_here_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1779,7 +1779,7 @@ fun ams_subscription_fromstring_cont a s =
     in
         (s, r)
     end
-val ams_subscription_fromstring = ams_subscription_fromstring_cont NONE 
+fun ams_subscription_fromstring s = ams_subscription_fromstring_cont NONE s handle Subscript => ( print [ams_subscription parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun ams_subscription_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1886,7 +1886,7 @@ fun ams_unsubscribe_fromstring_cont a s =
     in
         (s, r)
     end
-val ams_unsubscribe_fromstring = ams_unsubscribe_fromstring_cont NONE 
+fun ams_unsubscribe_fromstring s = ams_unsubscribe_fromstring_cont NONE s handle Subscript => ( print [ams_unsubscribe parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun ams_unsubscribe_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
@@ -1966,7 +1966,7 @@ fun aams_pdu_header_fromstring_cont a s =
     in
         (s, r)
     end
-val aams_pdu_header_fromstring = aams_pdu_header_fromstring_cont NONE 
+fun aams_pdu_header_fromstring s = aams_pdu_header_fromstring_cont NONE s handle Subscript => ( print [aams_pdu_header parse problem <[chars-tohexstring s]>] ; raise Subscript )
 fun aams_pdu_header_tostring_cont a r = 
     let 
         val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 

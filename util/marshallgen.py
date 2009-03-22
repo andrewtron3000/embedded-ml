@@ -260,7 +260,7 @@ def createFromStringFunction(d, name):
     oe.decreaseIndent()
     oe.add('end\n')
     oe.decreaseIndent()
-    oe.add("val %s_fromstring = %s_fromstring_cont NONE \n" % (name, name))
+    oe.add("fun %s_fromstring s = %s_fromstring_cont NONE s handle Subscript => ( print [%s parse problem <[chars-tohexstring s]>] ; raise Subscript )\n" % (name, name, name))
     return oe.dump()
 
 def createToStringFunction(d, name):
