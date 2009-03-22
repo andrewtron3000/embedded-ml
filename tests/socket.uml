@@ -23,6 +23,7 @@ let
             val () = socket-bind (s2, 6970)
             val () = socket-connect (s, "127.0.0.1", 6969)
             val () = socket-connect (s2, "127.0.0.1", 6980)
+
             fun get-new-sentence s = 
                 let
                     val b = descriptor-bytes-avail s
@@ -32,10 +33,12 @@ let
 
         in
             ( descriptor-write (s, "hi from udp land") ;
-              get-new-sentence s ;
+              socket-close s ;
+              (* get-new-sentence s ; *)
               descriptor-write (s2, "hi again from udp land") ;
               get-new-sentence s2 ;
-              socket-close s )
+              get-new-sentence s2 ;
+              socket-close s2 )
         end
 
     fun tcp-client () =
@@ -76,6 +79,7 @@ in
       print [[bool-tostring (socket-is-ipaddr "127.0.0.1")]\n] ;
       print [[bool-tostring (socket-is-ipaddr "www.127.com")]\n] ;
       print [[bool-tostring (socket-is-ipaddr "1232132")]\n] ;
+      udp-sentence-client () ;
       print [[bool-tostring (socket-is-ipaddr "1.2.3.4.5")]\n] )
     (* udp-client () *)
     (* udp-sentence-client () *)
