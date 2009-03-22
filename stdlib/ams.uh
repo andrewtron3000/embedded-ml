@@ -55,6 +55,7 @@ fun ams-process-function (st, msg) =
                     case map-lookup subject m of 
                         SOME rs => list-filter (fn r1 => not (r-eq r r1)) rs
                       | NONE => nil
+                val () = print [added node [int-tostring node] to subject [int-tostring subject]\n]
             in
                 ams-update-state (subject_to_nodes_map
                                       (map-add (subject, r :: others)
@@ -71,6 +72,7 @@ fun ams-process-function (st, msg) =
                     case map-lookup subject m of 
                         SOME rs => list-filter (fn r1 => not (r-eq (node, subject) r1)) rs
                       | NONE => nil
+                val () = print [removing node [int-tostring node] from [int-tostring subject]\n]
             in
                 ams-update-state (subject_to_nodes_map
                                       (map-add (subject, others)
@@ -256,6 +258,7 @@ fun ams-process-function (st, msg) =
                                       aams_app_data_len = length data }
                             val (s, hs) = aams_pdu_header_tostring h
                             val ds = hs ^ data
+                            val () = print [sending aams data on subject [int-tostring subj] to node [int-tostring node]\n]
                         in
                             (#aams_sender/ams-statetype st) ds
                         end
@@ -293,9 +296,13 @@ fun ams-process-function (st, msg) =
                     end
 
                 fun add-to-contact-map (node, cs) st = 
-                    ams-update-state (node_to_contact_summary_map 
-                                          (map-add (node, cs) 
-                                                   (#node_to_contact_summary_map/ams-statetype st))) st
+                    let
+                        val () = print [adding node [int-tostring node] to contact map\n]
+                    in
+                        ams-update-state (node_to_contact_summary_map 
+                                              (map-add (node, cs) 
+                                                       (#node_to_contact_summary_map/ams-statetype st))) st
+                    end
 
                 (* *)
 
