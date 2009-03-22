@@ -100,23 +100,38 @@ uint32_t *socketGetHostByName(uint32_t context_len, uint32_t *hPtr )
 {
   char hostname[HOSTNAME_LEN];
   uint32_t hostname_len;
-  struct hostent *hostPtr = NULL;
-  char *addr;
+  struct addrinfo hints, *res;
+  char buf[HOSTNAME_LEN] = "";
+  int error;
 
   unboxString( hPtr, hostname, HOSTNAME_LEN, &hostname_len );
+  hostname[hostname_len] = (char) 0;
 
-  hostPtr = gethostbyname(hostname);
-  if (NULL == hostPtr)
-  {
-      perror("Error resolving server address:");
+  printf("trying <%s>\n", hostname);
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+
+  error = getaddrinfo(hostname, NULL, &hints, &res);
+  if(error != 0)
+    {
+      fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(error));
       exit(1);
-  }
+    }
 
-  addr = inet_ntoa(*((struct in_addr *)hostPtr->h_addr));
+  error = getnameinfo(res->ai_addr, res->ai_addrlen, buf, sizeof(buf), NULL, 0,
+                      NI_NUMERICHOST);
+  if(error != 0)
+    {
+      fprintf(stderr, "getnameinfo error: %s\n", gai_strerror(error));
+      exit(1);
+    }
 
-  return boxString( context_len, 
-                    addr, 
-                    strlen(addr) );
+  freeaddrinfo(res);
+
+  return boxString( context_len,
+                    buf,
+                    strlen(buf) );
 }
 
 uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
@@ -132,6 +147,7 @@ uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
   sd = (int) unboxUnsigned( unboxTuple(tuple, 0) );
 
   unboxString( unboxTuple(tuple, 1), hostname, HOSTNAME_LEN, &hostname_len );
+  hostname[hostname_len] = (char) 0;
 
   port = (int) unboxUnsigned( unboxTuple(tuple, 2) );
 
@@ -143,7 +159,7 @@ uint32_t *socketConnect(uint32_t context_len, uint32_t *tuple )
                             AF_INET);
     if (NULL == hostPtr)
     {
-      perror("Error resolving server address:");
+      perror("Connect: Error resolving server address:");
       exit(1);
     }
   }
