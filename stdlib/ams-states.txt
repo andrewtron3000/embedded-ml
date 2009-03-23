@@ -24,5 +24,4 @@ node_to_contact_summary_map= (int, contact_summary_type) map
 node_to_heartbeat_map= (int, int) map
 last_registrar_hb_time= int * int
 registrar_dead= bool
-mams_endpoint= string
 subscriptions= subscription_assert_type list

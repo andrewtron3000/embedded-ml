@@ -34,10 +34,10 @@ let
             print [MAMS Sender [dv]: [hs]\n]
         end
 
-    val cs = { mams_endpoint_name = "udp=127.0.0.1:6969",
+    val cs = { mams_endpoint_name = "test=123:4",
                delivery_vector_list = {| { delivery_vector_num = 1,
                                            number_delivery_point_names = 1,
-                                           delivery_point_names = "udp=127.0.0.1:6970" } |} }
+                                           delivery_point_names = "test=1:1" } |} }
 
     val initial_state = { app_name = "myapp",
                           auth_name = "myauth",
