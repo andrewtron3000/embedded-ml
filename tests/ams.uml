@@ -56,7 +56,6 @@ let
                           unit = 1,
                           last_registrar_hb_time = clock-gettime (),
                           registrar_dead = true,
-                          mams_endpoint = "test=12345:44",
                           venture = 1 }
  
     val ams = activeobject-create ams-process-function initial_state
