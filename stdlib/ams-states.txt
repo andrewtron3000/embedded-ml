@@ -1,7 +1,9 @@
 >val provide-ams-states = ()
 > 
 >datatype MAMS_state_type =
->     MAMS_WAITING_FOR_YOU_ARE_IN
+>     MAMS_WAITING_FOR_REGISTRAR
+>   | MAMS_REGISTRAR_KNOWN
+>   | MAMS_WAITING_FOR_YOU_ARE_IN
 >   | MAMS_YOU_ARE_IN
 > 
 ams
@@ -15,11 +17,12 @@ app_name= string
 auth_name= string
 desired_transport= string
 state=  MAMS_state_type
-aams_sender= (string -> unit)
-mams_sender= (string -> unit)
+aams_sender= (string -> string -> unit)
+mams_sender= (string -> string -> unit)
 subject_to_nodes_map= (int, (int * subscription_assert_type) list) map
 node_to_contact_summary_map= (int, contact_summary_type) map
 node_to_heartbeat_map= (int, int) map
 last_registrar_hb_time= int * int
 registrar_dead= bool
+mams_endpoint= string
 subscriptions= subscription_assert_type list

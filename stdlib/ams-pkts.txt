@@ -53,6 +53,8 @@ ams_i_am_starting, composite, mams_pdu_header, contact_summary
 ams_i_am_here, composite, mams_pdu_header, node_status_list
 ams_subscription, composite, mams_pdu_header, subscription_assert
 ams_unsubscribe, composite, mams_pdu_header, subscription_cancel
+ams_registrar_query, composite, mams_pdu_header, mams_endpoint_name
+ams_cell_spec, composite, mams_pdu_header, cell_descriptor
 aams_version, int, 0, 2
 aams_message_type, int, 0, 2
 aams_priority, int, 0, 4

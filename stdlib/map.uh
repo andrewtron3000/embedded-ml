@@ -30,3 +30,4 @@ fun map-lookup k (keymatchf, m) =
           | NONE => NONE
     end
 
+fun map-get-contents (keymatchf, m) = m

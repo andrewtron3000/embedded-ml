@@ -125,6 +125,16 @@ type ams_unsubscribe_type =
         mams_pdu_header : mams_pdu_header_type,
         subscription_cancel : subscription_cancel_type
     }
+type ams_registrar_query_type =
+    {
+        mams_pdu_header : mams_pdu_header_type,
+        mams_endpoint_name : string
+    }
+type ams_cell_spec_type =
+    {
+        mams_pdu_header : mams_pdu_header_type,
+        cell_descriptor : cell_descriptor_type
+    }
 type aams_pdu_header_type =
     {
         aams_version : int,
@@ -1926,6 +1936,183 @@ fun ams_unsubscribe_tostring_cont a r =
         (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
     end
 val ams_unsubscribe_tostring = ams_unsubscribe_tostring_cont NONE 
+fun ams_registrar_query_fromstring_cont a s = 
+    let 
+        val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val (r, s) =
+        let
+            val (mams_pdu_header, s) =
+                let
+                    val (mams_version, s) = marshall-readnextinteger (s, 0, 2)
+                    val (mams_checksum, s) = marshall-readnextinteger (s, 0, 1)
+                    val (mams_mpdu_type, s) = marshall-readnextinteger (s, 0, 5)
+                    val (mams_sender_venture, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_sender_unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_role, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
+                in
+                    (
+                        {
+                            mams_version = mams_version,
+                            mams_checksum = mams_checksum,
+                            mams_mpdu_type = mams_mpdu_type,
+                            mams_sender_venture = mams_sender_venture,
+                            mams_sender_unit = mams_sender_unit,
+                            mams_role = mams_role,
+                            mams_signature_length = mams_signature_length,
+                            mams_supp_data_length = mams_supp_data_length,
+                            mams_reference = mams_reference,
+                            mams_time_tag = mams_time_tag
+                        },
+                        s
+                    )
+                end
+            val (mams_endpoint_name, s) = marshall-readnextstring s
+        in
+            (
+                {
+                    mams_pdu_header = mams_pdu_header,
+                    mams_endpoint_name = mams_endpoint_name
+                },
+                s
+            )
+        end
+    in
+        (s, r)
+    end
+fun ams_registrar_query_fromstring s = ams_registrar_query_fromstring_cont NONE s handle Subscript => ( print [ams_registrar_query parse problem <[chars-tohexstring s]>] ; raise Subscript )
+fun ams_registrar_query_tostring_cont a r = 
+    let 
+        val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val s =
+        let
+            val s =
+                let
+                    val r = #mams_pdu_header/ams_registrar_query_type r
+                    val s = marshall-writenextinteger (s, 0, 2, #mams_version/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 1, #mams_checksum/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 5, #mams_mpdu_type/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_sender_venture/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_sender_unit/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_role/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
+                in
+                    s
+                end
+            val s = marshall-writenextstring (s, #mams_endpoint_name/ams_registrar_query_type r)
+        in
+            s
+        end
+    in
+        (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
+    end
+val ams_registrar_query_tostring = ams_registrar_query_tostring_cont NONE 
+fun ams_cell_spec_fromstring_cont a s = 
+    let 
+        val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val (r, s) =
+        let
+            val (mams_pdu_header, s) =
+                let
+                    val (mams_version, s) = marshall-readnextinteger (s, 0, 2)
+                    val (mams_checksum, s) = marshall-readnextinteger (s, 0, 1)
+                    val (mams_mpdu_type, s) = marshall-readnextinteger (s, 0, 5)
+                    val (mams_sender_venture, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_sender_unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_role, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
+                    val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
+                in
+                    (
+                        {
+                            mams_version = mams_version,
+                            mams_checksum = mams_checksum,
+                            mams_mpdu_type = mams_mpdu_type,
+                            mams_sender_venture = mams_sender_venture,
+                            mams_sender_unit = mams_sender_unit,
+                            mams_role = mams_role,
+                            mams_signature_length = mams_signature_length,
+                            mams_supp_data_length = mams_supp_data_length,
+                            mams_reference = mams_reference,
+                            mams_time_tag = mams_time_tag
+                        },
+                        s
+                    )
+                end
+            val (cell_descriptor, s) =
+                let
+                    val (unit, s) = marshall-readnextinteger (s, 2, 0)
+                    val (mams_endpoint_name, s) = marshall-readnextstring s
+                in
+                    (
+                        {
+                            unit = unit,
+                            mams_endpoint_name = mams_endpoint_name
+                        },
+                        s
+                    )
+                end
+        in
+            (
+                {
+                    mams_pdu_header = mams_pdu_header,
+                    cell_descriptor = cell_descriptor
+                },
+                s
+            )
+        end
+    in
+        (s, r)
+    end
+fun ams_cell_spec_fromstring s = ams_cell_spec_fromstring_cont NONE s handle Subscript => ( print [ams_cell_spec parse problem <[chars-tohexstring s]>] ; raise Subscript )
+fun ams_cell_spec_tostring_cont a r = 
+    let 
+        val s = case a of NONE => { readbuffer = array(1, chr 0), writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 
+                        | SOME x => x 
+        val s =
+        let
+            val s =
+                let
+                    val r = #mams_pdu_header/ams_cell_spec_type r
+                    val s = marshall-writenextinteger (s, 0, 2, #mams_version/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 1, #mams_checksum/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 0, 5, #mams_mpdu_type/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_sender_venture/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_sender_unit/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_role/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
+                in
+                    s
+                end
+            val s =
+                let
+                    val r = #cell_descriptor/ams_cell_spec_type r
+                    val s = marshall-writenextinteger (s, 2, 0, #unit/cell_descriptor_type r)
+                    val s = marshall-writenextstring (s, #mams_endpoint_name/cell_descriptor_type r)
+                in
+                    s
+                end
+        in
+            s
+        end
+    in
+        (s, growarray-subarray ((#writebuffer/marshall_type s), 0, (#byte_offset/marshall_type s)))
+    end
+val ams_cell_spec_tostring = ams_cell_spec_tostring_cont NONE 
 fun aams_pdu_header_fromstring_cont a s = 
     let 
         val s = case a of NONE => { readbuffer = s, writebuffer = growarray-new (chr 0), byte_offset = 0, bit_offset = 0 } 

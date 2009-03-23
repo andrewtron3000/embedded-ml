@@ -20,18 +20,18 @@ let
     import "futures.uh"
     import "activeobject.uh"
 
-    fun AAMSSender ds = 
+    fun AAMSSender dv ds = 
         let
             val hs = chars-tohexstring ds
         in
-            print [AAMS Sender: [hs]\n]
+            print [AAMS Sender [dv]: [hs]\n]
         end
 
-    fun MAMSSender ds = 
+    fun MAMSSender dv ds = 
         let
             val hs = chars-tohexstring ds
         in
-            print [MAMS Sender: [hs]\n]
+            print [MAMS Sender [dv]: [hs]\n]
         end
 
     val cs = { mams_endpoint_name = "udp=127.0.0.1:6969",
@@ -52,10 +52,11 @@ let
                           node_id = 0xa5,
                           query_number = 0,
                           role = 1,
-                          state = MAMS_WAITING_FOR_YOU_ARE_IN,
+                          state = MAMS_WAITING_FOR_REGISTRAR,
                           unit = 1,
                           last_registrar_hb_time = clock-gettime (),
                           registrar_dead = true,
+                          mams_endpoint = "test=12345:44",
                           venture = 1 }
  
     val ams = activeobject-create ams-process-function initial_state
