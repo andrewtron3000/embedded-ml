@@ -102,15 +102,21 @@ fun ams-process-function (st, msg) =
             end
 
         (* *)
-        fun send-mams-pdu st node ds =
-            case map-lookup node (#node_to_contact_summary_map/ams-statetype st) of 
-                SOME cs => 
-                let
-                    val dv = #mams_endpoint_name/contact_summary_type cs
-                in
-                    (#mams_sender/ams-statetype st) dv ds
-                end
-              | NONE => ()
+        fun send-mams-pdu st (SOME node) ds =
+            ( case map-lookup node (#node_to_contact_summary_map/ams-statetype st) of 
+                  SOME cs => 
+                  let
+                      val dv = #mams_endpoint_name/contact_summary_type cs
+                  in
+                      (#mams_sender/ams-statetype st) dv ds
+                  end
+		| NONE => () )
+          | send-mams-pdu st NONE ds =
+	    let
+                val dv = #cs_mams_endpoint_name/ams-statetype st
+	    in
+                (#mams_sender/ams-statetype st) dv ds
+	    end 
 
         (* *)
         fun send-aams-pdu dvnum st node ds =
@@ -140,7 +146,7 @@ fun ams-process-function (st, msg) =
                 val hb = { mams_pdu_header = h }
                 val (s, ds) = ams_heartbeat_tostring hb
             in
-                send-mams-pdu st node ds
+                send-mams-pdu st (SOME node) ds
             end
 
         (* *)
@@ -167,13 +173,34 @@ fun ams-process-function (st, msg) =
                             node_status_list = {| ns |} }
                 val (s, ds) = ams_i_am_here_tostring iah 
             in
-                send-mams-pdu st node ds
+                send-mams-pdu st (SOME node) ds
             end
 
         (* *)
         fun process-registration (app, auth, u, r) =
             case (#state/ams-statetype st) of 
-                MAMS_REGISTRAR_KNOWN => 
+                MAMS_WAITING_FOR_REGISTRAR => 
+                let
+                    val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) :: nil ) st
+                    val h = { mams_version = 0,
+                              mams_checksum = 0, 
+                              mams_mpdu_type = AMS_REGISTRAR_QUERY,
+                              mams_sender_venture = #venture/ams-statetype st,
+                              mams_sender_unit = #unit/ams-statetype st,
+                              mams_role = #role/ams-statetype st,
+                              mams_signature_length = 0,
+                              mams_supp_data_length = 0, 
+                              mams_reference = #query_number/ams-statetype st,
+                              mams_time_tag = 0 }
+		    val cs = #contact_summary/ams-statetype st 
+                    val p = { mams_pdu_header = h,
+                              mams_endpoint_name = #mams_endpoint_name/contact_summary_type cs }
+                    val (s, ds) = ams_registrar_query_tostring p
+                    val () = send-mams-pdu st NONE ds
+                in
+                    ( ams-update-state (state MAMS_WAITING_FOR_YOU_ARE_IN) st, true )
+                end 
+              | MAMS_REGISTRAR_KNOWN => 
                 let
                     val st = update-seq ( query_number ((#query_number/ams-statetype st) + 1) ::
                                           app_name app ::
@@ -194,12 +221,12 @@ fun ams-process-function (st, msg) =
                     val p = { mams_pdu_header = h,
                               contact_summary = #contact_summary/ams-statetype st }
                     val (s, ds) = ams_registration_tostring p
-                    val () = send-mams-pdu st 0 ds 
+                    val () = send-mams-pdu st (SOME 0) ds 
                 in
                     ( ams-update-state (state MAMS_WAITING_FOR_YOU_ARE_IN) st, true )
-                end
+                end 
               | _ => (st, false)
-
+		     
         (* *)
         fun generate-subscription (subj, service, cont, unit, role) =
             let
@@ -226,7 +253,7 @@ fun ams-process-function (st, msg) =
                 val (s, ds) = ams_subscription_tostring sm
                 val st = add-to-subject-map node (sa, st)
             in
-                ( send-mams-pdu st node ds ;
+                ( send-mams-pdu st (SOME node) ds ;
                   (st, true) )
             end
 
@@ -253,7 +280,7 @@ fun ams-process-function (st, msg) =
                 val (s, ds) = ams_unsubscribe_tostring usm
                 val st = remove-from-subject-map node (sc, st)
             in
-                ( send-mams-pdu st node ds ;
+                ( send-mams-pdu st (SOME node) ds ;
                   (st, true) )
             end
 
@@ -448,7 +475,8 @@ fun ams-process-function (st, msg) =
                             let
                                 val st = add-to-contact-map (0, cs) st
                             in
-                                ( ams-update-state (state MAMS_REGISTRAR_KNOWN) st, true )
+                                ( (#registration_callback/ams-statetype st) 0 ;
+				  ( ams-update-state (state MAMS_REGISTRAR_KNOWN) st, true ) )
                             end
                           | _ => (st, false)
                     end
