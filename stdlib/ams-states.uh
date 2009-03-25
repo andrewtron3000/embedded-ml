@@ -9,8 +9,10 @@ datatype MAMS_state_type =
 type ams-statetype =
     {
         aams_sender : (string -> string -> unit),
+        message_callback : string -> unit,
         app_name : string,
         state : MAMS_state_type,
+        registration_callback : int -> unit,
         subscriptions : subscription_assert_type list,
         node_to_contact_summary_map : (int, contact_summary_type) map,
         desired_transport : string,
@@ -30,8 +32,10 @@ type ams-statetype =
 
 datatype ams-optype =
     aams_sender of (string -> string -> unit) |
+    message_callback of string -> unit |
     app_name of string |
     state of MAMS_state_type |
+    registration_callback of int -> unit |
     subscriptions of subscription_assert_type list |
     node_to_contact_summary_map of (int, contact_summary_type) map |
     desired_transport of string |
@@ -52,8 +56,32 @@ fun ams-update-state tv st =
     case tv of 
         aams_sender v => {
             aams_sender = v,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
+            subscriptions = #subscriptions/ams-statetype st,
+            node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
+            desired_transport = #desired_transport/ams-statetype st,
+            auth_name = #auth_name/ams-statetype st,
+            contact_summary = #contact_summary/ams-statetype st,
+            node_id = #node_id/ams-statetype st,
+            role = #role/ams-statetype st,
+            subject_to_nodes_map = #subject_to_nodes_map/ams-statetype st,
+            venture = #venture/ams-statetype st,
+            query_number = #query_number/ams-statetype st,
+            last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
+            registrar_dead = #registrar_dead/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
+         }
+        | message_callback v => {
+            aams_sender = #aams_sender/ams-statetype st,
+            message_callback = v,
+            app_name = #app_name/ams-statetype st,
+            state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -72,8 +100,10 @@ fun ams-update-state tv st =
          }
         | app_name v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = v,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -92,8 +122,32 @@ fun ams-update-state tv st =
          }
         | state v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = v,
+            registration_callback = #registration_callback/ams-statetype st,
+            subscriptions = #subscriptions/ams-statetype st,
+            node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
+            desired_transport = #desired_transport/ams-statetype st,
+            auth_name = #auth_name/ams-statetype st,
+            contact_summary = #contact_summary/ams-statetype st,
+            node_id = #node_id/ams-statetype st,
+            role = #role/ams-statetype st,
+            subject_to_nodes_map = #subject_to_nodes_map/ams-statetype st,
+            venture = #venture/ams-statetype st,
+            query_number = #query_number/ams-statetype st,
+            last_registrar_hb_time = #last_registrar_hb_time/ams-statetype st,
+            registrar_dead = #registrar_dead/ams-statetype st,
+            mams_sender = #mams_sender/ams-statetype st,
+            unit = #unit/ams-statetype st,
+            node_to_heartbeat_map = #node_to_heartbeat_map/ams-statetype st
+         }
+        | registration_callback v => {
+            aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
+            app_name = #app_name/ams-statetype st,
+            state = #state/ams-statetype st,
+            registration_callback = v,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -112,8 +166,10 @@ fun ams-update-state tv st =
          }
         | subscriptions v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = v,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -132,8 +188,10 @@ fun ams-update-state tv st =
          }
         | node_to_contact_summary_map v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = v,
             desired_transport = #desired_transport/ams-statetype st,
@@ -152,8 +210,10 @@ fun ams-update-state tv st =
          }
         | desired_transport v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = v,
@@ -172,8 +232,10 @@ fun ams-update-state tv st =
          }
         | auth_name v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -192,8 +254,10 @@ fun ams-update-state tv st =
          }
         | contact_summary v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -212,8 +276,10 @@ fun ams-update-state tv st =
          }
         | node_id v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -232,8 +298,10 @@ fun ams-update-state tv st =
          }
         | role v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -252,8 +320,10 @@ fun ams-update-state tv st =
          }
         | subject_to_nodes_map v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -272,8 +342,10 @@ fun ams-update-state tv st =
          }
         | venture v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -292,8 +364,10 @@ fun ams-update-state tv st =
          }
         | query_number v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -312,8 +386,10 @@ fun ams-update-state tv st =
          }
         | last_registrar_hb_time v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -332,8 +408,10 @@ fun ams-update-state tv st =
          }
         | registrar_dead v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -352,8 +430,10 @@ fun ams-update-state tv st =
          }
         | mams_sender v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -372,8 +452,10 @@ fun ams-update-state tv st =
          }
         | unit v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,
@@ -392,8 +474,10 @@ fun ams-update-state tv st =
          }
         | node_to_heartbeat_map v => {
             aams_sender = #aams_sender/ams-statetype st,
+            message_callback = #message_callback/ams-statetype st,
             app_name = #app_name/ams-statetype st,
             state = #state/ams-statetype st,
+            registration_callback = #registration_callback/ams-statetype st,
             subscriptions = #subscriptions/ams-statetype st,
             node_to_contact_summary_map = #node_to_contact_summary_map/ams-statetype st,
             desired_transport = #desired_transport/ams-statetype st,

@@ -310,6 +310,14 @@ fun ams-process-function (st, msg) =
                   (st, true) )
             end
 
+	(* *)
+	fun process-inbound-aams ds =
+	    let
+		val () = (#message_callback/ams-statetype st) ds
+	    in
+		(st, true)
+	    end
+
         (* *)
         fun process-inbound-mams ds =
             let
@@ -322,9 +330,11 @@ fun ams-process-function (st, msg) =
                         let
                             val (s, yai) = ams_you_are_in_fromstring ds
                             val id = (#node_number/ams_you_are_in_type yai)
+			    val st = ( update-seq (state MAMS_YOU_ARE_IN ::
+						   node_id id :: nil) st )
                         in
-                            ( ( update-seq (state MAMS_YOU_ARE_IN ::
-                                            node_id id :: nil) st ), true )
+                            ( (#registration_callback/ams-statetype st) id ;
+			      (st, true) )
                         end
                       | _ => (st, false)
 
@@ -466,6 +476,7 @@ fun ams-process-function (st, msg) =
                   | AMSUnsubscribe us => generate-unsubscribe us
                   | AMSPublish p => process-publish p
                   | AMSInboundMAMS ds => process-inbound-mams ds
+                  | AMSInboundAAMS ds => process-inbound-aams ds
                   | AMSTimeTick => process-time-tick ()
                   | _ => 
                     ( print "got some other crap\n" ;
