@@ -474,6 +474,7 @@ fun ams-process-function (st, msg) =
                             MAMS_WAITING_FOR_REGISTRAR =>
                             let
                                 val st = add-to-contact-map (0, cs) st
+				val () = print [cellspec: registrar is: [me]\n]
                             in
                                 ( (#registration_callback/ams-statetype st) 0 ;
 				  ( ams-update-state (state MAMS_REGISTRAR_KNOWN) st, true ) )
