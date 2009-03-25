@@ -94,11 +94,13 @@ fun ams-process-function (st, msg) =
                         val names = string-fields (fn ?, => true | _ => false) dpns
                         val name = case list-find (fn x => string-prefix (transport, x)) names of
                                        SOME v => v
-                                     | NONE => raise Subscript
+                                     | NONE => ( print [get-dv error 1\n] ;
+						 raise Subscript )
                     in
                         name
                     end
-                  | NONE => raise Subscript
+                  | NONE => ( print [get-dv-error 2\n] ;
+			      raise Subscript )
             end
 
         (* *)
@@ -245,7 +247,7 @@ fun ams-process-function (st, msg) =
                            continuum = cont,
                            unit = unit,
                            role = role,
-                           delivery_vector_num = 0, (* SUSP *)
+                           delivery_vector_num = 1, (* SUSP *)
                            priority = 1,
                            flow = 1 }
                 val sm = { mams_pdu_header = h,
@@ -253,7 +255,7 @@ fun ams-process-function (st, msg) =
                 val (s, ds) = ams_subscription_tostring sm
                 val st = add-to-subject-map node (sa, st)
             in
-                ( send-mams-pdu st (SOME node) ds ;
+                ( send-mams-pdu st (SOME 0) ds ;
                   (st, true) )
             end
 
@@ -280,7 +282,7 @@ fun ams-process-function (st, msg) =
                 val (s, ds) = ams_unsubscribe_tostring usm
                 val st = remove-from-subject-map node (sc, st)
             in
-                ( send-mams-pdu st (SOME node) ds ;
+                ( send-mams-pdu st (SOME 0) ds ;
                   (st, true) )
             end
 
@@ -312,8 +314,11 @@ fun ams-process-function (st, msg) =
                 val ns = case map-lookup subj (#subject_to_nodes_map/ams-statetype st) of 
                              SOME xs => list-filter (fn (n1, _) => n1 <> node) xs
                            | NONE => nil
+                val n0 = case map-lookup 0 (#subject_to_nodes_map/ams-statetype st) of 
+                             SOME xs => list-filter (fn (n1, _) => n1 <> node) xs
+                           | NONE => nil
             in
-                ( list-app publish-msg ns ;
+                ( list-app publish-msg (ns @ n0) ;
                   (st, true) )
             end
 
@@ -432,6 +437,7 @@ fun ams-process-function (st, msg) =
                         val h = #mams_pdu_header/ams_subscription_type sub
                         val sa = #subscription_assert/ams_subscription_type sub
                         val node = #mams_reference/mams_pdu_header_type h
+			val () = print [processing subscription from node [int-tostring node]\n]
                     in
                         (add-to-subject-map node (sa, st),
                          true)
@@ -444,6 +450,7 @@ fun ams-process-function (st, msg) =
                         val h = #mams_pdu_header/ams_unsubscribe_type unsub
                         val sc = #subscription_cancel/ams_unsubscribe_type unsub
                         val node = #mams_reference/mams_pdu_header_type h
+			val () = print [processing unsubscription from node [int-tostring node]\n]
                     in
                         (remove-from-subject-map node (sc, st),
                          true)
