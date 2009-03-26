@@ -5,7 +5,7 @@
 >(* DO NOT EDIT *)
 >
 subject, int, 2, 0
-continuum, int, 3, 0
+continuum, int, 2, 0
 unit, int, 2, 0
 role, int, 1, 0
 delivery_vector_num, int, 0, 4

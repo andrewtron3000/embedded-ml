@@ -25,6 +25,7 @@ val AMS_I_AM_HERE = 22
 val AMS_SUBSCRIBE = 24
 val AMS_UNSUBSCRIBE = 24
 val AMS_N3 = 10
+val AMS_N4 = AMS_N3 * 2
 val AMS_UNARY = 0
 
 (* ams-process-function : (st, msg) -> (st, result) *)
@@ -110,7 +111,7 @@ fun ams-process-function (st, msg) =
                   let
                       val endpoint = #mams_endpoint_name/contact_summary_type cs
                   in
-                      ( print [mams-pdu -- sending to [endpoint]\n] ;
+                      ( print [mams-pdu -- sending [chars-tohexstring ds] to [endpoint]\n] ;
 			(#mams_sender/ams-statetype st) endpoint ds )
                   end
 		| NONE => () )
@@ -145,13 +146,13 @@ fun ams-process-function (st, msg) =
                           mams_role = #role/ams-statetype st,
                           mams_signature_length = 0,
                           mams_supp_data_length = 0,
-                          mams_reference = node,
+                          mams_reference = #node_id/ams-statetype st,
                           mams_time_preamble = 0,
                           mams_time_tag = 0 }
                 val hb = { mams_pdu_header = h }
                 val (s, ds) = ams_heartbeat_tostring hb
             in
-                send-mams-pdu st (SOME node) ds
+		send-mams-pdu st (SOME node) ds
             end
 
         (* *)
@@ -337,10 +338,11 @@ fun ams-process-function (st, msg) =
 
                 fun been-awhile curr-t (node, treceived) =
                     let
-                        val max-time = if (node = 0) then AMS_N3 else (AMS_N3 * 2)
+                        val max-time = AMS_N4
                     in 
                         if (curr-t - treceived) >= max-time 
-                        then generate-heartbeat node st
+                        then ( print [generating heartbeat on timetick...\n] ;
+			       generate-heartbeat node st )
                         else ()
                     end
 
@@ -485,8 +487,8 @@ fun ams-process-function (st, msg) =
                         val cs = { mams_endpoint_name = me,
                                    delivery_vector_list = {| |} }
                     in
-(*                        case (#state/ams-statetype st) of 
-                            MAMS_WAITING_FOR_REGISTRAR => *)
+                        case (#state/ams-statetype st) of 
+                            MAMS_WAITING_FOR_REGISTRAR => 
                             let
                                 val st = add-to-contact-map (0, cs) st
 				val () = print [cellspec: registrar is: [me]\n]
@@ -494,7 +496,7 @@ fun ams-process-function (st, msg) =
                                 ( (#registration_callback/ams-statetype st) 0 ;
 				  ( ams-update-state (state MAMS_REGISTRAR_KNOWN) st, true ) )
                             end
-(*                          | _ => (st, false) *)
+                          | _ => (st, false) 
                     end
                                            
             in
