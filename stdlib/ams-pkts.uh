@@ -89,6 +89,7 @@ type mams_pdu_header_type =
         mams_signature_length : int,
         mams_supp_data_length : int,
         mams_reference : int,
+        mams_time_preamble : int,
         mams_time_tag : int
     }
 type ams_heartbeat_type =
@@ -978,6 +979,7 @@ fun mams_pdu_header_fromstring_cont a s =
             val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
             val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
             val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+            val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
             val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
         in
             (
@@ -991,6 +993,7 @@ fun mams_pdu_header_fromstring_cont a s =
                     mams_signature_length = mams_signature_length,
                     mams_supp_data_length = mams_supp_data_length,
                     mams_reference = mams_reference,
+                    mams_time_preamble = mams_time_preamble,
                     mams_time_tag = mams_time_tag
                 },
                 s
@@ -1015,6 +1018,7 @@ fun mams_pdu_header_tostring_cont a r =
             val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
             val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
             val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+            val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
             val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
         in
             s
@@ -1040,6 +1044,7 @@ fun ams_heartbeat_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1053,6 +1058,7 @@ fun ams_heartbeat_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -1088,6 +1094,7 @@ fun ams_heartbeat_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -1116,6 +1123,7 @@ fun ams_registration_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1129,6 +1137,7 @@ fun ams_registration_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -1198,6 +1207,7 @@ fun ams_registration_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -1247,6 +1257,7 @@ fun ams_you_are_in_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1260,6 +1271,7 @@ fun ams_you_are_in_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -1297,6 +1309,7 @@ fun ams_you_are_in_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -1326,6 +1339,7 @@ fun ams_i_am_starting_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1339,6 +1353,7 @@ fun ams_i_am_starting_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -1408,6 +1423,7 @@ fun ams_i_am_starting_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -1457,6 +1473,7 @@ fun ams_i_am_here_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1470,6 +1487,7 @@ fun ams_i_am_here_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -1631,6 +1649,7 @@ fun ams_i_am_here_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -1736,6 +1755,7 @@ fun ams_subscription_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1749,6 +1769,7 @@ fun ams_subscription_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -1808,6 +1829,7 @@ fun ams_subscription_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -1849,6 +1871,7 @@ fun ams_unsubscribe_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1862,6 +1885,7 @@ fun ams_unsubscribe_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -1915,6 +1939,7 @@ fun ams_unsubscribe_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -1953,6 +1978,7 @@ fun ams_registrar_query_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -1966,6 +1992,7 @@ fun ams_registrar_query_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -2003,6 +2030,7 @@ fun ams_registrar_query_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s
@@ -2032,6 +2060,7 @@ fun ams_cell_spec_fromstring_cont a s =
                     val (mams_signature_length, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_supp_data_length, s) = marshall-readnextinteger (s, 2, 0)
                     val (mams_reference, s) = marshall-readnextinteger (s, 4, 0)
+                    val (mams_time_preamble, s) = marshall-readnextinteger (s, 1, 0)
                     val (mams_time_tag, s) = marshall-readnextinteger (s, 4, 0)
                 in
                     (
@@ -2045,6 +2074,7 @@ fun ams_cell_spec_fromstring_cont a s =
                             mams_signature_length = mams_signature_length,
                             mams_supp_data_length = mams_supp_data_length,
                             mams_reference = mams_reference,
+                            mams_time_preamble = mams_time_preamble,
                             mams_time_tag = mams_time_tag
                         },
                         s
@@ -2094,6 +2124,7 @@ fun ams_cell_spec_tostring_cont a r =
                     val s = marshall-writenextinteger (s, 1, 0, #mams_signature_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 2, 0, #mams_supp_data_length/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_reference/mams_pdu_header_type r)
+                    val s = marshall-writenextinteger (s, 1, 0, #mams_time_preamble/mams_pdu_header_type r)
                     val s = marshall-writenextinteger (s, 4, 0, #mams_time_tag/mams_pdu_header_type r)
                 in
                     s

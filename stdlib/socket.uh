@@ -23,8 +23,8 @@ native socket-connect = "socketConnect" : descriptor * string * int -> unit
 (* opens a network stream socket *)
 native socket-set-nonblocking = "socketSetNonBlocking" : descriptor -> unit
 
-(* socket-bind <descriptor> <port> *)
-native socket-bind = "socketBind" : descriptor * int -> unit
+(* socket-bind <descriptor> <hostname> <port> *)
+native socket-bind = "socketBind" : descriptor * string * int -> unit
 
 (* socket-listen <descriptor> <queuesize> *)
 native socket-listen = "socketListen" : descriptor * int -> unit

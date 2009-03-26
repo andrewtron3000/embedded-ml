@@ -190,38 +190,55 @@ uint32_t *socketBind(uint32_t context_len, uint32_t *tuple )
 {
   int sd;
   int port;
+  char hostname[HOSTNAME_LEN];
+  uint32_t hostname_len;
   int status = 0;
-  struct hostent *hostPtr = NULL;
   struct sockaddr_in serverName = { 0 };
+  struct addrinfo hints, *res, *r;
+  int error;
 
   sd = (int) unboxUnsigned( unboxTuple(tuple, 0) );
-  port = (int) unboxUnsigned( unboxTuple(tuple, 1) );
 
-  hostPtr = gethostbyname("127.0.0.1");
-  if (NULL == hostPtr)
-  {
-    perror("gethostbyname()");
-    exit(1);
-  }
+  unboxString( unboxTuple(tuple, 1), hostname, HOSTNAME_LEN, &hostname_len );
+  hostname[hostname_len] = (char) 0;
 
-  (void) memset(&serverName, 0,
-                sizeof(serverName));
-  (void) memcpy(&serverName.sin_addr,
-                hostPtr->h_addr,
-                hostPtr->h_length);
+  port = (int) unboxUnsigned( unboxTuple(tuple, 2) );
 
-  serverName.sin_addr.s_addr=htonl(INADDR_ANY);
-  serverName.sin_family = AF_INET;
-  serverName.sin_port = htons(port);
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
 
-  status = bind(sd,
-                (struct sockaddr *) &serverName,
-                sizeof(serverName));
-  if (-1 == status)
-  {
-    perror("bind()");
-    exit(1);
-  }
+  error = getaddrinfo(hostname, NULL, &hints, &res);
+  if(error != 0)
+    {
+      fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(error));
+      exit(1);
+    }
+
+  for ( r=res; r != NULL; r=r->ai_next) 
+    {
+      memset(&serverName, 0x0, sizeof(serverName));
+      memcpy(&serverName, r->ai_addr, r->ai_addrlen);
+      serverName.sin_port = htons(port);
+      //serverName.sin_addr.s_addr=htonl(INADDR_ANY);
+      //serverName.sin_family = AF_INET;
+
+      status = bind(sd, 
+		    (struct sockaddr *) &serverName,
+		    sizeof(serverName));
+
+      if (status == 0)
+        {
+          break;
+        }
+    }
+
+  freeaddrinfo(res);
+
+  if (r == NULL) 
+    {
+      perror("bind:");
+      exit(1);
+    }
 
   return (uint32_t *) NULL;
 }
