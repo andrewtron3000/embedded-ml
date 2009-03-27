@@ -13,6 +13,7 @@ datatype ams-primitive =
        | AMSPublish of int * string (* subjectID, data *)
        | AMSInboundAAMS of string
        | AMSInboundMAMS of string
+       | AMSBindAAMSMessageCallback of int -> string -> unit
        | AMSTimeTick
 
 val AMS_HEARTBEAT = 1
@@ -355,7 +356,12 @@ fun ams-process-function (st, msg) =
 	(* *)
 	fun process-inbound-aams ds =
 	    let
-		val () = (#message_callback/ams-statetype st) ds
+                val (s, a) = aams_pdu_header_fromstring ds
+                val sub = #aams_subject/aams_pdu_header_type a
+                val n = #aams_app_data_len/aams_pdu_header_type a
+		val msg = substring (ds, 16, n) 
+
+		val () = (#message_callback/ams-statetype st) sub msg
 	    in
 		(st, true)
 	    end
@@ -523,6 +529,7 @@ fun ams-process-function (st, msg) =
                   | AMSPublish p => process-publish p
                   | AMSInboundMAMS ds => process-inbound-mams ds
                   | AMSInboundAAMS ds => process-inbound-aams ds
+		  | AMSBindAAMSMessageCallback f => (ams-update-state (message_callback f) st, true)
                   | AMSTimeTick => process-time-tick ()
                   | _ => 
                     ( print "got some other crap\n" ;

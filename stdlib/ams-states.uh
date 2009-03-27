@@ -9,8 +9,8 @@ datatype MAMS_state_type =
 type ams-statetype =
     {
         cs_mams_endpoint_name : string,
-        aams_sender : (string -> string -> unit),
-        message_callback : string -> unit,
+        aams_sender : string -> string -> unit,
+        message_callback : int -> string -> unit,
         app_name : string,
         state : MAMS_state_type,
         registration_callback : int -> unit,
@@ -25,15 +25,15 @@ type ams-statetype =
         venture : int,
         query_number : int,
         registrar_dead : bool,
-        mams_sender : (string -> string -> unit),
+        mams_sender : string -> string -> unit,
         unit : int,
         node_to_heartbeat_map : (int, int) map
     }
 
 datatype ams-optype =
     cs_mams_endpoint_name of string |
-    aams_sender of (string -> string -> unit) |
-    message_callback of string -> unit |
+    aams_sender of string -> string -> unit |
+    message_callback of int -> string -> unit |
     app_name of string |
     state of MAMS_state_type |
     registration_callback of int -> unit |
@@ -48,7 +48,7 @@ datatype ams-optype =
     venture of int |
     query_number of int |
     registrar_dead of bool |
-    mams_sender of (string -> string -> unit) |
+    mams_sender of string -> string -> unit |
     unit of int |
     node_to_heartbeat_map of (int, int) map
 
