@@ -1,0 +1,17 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "array.uh"
+    import "char.uh"
+
+    fun list-print nil = print "\n"
+      | list-print (h :: t) = ( print [<[int-tostring h]>] ; 
+                                list-print t )
+
+    val xs = 1 :: 2 :: 3 :: 4 :: 3 :: 2 :: 2 :: 1 :: nil
+in
+    ( list-print xs ;
+      list-print (list-unique (fn x y => x = y) xs) )
+end
