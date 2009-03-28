@@ -131,6 +131,17 @@ fun list-exists _ nil = false
   | list-exists f (h :: t) = if f h then true
                              else list-exists f t
 
+fun list-unique equalf xs =
+    let
+        fun looper nil new = new
+          | looper (h :: t) new = 
+            if list-exists (equalf h) new
+            then looper t new
+            else looper t (h :: new)
+    in
+        looper xs nil
+    end
+
 fun list-length l =
   let
     fun ll (acc, nil) = acc
