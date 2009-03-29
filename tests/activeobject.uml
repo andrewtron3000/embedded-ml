@@ -11,17 +11,18 @@ let
     import "futures.uh"
     import "activeobject.uh"
 
-    fun task-a-hook (st, m) = 
+    fun task-a-hook (st, m, fu) = 
         ( print [message is: [m] and state is [int-tostring st]\n] ; 
-          (st+1, true) )
+          future-complete fu () ;
+          st+1 )
 
     val ao = activeobject-create task-a-hook 1
 
     fun idle () = ( yield (); idle () )
 
-    fun task1 () = ( ao ("greetings") ;
-                     ao ("goodbye!") ;
-                     ao ("hihihi") )
+    fun task1 () = ( future-force (ao ("greetings")) ;
+                     future-force (ao ("goodbye!")) ;
+                     future-force (ao ("hihihi")) )
 
     val () = fork task1
 in
