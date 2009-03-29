@@ -2,7 +2,7 @@ val require-messagequeues = provide-messagequeues
 val require-futures = provide-futures
 val require-threads = provide-threads
 
-(* pf : (state, action) -> (state, result) *)
+(* pf : (state, action, future) -> state *)
 fun activeobject-create pf initialstate =
     let
         val q = mq-create ()
@@ -11,13 +11,7 @@ fun activeobject-create pf initialstate =
             let
                 val x = mq-receive q
                 val st' = case x of NONE => st 
-                                  | SOME (fu, a) =>
-                                    let
-                                        val (s, result) = pf (st, a)
-                                    in
-                                        ( future-complete fu result ;
-                                          s )
-                                    end
+                                  | SOME (fu, a) => pf (st, a, fu)
             in
                 ( yield () ;
                   looper st' () )
