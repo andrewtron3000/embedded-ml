@@ -1,8 +1,8 @@
 >val provide-ams-states = ()
+>val require-futures = provide-futures
 > 
 >datatype MAMS_state_type =
 >     MAMS_WAITING_FOR_REGISTRAR
->   | MAMS_REGISTRAR_KNOWN
 >   | MAMS_WAITING_FOR_YOU_ARE_IN
 >   | MAMS_YOU_ARE_IN
 > 
@@ -20,10 +20,10 @@ cs_mams_endpoint_name= string
 state=  MAMS_state_type
 aams_sender= string -> string -> unit
 mams_sender= string -> string -> unit
-registration_callback= int -> unit
 message_callback= int -> string -> unit
 subject_to_nodes_map= (int, (int * subscription_assert_type) list) map
 node_to_contact_summary_map= (int, contact_summary_type) map
 node_to_heartbeat_map= (int, int) map
 registrar_dead= bool
+registration_future= bool future
 subscriptions= subscription_assert_type list
