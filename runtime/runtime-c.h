@@ -3,6 +3,8 @@
 #include <inttypes.h>
 #include <string.h>
 #include <assert.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 
 #define HEAPforwardbiton 0x80000000
 #define HEAPforwardbitoff 0x7fffffff
@@ -49,3 +51,6 @@ uint32_t *alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_le
 uint32_t *alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len);
 uint32_t *alloc_tagged(uint32_t tag, uint32_t context_len);
 
+void initializeHeap(void);
+uint32_t availc();
+int engine();

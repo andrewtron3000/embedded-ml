@@ -6,28 +6,25 @@ struct
   structure W = Word32
 
   open C
-  fun print out runtime (blocks, lab) compileflags target =
+  fun print out includemain runtime (blocks, lab) compileflags target =
       let
-          val path = "./.tmp/"
+          val path = "./output/"
           val () = OS.FileSys.mkDir path
-          val file = TextIO.openOut (path ^ "main.c")
 
-(*
-        val MAX_LEN = 72
-        val cur_len = ref 0
-        fun p s = let in
-                    (if String.size s + !cur_len > MAX_LEN then
-                      (TextIO.output (file, "\n");
-                       cur_len := 0)
-                    else
-                      ());
-                    TextIO.output (file, s);
-                    cur_len := !cur_len + String.size s
-                  end
-*)
+          fun generateMainFile includemain =
+              let
+                  val entry = if includemain then "main" else "mlmain"
+                  val file = TextIO.openOut (path ^ entry ^ ".c")
+              in
+                  TextIO.output (file, "#include \"labels.h\"\n");
+                  TextIO.output (file, "int " ^ entry ^ "(int argc, char **argv)\n{\n");
+                  TextIO.output (file, "   return engine();\n");
+                  TextIO.output (file, "}\n");
+                  TextIO.flushOut file;
+                  TextIO.closeOut file
+              end
+
         fun generateLabel l = "_" ^ (Variable.tostring l)
-
-        fun p s = TextIO.output (file, s)
 
         fun asm_to_string h = case h of 
                                   CONST i => "0x" ^ (StringUtil.lcase (W.toString i))
@@ -36,6 +33,7 @@ struct
                                 | LABEL_REF s => "_" ^ s
                                 | GETC => "getc(stdin)"
                                 | PUTC i => "putc(" ^ (asm_to_string i) ^ ", stdout)"
+                                | AVAILC => "availc()"
                                 | ADDRESS_OF is => "&(" ^ (asm_to_string is) ^ ")"
                                 | ALLOC_TRACED_STRING (i1, i2) => "alloc_traced_string(" ^
                                                                  (asm_to_string i1) ^ ", " ^
@@ -205,27 +203,9 @@ struct
       in
         generateRuntimeFiles ();
         generateLabelHeaderFile ordered_blocks;
-        generateMakefile ordered_blocks target;
+        if includemain then generateMakefile ordered_blocks target else ();
         app printblock ordered_blocks;
-        TextIO.output (file, "#include \"labels.h\"\n");
-        TextIO.output (file, "int main(int argc, char **argv)\n{\n");
-        TextIO.output (file, "   void*(*f)();\n");
-        TextIO.output (file, "   initializeHeap();\n");
-        TextIO.output (file, "   f = _mainentry;\n");
-        TextIO.output (file, "   while (f != 0)\n");
-        TextIO.output (file, "   {\n");
-        TextIO.output (file, "      f = f();\n");
-        TextIO.output (file, "   }\n");
-        TextIO.output (file, "   return(0);\n");
-        TextIO.output (file, "}\n");
-        TextIO.flushOut file;
-        TextIO.closeOut file
-(*
-        (if includemain then
-          p ("\n cr \n" ^ Variable.tostring(lab) ^ "\n cr cr \n")
-        else
-          ());
-*)
+        generateMainFile (includemain)
       end
 
 end

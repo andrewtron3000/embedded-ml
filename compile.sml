@@ -60,7 +60,11 @@ struct
 
     val c_backend = Params.flag false
         (SOME ("-cbackend",
-               "generate a C file")) "cfile"
+               "generate C output")) "c_backend"
+
+    val c_output_style = Params.param "standalone"
+        (SOME ("-c_output_style",
+               "Generate \"standalone\" or \"linkable\"")) "c_output_style"
 
     val compileflags = Params.param ""
         (SOME ("-compileflags",
@@ -387,7 +391,8 @@ struct
             val runtime_files = map TextIO.openIn runtime_names
             val runtime = String.concat (map TextIO.inputAll runtime_files)
             val includemain = if !fr_backend then ((!fr_platform) = "gforth")
-                              else true
+                              else if !c_backend then ((!c_output_style) = "standalone") 
+                              else false
         in
 	    (*
           Assemble.assemble { for_humlock = fh,
@@ -396,7 +401,7 @@ struct
                                        else Assemble.TARG_UM,
                               obfuscate = !obfuscate_outer } out code;
 	     *)
-            (if !c_backend then (CPrint.print out runtime c_asm (!compileflags) (!gcctarget))
+            (if !c_backend then (CPrint.print out includemain runtime c_asm (!compileflags) (!gcctarget))
              else if !fr_backend then (ForthPrint.print includemain out runtime fr_asm)
              else (vprint "Not printing anything.\n"));
             OS.Process.success

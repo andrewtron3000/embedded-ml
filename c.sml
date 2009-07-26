@@ -14,6 +14,7 @@ struct
          | LABEL_REF of string
          | GETC
          | PUTC of inst
+         | AVAILC
          | ADDRESS_OF of inst
          | ALLOC_TRACED_STRING of inst * inst
          | ALLOC_TRACED_ARRAY of inst * inst

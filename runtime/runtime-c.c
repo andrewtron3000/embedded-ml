@@ -1,10 +1,50 @@
 /* Runtime system for the C backend of Humlock */
 
 #include "runtime-c.h"
+#include "labels.h"
+
 uint32_t *temp;
 uint32_t *stackframe[NUM_STACK_VARS];
 uint32_t newtag;
 uint32_t *exception_handler[1];
+
+/* returns bytes available on stdin */
+uint32_t availc()
+{
+  uint32_t bytes;
+  ioctl(0, FIONREAD, &bytes);
+  return bytes;
+}
+
+int engine()
+{
+  struct termios old_tio, new_tio;
+  void*(*f)();
+
+  /* get the terminal settings for stdin */
+  tcgetattr(0, &old_tio);
+
+  /* we want to keep the old setting to restore them a the end */
+  new_tio=old_tio;
+
+  /* disable canonical mode (buffered i/o) and local echo */
+  new_tio.c_lflag &=(~ICANON & ~ECHO);
+
+  /* set the new settings immediately */
+  tcsetattr(0, TCSANOW, &new_tio);
+
+  initializeHeap();
+  f = _mainentry;
+  while (f != 0)
+    {
+      f = f();
+    }
+  
+  /* restore the former settings */
+  tcsetattr(0, TCSANOW, &old_tio);
+
+  return 0;
+}
 
 void efficient_copy(void *d, void *s, uint32_t words)
 {

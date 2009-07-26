@@ -1,0 +1,19 @@
+let
+    import "std.uh"
+    import "random.uh"
+    import "string.uh"
+    import "int.uh"
+    import "array.uh"
+    import "growarray.uh"
+    import "char.uh"
+    import "time.uh"
+    import "io.uh"
+    import "list.uh"
+
+    fun looper () = 
+        if availc0 () > 0 
+        then print [got a key [int-tohexstringx 2 (ord (getc ()))]\n]
+        else looper () 
+in
+    looper ()
+end

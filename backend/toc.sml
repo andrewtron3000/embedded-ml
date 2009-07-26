@@ -503,6 +503,19 @@ fun convert (Fix(fns, App(Label main, nil))) = let
 
               | convertBlock (context, Primop(PPutc p, _, _, _)) = raise ToC "bad putc"
 
+              | convertBlock (context, Primop(PAvail p, [], [v], [c])) =
+                let 
+                    val v_context_info = ContextMap.addToContext(context, v)
+                    val target = W.fromInt(#position(v_context_info))
+                    val context_len = CONST (W.fromInt (ContextMap.contextLength context))
+                in
+                    UPDATE_STACK (target,
+                                  ALLOC_UNTRACED (AVAILC, context_len)) ::
+                    convertBlock(#context(v_context_info), c)
+                end
+
+              | convertBlock (context, Primop(PAvail _, _, _, _)) = raise ToC "bad pavail"
+
               | convertBlock (context, Primop(PCompileWarn s, [], vs, [c])) =
                 let 
                 in
