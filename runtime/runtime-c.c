@@ -18,21 +18,38 @@ uint32_t availc()
 
 int engine()
 {
-  struct termios old_tio, new_tio;
+  struct termios old_stdin_tio, new_stdin_tio;
+  struct termios old_stdout_tio, new_stdout_tio;
   void*(*f)();
 
-  /* get the terminal settings for stdin */
-  tcgetattr(0, &old_tio);
+  /*
+   *  First change the buffering scheme related to stdio.
+   */
+  setvbuf(stdin, NULL, _IONBF, 0);
+  setvbuf(stdout, NULL, _IONBF, 0);
 
-  /* we want to keep the old setting to restore them a the end */
-  new_tio=old_tio;
+  /*
+   *  Next change the terminal driver buffering scheme.
+   */
+  /* get the terminal settings for stdin and stdout */
+  tcgetattr(0, &old_stdin_tio);
+  tcgetattr(1, &old_stdout_tio);
+
+  /* we want to keep the old setting to restore them at the end */
+  new_stdin_tio=old_stdin_tio;
+  new_stdout_tio=old_stdout_tio;
 
   /* disable canonical mode (buffered i/o) and local echo */
-  new_tio.c_lflag &=(~ICANON & ~ECHO);
+  new_stdin_tio.c_lflag &=(~ICANON & ~ECHO);
+  new_stdout_tio.c_lflag &=(~ICANON & ~ECHO);
 
   /* set the new settings immediately */
-  tcsetattr(0, TCSANOW, &new_tio);
+  tcsetattr(0, TCSANOW, &new_stdin_tio);
+  tcsetattr(1, TCSANOW, &new_stdout_tio);
 
+  /*
+   *  Now run the main program.
+   */
   initializeHeap();
   f = _mainentry;
   while (f != 0)
@@ -40,8 +57,9 @@ int engine()
       f = f();
     }
   
-  /* restore the former settings */
-  tcsetattr(0, TCSANOW, &old_tio);
+  /* restore the former terminal settings */
+  tcsetattr(0, TCSANOW, &old_stdin_tio);
+  tcsetattr(1, TCSANOW, &old_stdout_tio);
 
   return 0;
 }
