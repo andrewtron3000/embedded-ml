@@ -1,0 +1,39 @@
+let
+    import "std.uh"
+    import "random.uh"
+    import "string.uh"
+    import "int.uh"
+    import "array.uh"
+    import "growarray.uh"
+    import "char.uh"
+    import "time.uh"
+    import "io.uh"
+    import "list.uh"
+    import "threads.uh"
+    import "queues.uh"
+    import "messagequeues.uh"
+    import "tasks.uh"
+    import "robin.uh"
+
+    (* PMAD ---> uController *)
+    val outbound-robin-queue = mq-create ()
+			     
+    fun generator-loop () = ( ( if availc0 () > 0 
+				then ( getc () ;
+				       mq-send outbound-robin-queue (Robin-message (2, "hi")) )
+				else () ) ;
+			      yield () ;
+			      generator-loop () )
+
+    fun idle-loop () = ( yield () ; idle-loop () )
+
+    fun hexput c = print (int-tohexstringx 2 (ord c))
+in
+    (* The following task waits on the outbound ROBIN queue and sends
+    packets to the microcontroller. *)
+    task-create outbound-robin-queue (robin-sender putc 1) 0;
+
+    fork generator-loop ;
+
+    idle-loop ()
+end
