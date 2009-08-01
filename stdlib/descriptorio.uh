@@ -10,5 +10,7 @@ native descriptor-read = "descriptorRead" : descriptor * int -> string
 
 native descriptor-write = "descriptorWrite" : descriptor * string -> unit
 
+native descriptor-open = "descriptorOpen" : string -> descriptor
+
 native descriptor-close = "descriptorClose" : descriptor -> unit
  

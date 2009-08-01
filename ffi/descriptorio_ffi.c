@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <fcntl.h>
 
 #include "ffi.h"
 
@@ -73,6 +74,19 @@ uint32_t *descriptorWrite( uint32_t context_len, uint32_t *tuple )
   return (uint32_t *) NULL;
 }
 
+uint32_t *descriptorOpen( uint32_t context_len, uint32_t *hptr )
+{
+  int d;
+  uint32_t len;
+
+  unboxString( unboxTuple(hptr, 0), (char *) d_buffer, sizeof(d_buffer), &len);
+
+  d = open((char *) d_buffer, O_RDWR | O_NONBLOCK | O_CREAT, 0666);
+  assert( d > 0 );
+
+  return boxUnsigned( context_len, d );
+}
+
 uint32_t *descriptorClose( uint32_t context_len, uint32_t *hptr )
 {
   int d;
@@ -84,4 +98,3 @@ uint32_t *descriptorClose( uint32_t context_len, uint32_t *hptr )
 
   return (uint32_t *) NULL;
 }
-
