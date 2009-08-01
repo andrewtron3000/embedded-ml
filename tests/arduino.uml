@@ -14,24 +14,60 @@ let
     import "messagequeues.uh"
     import "tasks.uh"
     import "robin.uh"
+    import "descriptorio.uh"
 
     (* PMAD ---> uController *)
     val outbound-robin-queue = mq-create ()
+
+    (* PMAD <--- uController *)
+    val inbound-robin-queue = mq-create ()
 			     
+    fun processKey k =
+	case k of
+	    ?4 => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 4, chr 1 |})) (* turn on *)
+	  | ?5 => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 5, chr 1 |})) (* turn on *)
+	  | ?6 => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 6, chr 1 |})) (* turn on *)
+	  | ?7 => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 7, chr 1 |})) (* turn on *)
+	  | ?$ => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 4, chr 0 |})) 
+	  | ?% => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 5, chr 0 |})) 
+	  | ?^ => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 6, chr 0 |})) 
+	  | ?& => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 7, chr 0 |})) 
+	  | ?a => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 13, chr 1 |})) (* turn on *)
+	  | ?b => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 13, chr 0 |})) (* turn off *)
+	  | ?c => mq-send outbound-robin-queue (Robin-message (2, {| chr 1, chr 1, chr 1, chr 1, chr 1, chr 1, chr 1, chr 1 |})) (* set time *)
+	  | ?d => mq-send outbound-robin-queue (Robin-message (2, {| chr 6, chr 0, chr 10, chr 1, chr 1, chr 1, chr 1, chr 1, chr 1, chr 3, chr 4, chr 13, chr 1 |})) (* set time rule 0 *)
+	  | ?e => mq-send outbound-robin-queue (Robin-message (2, {| chr 6, chr 1, chr 10, chr 1, chr 1, chr 1, chr 1, chr 1, chr 1, chr 3, chr 4, chr 4, chr 1 |})) (* set time rule 1 *)
+	  | ?f => mq-send outbound-robin-queue (Robin-message (2, {| chr 6, chr 2, chr 10, chr 1, chr 1, chr 1, chr 1, chr 1, chr 1, chr 3, chr 4, chr 5, chr 1 |})) (* set time rule 2 *)
+	  | _ => ()
+
     fun generator-loop () = ( ( if availc0 () > 0 
-				then ( getc () ;
-				       mq-send outbound-robin-queue (Robin-message (2, "hi")) )
+				then processKey ( getc () )
 				else () ) ;
 			      yield () ;
 			      generator-loop () )
 
+
+    fun rx-f st m = case m of Robin-message (s, ds) => 
+			      ( print [[chars-tohexstring ds]\n] ;
+				st )
+			    | _ => st
+
     fun idle-loop () = ( yield () ; idle-loop () )
+
+    val output-d = ( descriptor-open "/dev/cu.usbserial-A6008hzh" )
+
+    fun outputter c = descriptor-write (output-d, {|c|})
 
     fun hexput c = print (int-tohexstringx 2 (ord c))
 in
     (* The following task waits on the outbound ROBIN queue and sends
     packets to the microcontroller. *)
-    task-create outbound-robin-queue (robin-sender putc 1) 0;
+    task-create outbound-robin-queue (robin-sender outputter 1) 0;
+
+    (* The following task waits on the inbound ROBIN queue and calls
+    pmad-rx-f on each message received.
+     *)
+    task-create inbound-robin-queue rx-f 0;
 
     fork generator-loop ;
 
