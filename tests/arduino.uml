@@ -15,6 +15,7 @@ let
     import "tasks.uh"
     import "robin.uh"
     import "descriptorio.uh"
+    import "clock.uh"
 
     (* PMAD ---> uController *)
     val outbound-robin-queue = mq-create ()
@@ -22,7 +23,7 @@ let
     (* PMAD <--- uController *)
     val inbound-robin-queue = mq-create ()
 			     
-    fun processKey k =
+    fun process-key k =
 	case k of
 	    ?4 => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 4, chr 1 |})) (* turn on *)
 	  | ?5 => mq-send outbound-robin-queue (Robin-message (2, {| chr 4, chr 5, chr 1 |})) (* turn on *)
@@ -40,36 +41,41 @@ let
 	  | ?f => mq-send outbound-robin-queue (Robin-message (2, {| chr 6, chr 2, chr 10, chr 1, chr 1, chr 1, chr 1, chr 1, chr 1, chr 3, chr 4, chr 5, chr 1 |})) (* set time rule 2 *)
 	  | _ => ()
 
-    fun generator-loop () = ( ( if availc0 () > 0 
-				then processKey ( getc () )
-				else () ) ;
-			      yield () ;
-			      generator-loop () )
-
-
     fun rx-f st m = case m of Robin-message (s, ds) => 
-			      ( print [[chars-tohexstring ds]\n] ;
+			      ( descriptor-write (2, [[chars-tohexstring ds]\n]) ;
 				st )
 			    | _ => st
 
+    fun time-loop (s, ns) () = 
+        let
+            val (s', ns') = clock-gettime ()
+        in
+            ( if (s' > s) then
+                  if (s' mod 2) = 0
+                  then process-key ?4
+                  else process-key ?$
+              else () ;
+              yield () ;
+              time-loop (s', ns') () )
+        end
+
     fun idle-loop () = ( yield () ; idle-loop () )
 
-    val output-d = ( descriptor-open "/dev/cu.usbserial-A6008hzh" )
-
-    fun outputter c = descriptor-write (output-d, {|c|})
-
-    fun hexput c = print (int-tohexstringx 2 (ord c))
 in
     (* The following task waits on the outbound ROBIN queue and sends
     packets to the microcontroller. *)
-    task-create outbound-robin-queue (robin-sender outputter 1) 0;
+    task-create outbound-robin-queue (robin-sender putc 1) 0;
 
     (* The following task waits on the inbound ROBIN queue and calls
     pmad-rx-f on each message received.
      *)
     task-create inbound-robin-queue rx-f 0;
 
-    fork generator-loop ;
+    (* The following tasks receives individual characters and outputs robin packets. *)
+    fork (robin-receiver getc availc0 inbound-robin-queue) ;
+
+    (* do something periodically *)
+    fork ( time-loop (clock-gettime ()) ); 
 
     idle-loop ()
 end
