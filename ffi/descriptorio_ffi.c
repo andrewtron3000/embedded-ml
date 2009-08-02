@@ -79,7 +79,7 @@ uint32_t *descriptorOpen( uint32_t context_len, uint32_t *hptr )
   int d;
   uint32_t len;
 
-  unboxString( unboxTuple(hptr, 0), (char *) d_buffer, sizeof(d_buffer), &len);
+  unboxString( hptr, (char *) d_buffer, sizeof(d_buffer), &len);
 
   d = open((char *) d_buffer, O_RDWR | O_NONBLOCK | O_CREAT, 0666);
   assert( d > 0 );
