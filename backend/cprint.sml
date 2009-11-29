@@ -171,6 +171,7 @@ struct
 		val target = if target = "" then target else (target ^ "-")
                 val hdr = ( "CC := " ^ target ^ "gcc\n" ^
                             "CFLAGS := " ^ cflags ^ "\n" ^
+                            "LDFLAGS := " ^ ldflags ^ "\n" ^
                             "AR := " ^ target ^ "ar\n" ^
                             "ARFLAGS := rS\n" ^
                             "RM := rm -f \n" ^
@@ -179,7 +180,7 @@ struct
                 val f = TextIO.openOut (path ^ "makefile");
                 val () = TextIO.output (f, hdr);
                 val () = TextIO.output (f, ("a.out: libarchive.a \n"));
-                val () = TextIO.output (f, ("\t$(CC) $(CFLAGS) -L. -larchive " ^ ldflags ^ " -o $@ \n"));
+                val () = TextIO.output (f, ("\t$(CC) $(CFLAGS) -L. -larchive $(LDFLAGS) -o $@ \n"));
                 val () = TextIO.output (f, ("libarchive.a: \n"));
                 val () = TextIO.output (f, ("\tmake -j 2 -f makefile.obj \n"));
                 val () = TextIO.output (f, ("\tfind . -print | grep \"\\.o\" | xargs $(AR) $(ARFLAGS) libarchive.a\n"));
