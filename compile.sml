@@ -66,9 +66,13 @@ struct
         (SOME ("-c_output_style",
                "Generate \"standalone\" or \"linkable\"")) "c_output_style"
 
-    val compileflags = Params.param ""
-        (SOME ("-compileflags",
-               "additional flags to add to the makefile (\"\")")) "compileflags"
+    val cflags = Params.param ""
+        (SOME ("-cflags",
+               "CFLAGS to add to the makefile (\"\")")) "cflags"
+
+    val ldflags = Params.param ""
+        (SOME ("-ldflags",
+               "LDFLAGS to add to the makefile (\"\")")) "ldflags"
 
     val gcctarget = Params.param ""
         (SOME ("-gcctarget",
@@ -401,7 +405,7 @@ struct
                                        else Assemble.TARG_UM,
                               obfuscate = !obfuscate_outer } out code;
 	     *)
-            (if !c_backend then (CPrint.print out includemain runtime c_asm (!compileflags) (!gcctarget))
+            (if !c_backend then (CPrint.print out includemain runtime c_asm (!cflags) (!ldflags) (!gcctarget))
              else if !fr_backend then (ForthPrint.print includemain out runtime fr_asm)
              else (vprint "Not printing anything.\n"));
             OS.Process.success

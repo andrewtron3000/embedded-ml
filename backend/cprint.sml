@@ -6,7 +6,7 @@ struct
   structure W = Word32
 
   open C
-  fun print out includemain runtime (blocks, lab) compileflags target =
+  fun print out includemain runtime (blocks, lab) cflags ldflags target =
       let
           val path = "./output/"
           val () = OS.FileSys.mkDir path
@@ -170,7 +170,7 @@ struct
                 val os = foldr (op^) "" (map genObjStr bs)
 		val target = if target = "" then target else (target ^ "-")
                 val hdr = ( "CC := " ^ target ^ "gcc\n" ^
-                            "CFLAGS := -O2\n" ^
+                            "CFLAGS := " ^ cflags ^ "\n" ^
                             "AR := " ^ target ^ "ar\n" ^
                             "ARFLAGS := rS\n" ^
                             "RM := rm -f \n" ^
@@ -179,7 +179,7 @@ struct
                 val f = TextIO.openOut (path ^ "makefile");
                 val () = TextIO.output (f, hdr);
                 val () = TextIO.output (f, ("a.out: libarchive.a \n"));
-                val () = TextIO.output (f, ("\t$(CC) $(CFLAGS) -L. -larchive " ^ compileflags ^ " -o $@ \n"));
+                val () = TextIO.output (f, ("\t$(CC) $(CFLAGS) -L. -larchive " ^ ldflags ^ " -o $@ \n"));
                 val () = TextIO.output (f, ("libarchive.a: \n"));
                 val () = TextIO.output (f, ("\tmake -j 2 -f makefile.obj \n"));
                 val () = TextIO.output (f, ("\tfind . -print | grep \"\\.o\" | xargs $(AR) $(ARFLAGS) libarchive.a\n"));
