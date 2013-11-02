@@ -18,8 +18,8 @@ fun future-complete (result, waiters) ans =
 fun future-force (f as (result, waiters)) = 
     let
         fun susp () = letcc k in ( waiters := !waiters @ 
-                                              ( (fn () => throw () to k) :: nil) ;
-                                   resched () ) 
+                                              ( (!currentPriority, (fn () => throw () to k) ) :: nil) ;
+                                   resched () )
                               end
     in
        ( if future-ready f then () else susp () ;

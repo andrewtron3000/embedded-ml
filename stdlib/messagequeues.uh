@@ -1,20 +1,37 @@
 val provide-messagequeues = ()
 val require-queues = provide-queues
+val require-threads = provide-threads
 
 (* message queues are useful for intertask communication *)
 
-fun mq-create () = ref (queue-create ())
+(* (queue ref, waiter list) *)
+type a mqueue = (a queue ref * task list ref)
 
-fun mq-send mq m = mq := queue-send (!mq) m
+fun mq-create () = (ref (queue-create ()), ref nil)
 
-fun mq-receive mq = 
+fun mq-send (mq, waiters) m = 
+    ( mq := queue-send (!mq) m ;
+      list-app fork (!waiters) ;
+      waiters := nil )
+	
+fun mq-receive (mq, waiters) = 
     let
         val (v, q') = queue-receive (!mq)
     in
-        ( mq := q' ;
-          v )
+	case v of 
+	    SOME x => ( mq := q' ;
+			v )
+	  | NONE =>
+	    let
+		fun susp () = letcc k in ( waiters := !waiters @ 
+						      ( (!currentPriority, (fn () => throw () to k) ) :: nil) ;
+					   resched () ) 
+                                      end
+            in
+		(susp () ; mq-receive (mq, waiters) )
+	    end
     end
-
+	
 fun mq-length mq = queue-length (!mq)
 
 fun mq-empty mq = queue-empty (!mq)

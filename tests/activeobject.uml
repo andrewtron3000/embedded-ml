@@ -5,7 +5,7 @@ let
     import "int.uh"
     import "array.uh"
     import "char.uh"
-    import "threads.uh"
+    import "priothreads.uh"
     import "queues.uh"
     import "messagequeues.uh"
     import "futures.uh"
@@ -16,15 +16,16 @@ let
           future-complete fu () ;
           st+1 )
 
-    val ao = activeobject-create task-a-hook 1
+    val aoPriority = 32
 
-    fun idle () = ( yield (); idle () )
+    val ao = activeobject-create aoPriority task-a-hook 1
 
     fun task1 () = ( future-force (ao ("greetings")) ;
                      future-force (ao ("goodbye!")) ;
                      future-force (ao ("hihihi")) )
 
-    val () = fork task1
+    val task1Priority = 64
+    val () = fork (task1Priority, task1)
 in
-    idle ()
+    resched ()
 end

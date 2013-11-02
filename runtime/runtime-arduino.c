@@ -1,69 +1,57 @@
-/* Runtime system for the C backend of Humlock */
 
-#include "runtime-c.h"
-#include "labels.h"
+#define HEAPforwardbiton 0x80000000
+#define HEAPforwardbitoff 0x7fffffff
 
-#undef PRINT_HEAPSIZE
+#define HEAPmask 0x1fffffff 
+#define HEAPtagmask 0x60000000 
+#define HEAPuntracedmask 0x00000000 
+#define HEAPtaggedmask 0x20000000 
+#define HEAPtracedmask 0x40000000 
 
-uint32_t *temp;
-uint32_t *stackframe[NUM_STACK_VARS];
+#define NUM_STACK_VARS 2048
+#define NUM_HEAP_WORDS 4096
+
+#define D(x) ( *(x) )
+
+/* Stackvar : int -> hptr */
+#define Stackvar(i) ( stackframe[i] )
+
+/* Intval : hptr -> int */
+#define Intval(x) ( D(((uint32_t *) x) + 1) )
+
+/* Tupleval : hptr x int -> hptr */
+#define Tupleval(x, i) ( D(((uint32_t *) x) + 1 + i) )
+
+/* Arrayval : hptr x int -> hptr */
+#define Arrayval(x, i) ( Tupleval(x, i) )
+
+/* Arraylen : hptr -> int */
+#define Arraylen(x) ( D((uint32_t *)(x)) & HEAPmask ) 
+
+void efficient_copy(void *d, void *s, uint32_t words);
+void efficient_set(void *d, uint32_t target, uint32_t words);
+
+uint32_t hExtractTag ( uint32_t *h );
+
+uint32_t alloc_untraced(uint32_t value, uint32_t context_len);
+uint32_t alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_len);
+uint32_t alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len);
+uint32_t alloc_tagged(uint32_t tag, uint32_t context_len);
+
+void initializeHeap(void);
+uint32_t availc();
+int embeddedml_setup();
+int embeddedml_loop();
+
+uint32_t temp;
+uint32_t stackframe[NUM_STACK_VARS];
 uint32_t newtag;
-uint32_t *exception_handler[1];
+uint32_t exception_handler;
 
 /* returns bytes available on stdin */
 uint32_t availc()
 {
-  uint32_t bytes;
-  ioctl(0, FIONREAD, &bytes);
-  return bytes;
-}
-
-int engine()
-{
-  struct termios old_stdin_tio, new_stdin_tio;
-  struct termios old_stdout_tio, new_stdout_tio;
-  void*(*f)();
-
-  /*
-   *  First change the buffering scheme related to stdio.
-   */
-  setvbuf(stdin, NULL, _IONBF, 0);
-  setvbuf(stdout, NULL, _IONBF, 0);
-
-  /*
-   *  Next change the terminal driver buffering scheme.
-   */
-  /* get the terminal settings for stdin and stdout */
-  tcgetattr(0, &old_stdin_tio);
-  tcgetattr(1, &old_stdout_tio);
-
-  /* we want to keep the old setting to restore them at the end */
-  new_stdin_tio=old_stdin_tio;
-  new_stdout_tio=old_stdout_tio;
-
-  /* disable canonical mode (buffered i/o) and local echo */
-  new_stdin_tio.c_lflag &=(~ICANON & ~ECHO);
-  new_stdout_tio.c_lflag &=(~ICANON & ~ECHO);
-
-  /* set the new settings immediately */
-  tcsetattr(0, TCSANOW, &new_stdin_tio);
-  tcsetattr(1, TCSANOW, &new_stdout_tio);
-
-  /*
-   *  Now run the main program.
-   */
-  initializeHeap();
-  f = _mainentry;
-  while (f != 0)
-    {
-      f = f();
-    }
-  
-  /* restore the former terminal settings */
-  tcsetattr(0, TCSANOW, &old_stdin_tio);
-  tcsetattr(1, TCSANOW, &old_stdout_tio);
-
-  return 0;
+   return Serial.available();
 }
 
 void efficient_copy(void *d, void *s, uint32_t words)
@@ -130,10 +118,10 @@ uint32_t hExtractTag ( uint32_t *h )
   return (*h & HEAPtagmask);
 }
 
-void setForwardBit ( uint32_t *new, uint32_t *old )
+void setForwardBit ( uint32_t *new_val, uint32_t *old )
 {
   *old = *old | HEAPforwardbiton;
-  *(old + 1) = (uint32_t) new;
+  *(old + 1) = (uint32_t) new_val;
 }
 
 uint32_t isForwardBitSet ( uint32_t tag )
@@ -187,20 +175,20 @@ uint32_t *hCopyToInactive ( uint32_t *old )
 uint32_t *hEvacuateNode ( uint32_t *old )
 {
   uint32_t tag;
-  uint32_t *new;
+  uint32_t *new_ptr;
 
   tag = *old;
   if (isForwardBitSet(tag))
   {
-    new = (uint32_t *) *(old + 1);
+    new_ptr = (uint32_t *) *(old + 1);
   }
   else
   {
-    new = hCopyToInactive (old);
-    setForwardBit (new, old);
+    new_ptr = hCopyToInactive (old);
+    setForwardBit (new_ptr, old);
   }
 
-  return new;
+  return new_ptr;
 }
 
 void hScavenge ( void )
@@ -254,11 +242,11 @@ void hScavenge ( void )
 void hTransferStackFrame ( uint32_t context_len )
 {
   uint32_t i;
-  uint32_t *heap_ptr;
+  uint32_t heap_ptr;
 
-  if (*exception_handler != 0)
+  if (exception_handler != 0)
   {
-    *exception_handler = hEvacuateNode ( *exception_handler );
+    exception_handler = (uint32_t) hEvacuateNode ( (uint32_t *) exception_handler );
   }
   
   for (i = 0; i < context_len; i++)
@@ -266,7 +254,7 @@ void hTransferStackFrame ( uint32_t context_len )
     heap_ptr = *(stackframe + i);
     if (heap_ptr != 0)
     {
-      *(stackframe + i) = hEvacuateNode ( *(stackframe + i) );
+      *(stackframe + i) = (uint32_t) hEvacuateNode ( (uint32_t *) *(stackframe + i) );
     }
   }
 }
@@ -339,9 +327,11 @@ void hScan ( void )
 
 void hGarbageCollect ( uint32_t context_len )
 {
+  digitalWrite(13, 1);
   hTransferStackFrame ( context_len );
   hScavenge();
   hSwitchHeaps();
+  digitalWrite(13, 0);
 /*  hScan(); */
 }
 
@@ -350,9 +340,6 @@ void checkHeapForSpace ( uint32_t context_len, uint32_t size_in_words )
   if (size_in_words > hWordsRemaining)
   {
     hGarbageCollect ( context_len );
-#ifdef PRINT_HEAPSIZE
-    printf("Heap Size = %d\n", HEAPnextunused * sizeof(uint32_t));
-#endif
     if (size_in_words > hWordsRemaining)
     {
       assert( 1 == 0 );
@@ -370,7 +357,7 @@ uint32_t *hAlloc( uint32_t context_len, uint32_t size_in_words )
   return new_ptr;
 }
 
-uint32_t *alloc_untraced(uint32_t value, uint32_t context_len)
+uint32_t alloc_untraced(uint32_t value, uint32_t context_len)
 {
   uint32_t *ptr;
 
@@ -379,10 +366,10 @@ uint32_t *alloc_untraced(uint32_t value, uint32_t context_len)
   *ptr = 0;
   *(ptr + 1) = value;
 
-  return ptr;
+  return (uint32_t) ptr;
 }
 
-uint32_t *alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_len)
+uint32_t alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_len)
 {
   uint32_t size;
   uint32_t *ptr;
@@ -423,10 +410,10 @@ uint32_t *alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_le
     *(ptr + 1) = 0;
   }
 
-  return ptr;
+  return (uint32_t) ptr;
 }
 
-uint32_t *alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len)
+uint32_t alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len)
 {
   uint32_t size;
   uint32_t *ptr;
@@ -446,10 +433,10 @@ uint32_t *alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len
   /* set next word to zero.  this is important for 0 length arrays */
   *(ptr + 1) = 0;
 
-  return ptr;
+  return (uint32_t) ptr;
 }
 
-uint32_t *alloc_tagged(uint32_t tag, uint32_t context_len)
+uint32_t alloc_tagged(uint32_t tag, uint32_t context_len)
 {
   uint32_t *ptr;
 
@@ -457,9 +444,44 @@ uint32_t *alloc_tagged(uint32_t tag, uint32_t context_len)
 
   *ptr = (tag & HEAPmask) | HEAPtaggedmask;
   
-  return ptr;
+  return (uint32_t) ptr;
+}
+
+/*
+ *  This variable defines the next function to call.
+ *  The system uses a technique called trampolining
+ *  to execute each basic block.
+ */
+Trampoline_fn_type next_trampoline;
+
+int embeddedml_setup()
+{
+  initializeHeap();
+  next_trampoline = _mainentry;
+  return 0;
+}
+
+int embeddedml_loop()
+{
+  while (next_trampoline != 0)
+    {
+      next_trampoline = (Trampoline_fn_type) next_trampoline();
+    }
+  
+  return 0;
 }
 
 /* End of runtime system */
 
+void setup()
+{
+  pinMode(13, OUTPUT);
+  digitalWrite(13, 0);
+  Serial.begin(38400);
+  embeddedml_setup();
+}
 
+void loop()
+{
+  embeddedml_loop();
+}

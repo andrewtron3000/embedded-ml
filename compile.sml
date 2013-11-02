@@ -86,6 +86,10 @@ struct
         (SOME ("-fr_platform",
                "target which forth platform? (gforth) ")) "fr_platform"
 
+    val arduino_backend = Params.flag false
+        (SOME ("-arduinobackend",
+               "generate Arduino sketch output")) "arduino_backend"
+
     exception Compile of string
 
     fun vprint s =
@@ -200,6 +204,7 @@ struct
                 (case out of
                      "" => base ^ (if !c_backend then ".c"
                                    else if !fr_backend then ".fr"
+				   else if !arduino_backend then ".ino"
                                    else raise Compile ("Please specify a backend to use."))
                    | s => s)
 
@@ -313,9 +318,9 @@ struct
             val _ = CPSPrint.writee (base ^ ".cpsa") alloced
 
             val () = vprint "Backend conversion\n"
-            val c_asm = if (!c_backend) then ((vprint "to C...\n") ; (ToC.convert alloced)) else (nil, Variable.newvar ()) 
+            val c_asm = if (!c_backend orelse !arduino_backend) then ((vprint "to C...\n") ; (ToC.convert alloced)) else (nil, Variable.newvar ()) 
             val fr_asm = if (!fr_backend) then ((vprint "to Forth...\n") ; (ToForth.convert alloced)) else (nil, Variable.newvar ()) 
-            val () = if not (!c_backend) andalso not (!fr_backend) then (vprint "SKIPPED...\n") else (vprint "")
+            val () = if not (!c_backend) andalso not (!arduino_backend) andalso not (!fr_backend) then (vprint "SKIPPED...\n") else (vprint "")
 
 (* spoons: no runtime for now 
             val () = vprint "Adding runtime...\n"
@@ -406,6 +411,7 @@ struct
                               obfuscate = !obfuscate_outer } out code;
 	     *)
             (if !c_backend then (CPrint.print out includemain runtime c_asm (!cflags) (!ldflags) (!gcctarget))
+             else if !arduino_backend then (ArduinoPrint.print out includemain runtime c_asm (!cflags) (!ldflags) (!gcctarget))
              else if !fr_backend then (ForthPrint.print includemain out runtime fr_asm)
              else (vprint "Not printing anything.\n"));
             OS.Process.success

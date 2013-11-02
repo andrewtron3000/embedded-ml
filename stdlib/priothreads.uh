@@ -1,0 +1,42 @@
+(* Note we provide threads to maintain backwards compatibility with threads.uh *)
+val provide-threads = ()
+
+val threads = ref nil
+val currentPriority = ref 0
+
+type task = int * (unit -> unit)
+
+fun insertIntoPrioList (newp, newf) list =
+    case list 
+     of nil => (newp, newf) :: nil
+      | (p, f) :: rest => 
+	if newp > p 
+	then (newp, newf) :: list
+	else (p, f) :: insertIntoPrioList (newp, newf) rest
+
+fun yield () =
+    letcc k
+    in
+       case !threads
+        of nil => ()
+         | (p, t) :: rest => ( threads := insertIntoPrioList (!currentPriority, (fn () => throw () to k)) rest ;
+			       currentPriority := p ;
+                               t () )
+    end
+
+fun resched () =
+    case !threads of nil => ()
+                   | (p, t) :: rest => ( threads := rest ;
+					 currentPriority := p ;
+					 t () )
+
+fun fork (priority, t) = 
+    let
+        fun harness () = ( t () ; resched () )
+    in
+        threads := insertIntoPrioList (priority, harness) (!threads)
+    end
+
+fun changePriority newpriority =
+    ( currentPriority := newpriority ;
+      yield () )
