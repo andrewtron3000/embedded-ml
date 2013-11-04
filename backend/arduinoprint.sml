@@ -28,11 +28,12 @@ struct
 
         fun asm_to_string h = case h of 
                                   CONST i => "0x" ^ (StringUtil.lcase (W.toString i))
+                                | CAST (t, v) => "( " ^ t ^ " )( " ^ (asm_to_string v) ^ " )"
                                 | DEBUG s => s
-                                | COMMENT s => "" (* "fprintf(stderr, \"" ^ s ^ "\\n\")" ^ (asm_to_string SEPARATOR) *)
+                                | COMMENT s => "/* " ^ s ^ "*/" (* "fprintf(stderr, \"" ^ s ^ "\\n\")" ^ (asm_to_string SEPARATOR) *)
                                 | LABEL_REF s => "_" ^ s
-                                | GETC => "Serial.read()"
-                                | PUTC i => "Serial.write(" ^ (asm_to_string i) ^ ")"
+                                | GETC => "arduino_getc()"
+                                | PUTC i => "arduino_putc(" ^ (asm_to_string i) ^ ")"
                                 | AVAILC => "availc()"
                                 | ADDRESS_OF is => "&(" ^ (asm_to_string is) ^ ")"
                                 | ALLOC_TRACED_STRING (i1, i2) => "alloc_traced_string(" ^
@@ -121,13 +122,21 @@ struct
                 TextIO.output (f, "}\n\n")
             end
 
-        fun generateRuntime output_file =
-	    let
-                val f = TextIO.openIn (Parse.root ^ "/runtime/runtime-arduino.c")
-		val s = TextIO.inputAll f
+
+        fun generateRuntimeFile ifile ofile = 
+            let 
+                fun cf infilename =
+                    let
+                        val f = TextIO.openIn infilename
+                        val s = TextIO.inputAll f
+                        val () = TextIO.closeIn f
+                    in
+                        TextIO.output(ofile, s)
+                    end
             in
-		TextIO.output(output_file, s)
-            end	
+		cf ifile
+            end
+
 
         fun generateLabelDefinitions (bs, f) = 
             let 
@@ -192,14 +201,27 @@ struct
          end
 
       in
+        TextIO.output (sketch, "char foo; /* included because of preprocessor */\n");
         TextIO.output (sketch, "#include \"inttypes.h\"\n");
         TextIO.output (sketch, "#include \"assert.h\"\n\n");
-        TextIO.output (sketch, "typedef void* (*Trampoline_fn_type)(void);\n");
+        TextIO.output (sketch, "#define ARDUINO_TARGET\n");
+        generateRuntimeFile (Parse.root ^ "/runtime/runtime-c.h") sketch;
         generateLabelDefinitions (ordered_blocks, sketch);
-        generateRuntime sketch;
-        (* if includemain then generateMakefile ordered_blocks target else (); *)
+        generateRuntimeFile (Parse.root ^ "/runtime/runtime-c.c") sketch;
         app printBlockToSketch ordered_blocks;
-        (* generateMainFile (includemain); *)
+	TextIO.output (sketch, "\n");
+	TextIO.output (sketch, "void setup()\n");
+	TextIO.output (sketch, "{\n");
+	TextIO.output (sketch, "  pinMode(13, OUTPUT);\n");
+	TextIO.output (sketch, "  digitalWrite(13, 0);\n");
+	TextIO.output (sketch, "  Serial.begin(57600);\n");
+	TextIO.output (sketch, "}\n");
+	TextIO.output (sketch, "\n");
+	TextIO.output (sketch, "void loop()\n");
+	TextIO.output (sketch, "{\n");
+	TextIO.output (sketch, "  engine();\n");
+	TextIO.output (sketch, "}\n");
+	TextIO.output (sketch, "\n");
         TextIO.flushOut sketch;
         TextIO.closeOut sketch
       end

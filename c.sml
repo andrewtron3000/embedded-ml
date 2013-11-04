@@ -9,6 +9,7 @@ struct
   datatype inst =
 
          CONST of W.word 
+         | CAST of string * inst
          | DEBUG of string
          | COMMENT of string
          | LABEL_REF of string

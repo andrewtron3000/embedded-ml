@@ -17,7 +17,7 @@ struct
 
 (* PERF make this smaller now that adventure is optimized? *)
   (* SUSP must agree with the number of variables in variables.fr *)
-  val STACK_SIZE = 2048
+  val STACK_SIZE = 384
 
   (* allocate some globals *)
   local

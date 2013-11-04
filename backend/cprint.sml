@@ -28,6 +28,7 @@ struct
 
         fun asm_to_string h = case h of 
                                   CONST i => "0x" ^ (StringUtil.lcase (W.toString i))
+                                | CAST (t, v) => "( " ^ t ^ " )( " ^ (asm_to_string v) ^ " )"
                                 | DEBUG s => "" (* s *)
                                 | COMMENT s => "" (* "fprintf(stderr, \"" ^ s ^ "\\n\")" ^ (asm_to_string SEPARATOR) *)
                                 | LABEL_REF s => "_" ^ s
