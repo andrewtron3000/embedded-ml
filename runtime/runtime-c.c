@@ -1,7 +1,9 @@
 /* Runtime system for the C backend of Humlock */
 
+#ifndef ARDUINO_TARGET
 #include "runtime-c.h"
 #include "labels.h"
+#endif
 
 #undef PRINT_HEAPSIZE
 
@@ -10,6 +12,8 @@ uint32_t *stackframe[NUM_STACK_VARS];
 uint32_t newtag;
 uint32_t *exception_handler[1];
 
+/* Now define the availc function */
+#ifndef ARDUINO_TARGET
 /* returns bytes available on stdin */
 uint32_t availc()
 {
@@ -17,13 +21,67 @@ uint32_t availc()
   ioctl(0, FIONREAD, &bytes);
   return bytes;
 }
-
-int engine()
+#else
+/* returns bytes available on stdin */
+uint32_t availc()
 {
-  struct termios old_stdin_tio, new_stdin_tio;
-  struct termios old_stdout_tio, new_stdout_tio;
-  void*(*f)();
+  return Serial.available();
+}
 
+uint32_t arduino_getc()
+{
+  static uint32_t just_returned_cr = 0;
+  uint32_t c;
+
+  /* Wait for data */
+  while (Serial.available() < 1)
+    {
+      ;
+    }
+
+  /*
+   * When we see a carriage return, send a linefeed too 
+   */
+  if (just_returned_cr == 1)
+    {
+      c = Serial.read();
+      c = 10;
+      just_returned_cr = 0;
+    }
+  else
+    {
+      c = Serial.peek();
+      if (c == 13)
+	{
+	  just_returned_cr = 1;
+	}
+      else
+	{
+	  c = Serial.read();
+	}
+    }
+
+  Serial.write(c); /* local echo */
+  return c;
+}
+
+uint32_t arduino_putc(uint32_t c)
+{
+  Serial.write(c);
+
+  /* send a carriage return after a linefeed */
+  if (c == 10)
+    {
+      Serial.write(13);
+    }
+}
+#endif
+
+#ifndef ARDUINO_TARGET
+struct termios old_stdin_tio, new_stdin_tio;
+struct termios old_stdout_tio, new_stdout_tio;
+int setup_terminal()
+{
   /*
    *  First change the buffering scheme related to stdio.
    */
@@ -42,12 +100,33 @@ int engine()
   new_stdout_tio=old_stdout_tio;
 
   /* disable canonical mode (buffered i/o) and local echo */
-  new_stdin_tio.c_lflag &=(~ICANON & ~ECHO);
-  new_stdout_tio.c_lflag &=(~ICANON & ~ECHO);
+  new_stdin_tio.c_lflag &=(~ICANON);
+  new_stdout_tio.c_lflag &=(~ICANON);
 
   /* set the new settings immediately */
   tcsetattr(0, TCSANOW, &new_stdin_tio);
   tcsetattr(1, TCSANOW, &new_stdout_tio);
+
+  return 0;
+}
+
+int restore_terminal()
+{
+  /* restore the former terminal settings */
+  tcsetattr(0, TCSANOW, &old_stdin_tio);
+  tcsetattr(1, TCSANOW, &old_stdout_tio);
+
+  return 0;
+}
+#endif
+
+int engine()
+{
+  void*(*f)();
+
+#ifndef ARDUINO_TARGET
+  setup_terminal();
+#endif
 
   /*
    *  Now run the main program.
@@ -56,12 +135,12 @@ int engine()
   f = _mainentry;
   while (f != 0)
     {
-      f = f();
+      f = (void* (*)()) f();
     }
   
-  /* restore the former terminal settings */
-  tcsetattr(0, TCSANOW, &old_stdin_tio);
-  tcsetattr(1, TCSANOW, &old_stdout_tio);
+#ifndef ARDUINO_TARGET
+  restore_terminal();
+#endif
 
   return 0;
 }
@@ -130,10 +209,10 @@ uint32_t hExtractTag ( uint32_t *h )
   return (*h & HEAPtagmask);
 }
 
-void setForwardBit ( uint32_t *new, uint32_t *old )
+void setForwardBit ( uint32_t *new_el, uint32_t *old )
 {
   *old = *old | HEAPforwardbiton;
-  *(old + 1) = (uint32_t) new;
+  *(old + 1) = (uint32_t) new_el;
 }
 
 uint32_t isForwardBitSet ( uint32_t tag )
@@ -187,20 +266,20 @@ uint32_t *hCopyToInactive ( uint32_t *old )
 uint32_t *hEvacuateNode ( uint32_t *old )
 {
   uint32_t tag;
-  uint32_t *new;
+  uint32_t *new_el;
 
   tag = *old;
   if (isForwardBitSet(tag))
   {
-    new = (uint32_t *) *(old + 1);
+    new_el = (uint32_t *) *(old + 1);
   }
   else
   {
-    new = hCopyToInactive (old);
-    setForwardBit (new, old);
+    new_el = hCopyToInactive (old);
+    setForwardBit (new_el, old);
   }
 
-  return new;
+  return new_el;
 }
 
 void hScavenge ( void )
@@ -461,5 +540,4 @@ uint32_t *alloc_tagged(uint32_t tag, uint32_t context_len)
 }
 
 /* End of runtime system */
-
 

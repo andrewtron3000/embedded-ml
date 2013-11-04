@@ -1,3 +1,5 @@
+
+#ifndef ARDUINO_TARGET
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -5,6 +7,7 @@
 #include <assert.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#endif
 
 #define HEAPforwardbiton 0x80000000
 #define HEAPforwardbitoff 0x7fffffff
@@ -15,8 +18,8 @@
 #define HEAPtaggedmask 0x20000000 
 #define HEAPtracedmask 0x40000000 
 
-#define NUM_STACK_VARS 10000
-#define NUM_HEAP_WORDS 10000000
+#define NUM_STACK_VARS 384
+#define NUM_HEAP_WORDS 11500
 
 #define D(x) ( *(x) )
 
@@ -35,11 +38,13 @@
 /* Arraylen : hptr -> int */
 #define Arraylen(x) ( (*x) & HEAPmask ) 
 
+#ifndef ARDUINO_TARGET
 extern uint32_t *temp;
 extern uint32_t *stackframe[];
 extern uint32_t newtag;
 extern uint32_t *exception_handler[];
 extern uint32_t storage[];
+#endif
 
 void efficient_copy(void *d, void *s, uint32_t words);
 void efficient_set(void *d, uint32_t target, uint32_t words);
