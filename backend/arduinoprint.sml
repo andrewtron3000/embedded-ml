@@ -208,6 +208,8 @@ struct
         generateRuntimeFile (Parse.root ^ "/runtime/runtime-c.h") sketch;
         generateLabelDefinitions (ordered_blocks, sketch);
         generateRuntimeFile (Parse.root ^ "/runtime/runtime-c.c") sketch;
+	generateRuntimeFile (Parse.root ^ "/ffi/ffi.c") sketch;
+	generateRuntimeFile (Parse.root ^ "/ffi/arduino_ffi.c") sketch;
         app printBlockToSketch ordered_blocks;
 	TextIO.output (sketch, "\n");
 	TextIO.output (sketch, "void setup()\n");

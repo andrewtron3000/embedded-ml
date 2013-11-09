@@ -1,0 +1,16 @@
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "arduino.uh"
+
+    fun looper (x) =
+	( arduino-digital-write (13, x mod 2) ;
+	  arduino-delay 500 ;
+	  looper (x + 1) )
+
+in
+    ( arduino-pin-mode (13, 1) ;
+      looper 0 )
+end

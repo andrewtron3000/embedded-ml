@@ -1,0 +1,23 @@
+val provide-arduino = ()
+
+(* pin * mode -> unit *)
+native arduino-pin-mode = "arduinoPinMode" : int * int -> unit
+
+(* pin * value -> unit *)
+native arduino-digital-write = "arduinoDigitalWrite" : int * int -> unit
+
+(* pin -> int *)
+native arduino-digital-read = "arduinoDigitalRead" : int -> int
+
+(* unit -> millis *)
+native arduino-millis = "arduinoMillis" : unit -> int
+
+(* unit -> micros *)
+native arduino-micros = "arduinoMicros" : unit -> int
+
+(* millis -> unit *)
+native arduino-delay = "arduinoDelay" : int -> unit
+
+(* micros -> unit *)
+native arduino-delay-microseconds = "arduinoDelayMicroseconds" : int -> unit
+

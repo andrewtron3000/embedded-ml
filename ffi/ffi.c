@@ -1,9 +1,11 @@
+#ifndef ARDUINO_TARGET
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
 
 #include "ffi.h"
 #include "runtime-c.h"
+#endif
 
 /* unboxUnsigned : hptr -> int */
 uint32_t unboxUnsigned( uint32_t *hptr )
