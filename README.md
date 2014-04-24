@@ -51,9 +51,9 @@ GNU/Linux distributions.
 Make a working directory on your machine called "mlhacking" or something similar.
 </li>
 
-<li>
+<blockquote>
 cd mlhacking
-</li>
+</blockquote>
 
 <li>
 Check out (via subversion) <a href="http://tom7.org">tom7</a>'s
