@@ -51,9 +51,9 @@ Check out (via subversion) <a href="http://tom7.org">tom7</a>'s
 sml-lib Standard ML library routines using the following command:
 </li>
 
-<li>
+<blockquote>
 svn co https://tom7misc.svn.sourceforge.net/svnroot/tom7misc/trunk/sml-lib sml-lib
-</li>
+</blockquote>
 
 <li>
 Clone the embedded-ml repository (this repository).
