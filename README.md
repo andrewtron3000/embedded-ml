@@ -68,6 +68,10 @@ svn co https://tom7misc.svn.sourceforge.net/svnroot/tom7misc/trunk/sml-lib sml-l
 Clone the embedded-ml repository (this repository).
 </li>
 
+<li>
+Change directory into the embedded-ml repository.
+</li>
+
 <blockquote>
 cd embedded-ml
 </blockquote>
@@ -86,6 +90,35 @@ make
 The compiler has been built, and it is named "mlc.exe".  
 </p>
 
+Compiling to an Arduino Due Sketch
+----------------------------------
+
+<li>
+First change directory into the tests subdirectory.
+</li>
+
+<blockquote>
+cd tests
+</blockquote>
+
+<li>
+Compile the arduino-test.uml file using the EmbeddedML compiler.
+</li>
+
+<blockquote>
+../mlc.exe -arduinobackend arduino-test.uml
+</blockquote>
+
+<li>
+This generates an Arduino compatible ".ino" file in the "output"
+directory, which you will need to load into the Arduino IDE where you
+can compile and load it to the Arduino Due.
+</li>
+
+<li>
+The resulting executable will flash the "L" LED on for 500ms and then
+off for 500ms.
+</li>
 
 Compiling To C
 --------------
@@ -225,38 +258,6 @@ You should see the following output from the program:
 SANDmark complete.<br>
 </blockquote>
 </ol>
-
-
-Compiling to an Arduino Due Sketch
-----------------------------------
-
-<li>
-First change directory into the tests subdirectory.
-</li>
-
-<blockquote>
-cd tests
-</blockquote>
-
-<li>
-Compile the arduino-test.uml file using the EmbeddedML compiler.
-</li>
-
-<blockquote>
-../mlc.exe -arduinobackend arduino-test.uml
-</blockquote>
-
-<li>
-This generates an Arduino compatible ".ino" file in the "output"
-directory, which you will need to load into the Arduino IDE where you
-can compile and load it to the Arduino Due.
-</li>
-
-<li>
-The resulting executable will flash the "L" LED on for 500ms and then
-off for 500ms.
-</li>
-
 
 Compiling to C for the GumStix
 ------------------------------
