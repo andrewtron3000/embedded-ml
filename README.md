@@ -1,3 +1,9 @@
+Embedded ML
+===========
+
+Overview
+--------
+
 <p>This project allows functional programmers to compile functional
 programs that can be run on small hobbyist class machines. This
 compiler was initially developed by the <a
@@ -23,6 +29,9 @@ developed at the <a href="http://www.frc.ri.cmu.edu">Carnegie Mellon
 University Field Robotics Center</a>.  </li>
 
 </ul>
+
+Building The Compiler
+---------------------
 
 <p>If you're interested in using the compiler, follow these
 instructions to obtain and compile it.  Building the compiler is
