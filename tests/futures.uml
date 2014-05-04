@@ -6,23 +6,25 @@ let
   import "threads.uh"
   import "futures.uh"
   import "queues.uh"
+  import "messagequeues.uh"
   import "tasks.uh"
 
   val f = future-create ()
 
-  val task-a-queue = queue-create ()
+  val task-a-mq = mq-create ()
 
   exception Command-message of (char array * int future)
-  fun task-a-rx-f m =
+  fun task-a-rx-f s m =
       case m of Command-message (a, f) =>
                 ( print [got command: [a]\n\r];
-                  future-complete f 1 )
-              | _ => ()
+                  future-complete f 1 ;
+                  s )
+              | _ => s
 
   fun send-command c =
       let
           val f = future-create ()
-          do queue-send task-a-queue (Command-message (c, f))
+          do mq-send task-a-mq (Command-message (c, f))
       in
           f
       end
@@ -69,6 +71,7 @@ let
 
   fun idle () = ( yield () ; idle () )
 in
-    ( task-create task-a-queue task-a-rx-f;
+    ( task-create task-a-mq task-a-rx-f () ;
       idle () )
 end
+

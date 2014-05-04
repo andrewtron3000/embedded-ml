@@ -24,7 +24,7 @@ fun mq-receive (mq, waiters) =
 	  | NONE =>
 	    let
 		fun susp () = letcc k in ( waiters := !waiters @ 
-						      ( (!currentPriority, (fn () => throw () to k) ) :: nil) ;
+						      ( (fn () => throw () to k) :: nil) ;
 					   resched () ) 
                                       end
             in

@@ -3,7 +3,7 @@ val require-futures = provide-futures
 val require-threads = provide-threads
 
 (* pf : (state, action, future) -> state *)
-fun activeobject-create prio pf initialstate =
+fun activeobject-create pf initialstate =
     let
         val q = mq-create ()
 
@@ -26,6 +26,6 @@ fun activeobject-create prio pf initialstate =
                   fu )
             end
     in
-        ( fork (prio, (looper initialstate)) ;
+        ( fork (looper initialstate)) ;
           dispatch )
     end

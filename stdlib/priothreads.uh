@@ -1,5 +1,5 @@
 (* Note we provide threads to maintain backwards compatibility with threads.uh *)
-val provide-threads = ()
+val provide-priothreads = ()
 
 val threads = ref nil
 val currentPriority = ref 0
