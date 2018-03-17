@@ -1,13 +1,8 @@
+#ifndef __RUNTIME_C_H__
+#define __RUNTIME_C_H__
 
-#ifndef ARDUINO_TARGET
-#include <stdio.h>
-#include <stdlib.h>
-#include <inttypes.h>
-#include <string.h>
+#include <stdint.h>
 #include <assert.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#endif
 
 #define HEAPforwardbiton 0x80000000
 #define HEAPforwardbitoff 0x7fffffff
@@ -38,13 +33,11 @@
 /* Arraylen : hptr -> int */
 #define Arraylen(x) ( (*x) & HEAPmask ) 
 
-#ifndef ARDUINO_TARGET
 extern uint32_t *temp;
 extern uint32_t *stackframe[];
 extern uint32_t newtag;
 extern uint32_t *exception_handler[];
 extern uint32_t storage[];
-#endif
 
 void efficient_copy(void *d, void *s, uint32_t words);
 void efficient_set(void *d, uint32_t target, uint32_t words);
@@ -57,5 +50,5 @@ uint32_t *alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len
 uint32_t *alloc_tagged(uint32_t tag, uint32_t context_len);
 
 void initializeHeap(void);
-uint32_t availc();
-int engine();
+
+#endif /* __RUNTIME_C_H__ */

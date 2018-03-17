@@ -58,6 +58,11 @@ struct
         (SOME ("-v",
                "Show progress")) "verbose"
 
+    val target_language = Params.param
+                              ""
+                              (SOME ("-target-language",
+                                     "Language to generate: (c, forth)")) "target_language"
+        
     val c_backend = Params.flag false
         (SOME ("-cbackend",
                "generate C output")) "c_backend"
@@ -410,7 +415,7 @@ struct
                                        else Assemble.TARG_UM,
                               obfuscate = !obfuscate_outer } out code;
 	     *)
-            (if !c_backend then (CPrint.print out includemain runtime c_asm (!cflags) (!ldflags) (!gcctarget))
+            (if !c_backend then CPrint.print_basic base c_asm (* (CPrint.print out includemain runtime c_asm (!cflags) (!ldflags) (!gcctarget)) *)
              else if !arduino_backend then (ArduinoPrint.print out includemain runtime c_asm (!cflags) (!ldflags) (!gcctarget))
              else if !fr_backend then (ForthPrint.print includemain out runtime fr_asm)
              else (vprint "Not printing anything.\n"));

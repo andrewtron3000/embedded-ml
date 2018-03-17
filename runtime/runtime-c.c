@@ -1,9 +1,6 @@
 /* Runtime system for the C backend of Humlock */
 
-#ifndef ARDUINO_TARGET
 #include "runtime-c.h"
-#include "labels.h"
-#endif
 
 #undef PRINT_HEAPSIZE
 
@@ -11,139 +8,6 @@ uint32_t *temp;
 uint32_t *stackframe[NUM_STACK_VARS];
 uint32_t newtag;
 uint32_t *exception_handler[1];
-
-/* Now define the availc function */
-#ifndef ARDUINO_TARGET
-/* returns bytes available on stdin */
-uint32_t availc()
-{
-  uint32_t bytes;
-  ioctl(0, FIONREAD, &bytes);
-  return bytes;
-}
-#else
-/* returns bytes available on stdin */
-uint32_t availc()
-{
-  return Serial.available();
-}
-
-uint32_t arduino_getc()
-{
-  static uint32_t just_returned_cr = 0;
-  uint32_t c;
-
-  /* Wait for data */
-  while (Serial.available() < 1)
-    {
-      ;
-    }
-
-  /*
-   * When we see a carriage return, send a linefeed too 
-   */
-  if (just_returned_cr == 1)
-    {
-      c = Serial.read();
-      c = 10;
-      just_returned_cr = 0;
-    }
-  else
-    {
-      c = Serial.peek();
-      if (c == 13)
-	{
-	  just_returned_cr = 1;
-	}
-      else
-	{
-	  c = Serial.read();
-	}
-    }
-
-  Serial.write(c); /* local echo */
-  return c;
-}
-
-uint32_t arduino_putc(uint32_t c)
-{
-  Serial.write(c);
-
-  /* send a carriage return after a linefeed */
-  if (c == 10)
-    {
-      Serial.write(13);
-    }
-}
-#endif
-
-#ifndef ARDUINO_TARGET
-struct termios old_stdin_tio, new_stdin_tio;
-struct termios old_stdout_tio, new_stdout_tio;
-int setup_terminal()
-{
-  /*
-   *  First change the buffering scheme related to stdio.
-   */
-  setvbuf(stdin, NULL, _IONBF, 0);
-  setvbuf(stdout, NULL, _IONBF, 0);
-
-  /*
-   *  Next change the terminal driver buffering scheme.
-   */
-  /* get the terminal settings for stdin and stdout */
-  tcgetattr(0, &old_stdin_tio);
-  tcgetattr(1, &old_stdout_tio);
-
-  /* we want to keep the old setting to restore them at the end */
-  new_stdin_tio=old_stdin_tio;
-  new_stdout_tio=old_stdout_tio;
-
-  /* disable canonical mode (buffered i/o) and local echo */
-  new_stdin_tio.c_lflag &=(~ICANON);
-  new_stdout_tio.c_lflag &=(~ICANON);
-
-  /* set the new settings immediately */
-  tcsetattr(0, TCSANOW, &new_stdin_tio);
-  tcsetattr(1, TCSANOW, &new_stdout_tio);
-
-  return 0;
-}
-
-int restore_terminal()
-{
-  /* restore the former terminal settings */
-  tcsetattr(0, TCSANOW, &old_stdin_tio);
-  tcsetattr(1, TCSANOW, &old_stdout_tio);
-
-  return 0;
-}
-#endif
-
-int engine()
-{
-  void*(*f)();
-
-#ifndef ARDUINO_TARGET
-  setup_terminal();
-#endif
-
-  /*
-   *  Now run the main program.
-   */
-  initializeHeap();
-  f = _mainentry;
-  while (f != 0)
-    {
-      f = (void* (*)()) f();
-    }
-  
-#ifndef ARDUINO_TARGET
-  restore_terminal();
-#endif
-
-  return 0;
-}
 
 void efficient_copy(void *d, void *s, uint32_t words)
 {
@@ -350,6 +214,7 @@ void hTransferStackFrame ( uint32_t context_len )
   }
 }
 
+#ifdef PRINT_HEAP_INFO
 void dumpHeapElement ( uint32_t *h )
 {
   uint32_t tag;
@@ -357,30 +222,32 @@ void dumpHeapElement ( uint32_t *h )
 
   tag = hExtractTag(h);
 
-  fprintf(stderr, "nodeaddr = %p ", h);
-  fprintf(stderr, "< hdr=%08x ", *h);
+  printf("nodeaddr = %p ", h);
+  printf("< hdr=%08x ", *h);
   switch(tag)
   {
   case HEAPuntracedmask:
-    fprintf(stderr, "value=%08x ", *(h+1));
+    printf("value=%08x ", *(h+1));
     break;
   case HEAPtaggedmask:
-    fprintf(stderr, "tag=%08x ", *(h+1));
+    printf("tag=%08x ", *(h+1));
     break;
   case HEAPtracedmask:
     len = *h & HEAPmask;
     for (i = 0; i < len; i++)
     {
-      fprintf(stderr, "addr=%08x ", *(h+1+i));
+      printf("addr=%08x ", *(h+1+i));
     }
     break;
   default:
     assert( 1 == 0 );
     break;
   }
-  fprintf(stderr, ">\n");
+  printf(">\n");
 }
+#endif
 
+#ifdef PRINT_HEAP_INFO
 void hScan ( void )
 {
   uint32_t active_idx, scan_idx;
@@ -415,13 +282,16 @@ void hScan ( void )
     scan_idx += dx;
   }
 }
+#endif
 
 void hGarbageCollect ( uint32_t context_len )
 {
   hTransferStackFrame ( context_len );
   hScavenge();
   hSwitchHeaps();
-/*  hScan(); */
+#if PRINT_HEAP_INFO
+  /*  hScan(); */
+#endif
 }
 
 void checkHeapForSpace ( uint32_t context_len, uint32_t size_in_words )
@@ -429,7 +299,7 @@ void checkHeapForSpace ( uint32_t context_len, uint32_t size_in_words )
   if (size_in_words > hWordsRemaining)
   {
     hGarbageCollect ( context_len );
-#ifdef PRINT_HEAPSIZE
+#ifdef PRINT_HEAP_INFO
     printf("Heap Size = %d\n", HEAPnextunused * sizeof(uint32_t));
 #endif
     if (size_in_words > hWordsRemaining)
