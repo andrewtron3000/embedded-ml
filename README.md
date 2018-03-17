@@ -1,8 +1,6 @@
-Embedded ML
-===========
+# Embedded ML
 
-Overview
---------
+## Overview
 
 <p>This project allows functional programmers to compile functional
 programs that can be run on small hobbyist class machines. This
@@ -30,8 +28,7 @@ University Field Robotics Center</a>.  </li>
 
 </ul>
 
-Building The Compiler
----------------------
+## Building The Compiler
 
 <p>If you're interested in using the compiler, follow these
 instructions to obtain and compile it.  Building the compiler is
@@ -90,8 +87,7 @@ make
 The compiler has been built, and it is named "mlc.exe".  
 </p>
 
-Compiling to an Arduino Due Sketch
-----------------------------------
+## Compiling to an Arduino Due Sketch
 
 <li>
 First change directory into the tests subdirectory.
@@ -120,8 +116,7 @@ The resulting executable will flash the "L" LED on for 500ms and then
 off for 500ms.
 </li>
 
-Compiling To C
---------------
+## Compiling To C
 
 <li>
 First change directories into the tests directory.  There are numerous test files that can be compiled in this directory.
@@ -140,15 +135,54 @@ Compile the sandmark.uml file using the EmbeddedML compiler.
 </blockquote>
 
 <li>
-This generates C code in the "output" directory, which you will compile and then execute:
+This generates C code in the "output" directory.  The next step is to compile this C code.  First, let's cd into the output directory. 
 </li>
 
 <blockquote>
 cd output<br>
+</blockquote>
+
+### If on a 64-bit system
+
+<li>
+The runtime system currently only supports 32-bit executables, so if you're running on a 64-bit OS, you'll need to compile as a 32-bit executable.  In Ubuntu, you can get the additional gcc tools by installing multilib:
+</li>
+ 
+<blockquote>
+sudo apt-get install gcc-multilib
+</blockquote>
+
+<li>
+You will also need to add the -m32 flag to the LDFLAGS in the makefile, and the -m32 flag to the CFLAGS in the makefile.obj.
+</li>
+
+<li>
+ In the makefile:
+</li>
+
+<blockquote>
+ LDFLAGS := -m32
+</blockquote>
+
+<li>
+ In the makefile.obj:
+</li>
+
+<blockquote>
+CFLAGS := -m32
+</blockquote>
+
+### Compiling the C Code
+
+<li>
+ Now you can compile and then execute the C code:
+</li>
+
+<blockquote>
+
 make<br>
 ./a.out<br>
 </blockquote>
-
 
 You should see the following output from the program:
 
