@@ -9,6 +9,8 @@ uint32_t *stackframe[NUM_STACK_VARS];
 uint32_t newtag;
 uint32_t *exception_handler[1];
 
+Heap_error_fn_t heap_error_callback;
+
 void efficient_copy(void *d, void *s, uint32_t words)
 {
   uint32_t i;
@@ -38,7 +40,9 @@ static uint32_t HEAPnextunused;
 static uint32_t HEAPnextunusedinactive;
 static uint32_t HEAPscavengeindex;
 
-void initializeHeap ( void )
+#define hWordsRemaining (HEAPtotalsize - HEAPnextunused)
+
+void initializeHeap ( Heap_error_fn_t f )
 {
   HEAP = HEAPbuffer;
   HEAPnextunused = 0;
@@ -46,9 +50,9 @@ void initializeHeap ( void )
   HEAPscavengeindex = 0;
   HEAPactive = 0;
   HEAPinactive = HEAPtotalsize;
+  heap_error_callback = f;
 }
 
-#define hWordsRemaining (HEAPtotalsize - HEAPnextunused)
 
 void hSwitchHeaps ( void )
 {
@@ -120,7 +124,7 @@ uint32_t *hCopyToInactive ( uint32_t *old )
     }
     break;
   default:
-    assert ( 1 == 0 );
+    heap_error_callback(HEAP_GENERAL_ERROR);
     break;
   }
 
@@ -151,7 +155,6 @@ void hScavenge ( void )
   uint32_t inactive_idx, scavenge_idx;
   uint32_t i, len, dx;
   uint32_t *scavenge_ptr;
-  uint32_t *old_ptr;
 
   inactive_idx = HEAPinactive + HEAPnextunusedinactive;
   scavenge_idx = HEAPinactive + HEAPscavengeindex;
@@ -184,7 +187,8 @@ void hScavenge ( void )
       }
       break;
     default:
-      assert( 1 == 0 );
+      dx = 0;
+      heap_error_callback(HEAP_GENERAL_ERROR);
       break;
     }
     HEAPscavengeindex += dx;
@@ -240,7 +244,7 @@ void dumpHeapElement ( uint32_t *h )
     }
     break;
   default:
-    assert( 1 == 0 );
+    heap_error_callback(HEAP_GENERAL_ERROR);
     break;
   }
   printf(">\n");
@@ -276,7 +280,7 @@ void hScan ( void )
       }
       break;
     default:
-      assert( 1 == 0 );
+      heap_errror_callback(HEAP_GENERAL_ERROR);
       break;
     }
     scan_idx += dx;
@@ -304,7 +308,7 @@ void checkHeapForSpace ( uint32_t context_len, uint32_t size_in_words )
 #endif
     if (size_in_words > hWordsRemaining)
     {
-      assert( 1 == 0 );
+      heap_error_callback(HEAP_NO_SPACE);
     }
   }
 }

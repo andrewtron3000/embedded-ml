@@ -121,6 +121,10 @@ struct
     ( TextIO.output (f, "#ifndef __" ^ appname ^ "_H__\n");
       TextIO.output (f, "#define __" ^ appname ^ "_H__\n");
       TextIO.output (f, "\n");
+      TextIO.output (f, "#ifdef __cplusplus\n");
+      TextIO.output (f, "extern \"C\" {\n");
+      TextIO.output (f, "#endif\n");
+      TextIO.output (f, "\n");
       TextIO.output (f, "typedef struct {\n");
       TextIO.output (f, "   uint32_t (*availc)();\n");
       TextIO.output (f, "   uint32_t (*getc)();\n");
@@ -131,13 +135,17 @@ struct
       TextIO.output (f, "\n");
       print_label_h f bs;
       TextIO.output (f, "\n");
+      TextIO.output (f, "#ifdef __cplusplus\n");
+      TextIO.output (f, "}\n");
+      TextIO.output (f, "#endif\n");
+      TextIO.output (f, "\n");
       TextIO.output (f, "#endif /*__" ^ appname ^ "_H__*/\n");
       TextIO.flushOut f;
       TextIO.closeOut f )
 
   fun print_io_fns f =
-      ( TextIO.output (f, "IO_functions_type io;");
-        TextIO.output (f, "");
+      ( TextIO.output (f, "IO_functions_type io;\n");
+        TextIO.output (f, "\n");
         TextIO.output (f, "void initializeIO(IO_functions_type *io_fns) {\n");
         TextIO.output (f, "   io.availc = io_fns->availc;\n");
         TextIO.output (f, "   io.getc = io_fns->getc;\n");
