@@ -1,0 +1,64 @@
+
+let
+    import "std.uh"
+    import "list.uh"
+    import "string.uh"
+    import "int.uh"
+    import "des.uh"
+    import "bigint.uh"
+(*    import "publications.uh" *)
+    import "random.uh"
+    import "growarray.uh"
+    import "io.uh"
+    import "util.uh"
+
+    val keys = 
+{|
+des-key (0xa07c632a, 0xd14ecf73),
+des-key (0x0380e70d, 0x16e1c73e),
+des-key (0x55e1b670, 0x450127b9),
+des-key (0x89561969, 0x594fd688),
+des-key (0x58f6b317, 0xdf18fe7b),
+des-key (0x52ea4288, 0xd47df04e),
+des-key (0x0b66e785, 0xeff0d38a),
+des-key (0xf74389eb, 0x1f081a2d),
+des-key (0x6f1fd2a8, 0xa9433129),
+des-key (0xbdc6d457, 0x4d4d3988),
+des-key (0xdba544e9, 0xfdb25834),
+des-key (0x8a09265a, 0xde9db7d6),
+des-key (0xd0a35a32, 0x1dca7ed0),
+des-key (0x3ba82ffc, 0xe3a6be41),
+des-key (0x92a23f55, 0xbdcacc2e),
+des-key (0xc2c1e3ff, 0x4ed7a512),
+des-key (0xee6598a6, 0x504c67b1),
+des-key (0x020c63ac, 0xfb35e841)
+|}
+    (* run the encryption loop for N cycles *)
+    val N = 10000
+
+    do print [ == SANDmark 19107 beginning stress test / benchmark.. ==\n\r]
+
+    val kr = ref 0
+    fun getkey () = 
+	let in
+	    kr := !kr + 1;
+	    if !kr >= length keys
+	    then kr := 0
+	    else ();
+	    sub(keys, 0)
+	end
+
+    fun pwp (w1, w2) = [[int-tohexstring w1].[int-tohexstring w2]]
+
+    fun loop () =
+	ford 0 N (0x12345678, 0x09ABCDEF)
+	(fn (i, ws) =>
+	 (if i mod 100 = 0 
+	  then print ([[string-pad(4, [[int-tostring ((N - i) div 100)].])] [pwp ws]\n\r])
+	  else ();
+	  des-encrypt3(getkey (), getkey (), getkey ()) ws))
+
+    val ws = loop ()
+in
+    print [SANDmark complete.\n\r]
+end
