@@ -86,7 +86,7 @@ struct
 
   structure LU = ListUtil
 
-  infixr 4 << >>
+  infixr 4 << >> **
   infixr 3 &&
   infix  2 -- ##
   infix  2 wth suchthat return guard when
@@ -103,6 +103,11 @@ struct
 
   exception Impossible 
 
+  fun **(s, p) = p ## (fn pos => raise Parse ("@" ^ Pos.toString pos ^ ": " ^ s))
+  infixr 4 **
+
+  (* as `KEYWORD -- punt "expected KEYWORD KEYWORD2" *)
+  fun punt msg _ = msg ** fail
 
   val namedstring = HumlockUtil.newstr
   val itos = Int.toString
@@ -363,11 +368,13 @@ struct
                wth (fn (v, es) =>
                     Letcc(v, combinermark Seq es)),
 
-               `LET >> call G decs -- 
-                    (fn (G,ds) => 
-                     `IN >> separate (call G exp) (`SEMICOLON) << `END
-                     wth (fn es => #1 (foldrmark Let 
-                                       (combinermark Seq es) ds))),
+               `LET >> "expected DECS after LET" **
+                (call G decs -- 
+                      (fn (G,ds) => 
+                          `IN >> "expected EXP after IN" **
+                           (separate (call G exp) (`SEMICOLON) << `END
+                                     wth (fn es => #1 (foldrmark Let 
+                                                                 (combinermark Seq es) ds))))),
 
                (* text is a little tricky because it contains
                   nested streams of tokens *)
@@ -398,20 +405,21 @@ struct
                                                 | _ => NONE)) << `RBRACE)
                   wth cryptstring,
 
-               `LBRACE >> 
-                    separate0 (label && (`EQUALS >> call G exp)) (`COMMA) 
-                       << `RBRACE wth Record,
+               `LBRACE >> "expected (LABEL = EXP,)s after LBRACE" **
+                (separate0 (label && (`EQUALS >> call G exp)) (`COMMA) 
+                           << `RBRACE wth Record),
 
                (* datafile expects a string literal next *)
-               `DATAFILE >> (any when (fn STRLIT s => SOME s
-                                               | _ => NONE))
-                                    wth (fn s =>
-                                         let
-                                             val dat = 
-                                               tryopenwith StringUtil.readfile s
-                                         in
-                                             Constant(CString dat)
-                                         end),
+               `DATAFILE >> "expected STRING LITERAL after DATAFILE" **
+                (any when (fn STRLIT s => SOME s
+                          | _ => NONE)
+                     wth (fn s =>
+                             let
+                                val dat = 
+                                    tryopenwith StringUtil.readfile s
+                             in
+                                Constant(CString dat)
+                             end)),
 
                (* encrypted datafile expects a string literal next *)
                `CRYPTFILE >> !!(any when (fn STRLIT s => SOME s
@@ -486,12 +494,13 @@ struct
       and exp G = 
           (* can only write cases with one object, though the
              ast allows multiple *)
-          !!( alt [`CASE >> call G exp && `OF && call G matching
-                      wth (fn (obj,(_,pel)) => Case([obj], 
-                                                    map (fn (p,e) =>
-                                                         ([p], e))
-                                                    pel,
-                                                    NONE)),
+          !!( alt [`CASE >> "expected EXP OF MATCHING after CASE" **
+                    (call G exp && `OF && call G matching
+                          wth (fn (obj,(_,pel)) => Case([obj], 
+                                                        map (fn (p,e) =>
+                                                                ([p], e))
+                                                            pel,
+                                                        NONE))),
                       (* generalize these *)
                    `RAISE >> call G exp wth Raise,
 
@@ -503,9 +512,12 @@ struct
 
                    (`THROW >> call G exp) && (`TO >> call G exp) wth Throw,
 
-                   `IF >> call G exp && `THEN && call G exp && `ELSE && 
-                      call G exp 
-                      wth (fn (e as (_,l),(_,(t,(_,f)))) => If (e,t,f)),
+                   `IF >> "expected EXP THEN EXP ELSE EXP after IF" **
+                    (call G exp &&
+                          `THEN && "expected EXP after THEN" ** call G exp &&
+                          `ELSE && "expected EXP after ELSE" ** call G exp
+                          wth (fn (e as (_,l),(_,(t,(_,f)))) => If (e,t,f))),
+                   
                    !!(`FN) && (separate0 (repeat1 (call G mapat) && 
                                           (`DARROW return NONE) && 
                                           call G exp) (`BAR))
@@ -590,21 +602,26 @@ struct
                  `TYPE >> id && `EQUALS && typ wth (fn (i,(_,t)) => 
                                                     Type (nil,i,t)),
                  `TYPE >> tyvars && id && `EQUALS && typ 
-                   wth (fn (tv,(i,(_,t))) => Type(tv,i,t)),
+                  wth (fn (tv,(i,(_,t))) => Type(tv,i,t)),
+                 `TYPE -- punt "expected type declaration after TYPE",
                  `TAGTYPE >> id wth Tagtype,
+                 `TAGTYPE -- punt "expected ID after TAGTYPE",
                  `NEWTAG >> expid && opt (`OF >> typ) && `IN && id
                    wth (fn (i,(to,(_,ty))) => Newtag (i, to, ty)),
                  `EXCEPTION >> expid && opt (`OF >> typ) wth Exception,
+                 `EXCEPTION -- punt "expected ID (OF TYP) after EXCEPTION",
                  `SIGNATURE >> (opt expid) && (`EQUALS >> (repeat strdec) << `END)
                      wth Signature,
-                 `DATATYPE >> 
+                 `DATATYPE >> "expected DATATYPES after DATATYPE" **
                    alt [tyvars && datatypes wth Datatype,
                         datatypes wth (fn d => Datatype(nil, d))],
                  `NATIVE >> id && `EQUALS >> (any when (fn STRLIT s => SOME s
                                               | _ => NONE))
                     -- (fn (f, s) => `COLON >> typ
                             wth (fn t => Native (f, s, t))),
-                 `FUN >> call G funs wth Fun])
+                 `FUN >> call G funs wth Fun,
+                 `FUN -- punt "expected (INLINE) FUNS after FUN"
+         ])
 
   in
       val pat = fn G => call G pat
