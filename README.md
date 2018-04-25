@@ -9,7 +9,7 @@ compiler was initially developed by the
 at Carnegie Mellon University by the folks
 who brought you the [2006 ICFP programming contest](http://www.boundvariable.org).
 This project contributes two backend code
-generators for C and Forth allow the compiler to take on a new role
+generators for C and Forth that allow the compiler to take on a new role
 for functional programmers wanting to target small machines.  The
 compiler can only currently target 32-bit machines; however it has
 been used to compile several fairly large applications, including:
