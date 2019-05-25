@@ -86,7 +86,7 @@ struct
 
   structure LU = ListUtil
 
-  infixr 4 << >> **
+  infixr 4 << >>
   infixr 3 &&
   infix  2 -- ##
   infix  2 wth suchthat return guard when
