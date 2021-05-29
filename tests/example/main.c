@@ -68,7 +68,7 @@ int restore_terminal()
   return 0;
 }
 
-int main(char **argv, int argc) {
+int main(int argc, char **argv) {
   void*(*f)();
   IO_functions_type io;
 
