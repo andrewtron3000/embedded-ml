@@ -41,7 +41,7 @@ GNU/Linux distributions.
 1. Check out (via subversion) [tom7](http://tom7.org)'s
 sml-lib Standard ML library routines using the following command:
 
-`svn co https://tom7misc.svn.sourceforge.net/svnroot/tom7misc/trunk/sml-lib sml-lib`
+`svn checkout https://svn.code.sf.net/p/tom7misc/svn/trunk/sml-lib sml-lib`
 
 1. Clone the embedded-ml repository (this repository).
 
