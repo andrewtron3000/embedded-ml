@@ -117,7 +117,7 @@ fun convert (Fix(fns, App(Label main, nil))) = let
                 in
                     COMMENT ( "got to pget" ) ::
                     UPDATE_STACK (target,
-                                  CAST("uint32_t *", convertToValue context (Var va))) ::
+                                  CAST("unsigned long *", convertToValue context (Var va))) ::
                     convertBlock(#context(v_context_info), c)
                 end
 
@@ -160,7 +160,7 @@ fun convert (Fix(fns, App(Label main, nil))) = let
                     val target = W.fromInt(#position(v_context_info))
                 in
                     COMMENT ( "got to gethandler" ) ::
-                    UPDATE_STACK (target, CAST ("uint32_t *", DEREFERENCE EXCEPTION_HANDLER_REF)) ::
+                    UPDATE_STACK (target, CAST ("unsigned long *", DEREFERENCE EXCEPTION_HANDLER_REF)) ::
                     convertBlock(#context(v_context_info), c)
                 end
 

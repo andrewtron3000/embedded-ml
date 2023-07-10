@@ -4,41 +4,41 @@
 
 #undef PRINT_HEAPSIZE
 
-uint32_t *temp;
-uint32_t *stackframe[NUM_STACK_VARS];
-uint32_t newtag;
-uint32_t *exception_handler[1];
+unsigned long *temp;
+unsigned long *stackframe[NUM_STACK_VARS];
+unsigned long newtag;
+unsigned long *exception_handler[1];
 
 Heap_error_fn_t heap_error_callback;
 
-void efficient_copy(void *d, void *s, uint32_t words)
+void efficient_copy(void *d, void *s, unsigned long words)
 {
-  uint32_t i;
+  unsigned long i;
 
   for (i=0; i<words; i++)
   {
-    *((uint32_t *)d + i) = *((uint32_t *)s + i);
+    *((unsigned long *)d + i) = *((unsigned long *)s + i);
   }
 }
 
-void efficient_set(void *d, uint32_t target, uint32_t words)
+void efficient_set(void *d, unsigned long target, unsigned long words)
 {
-  uint32_t i;
+  unsigned long i;
 
   for (i=0; i<words; i++)
   {
-    *((uint32_t *)d + i) = target;
+    *((unsigned long *)d + i) = target;
   }
 }
 
-static uint32_t HEAPtotalsize = NUM_HEAP_WORDS;
-static uint32_t HEAPbuffer[NUM_HEAP_WORDS * 2];
-static uint32_t *HEAP;
-static uint32_t HEAPactive;
-static uint32_t HEAPinactive;
-static uint32_t HEAPnextunused;
-static uint32_t HEAPnextunusedinactive;
-static uint32_t HEAPscavengeindex;
+static unsigned long HEAPtotalsize = NUM_HEAP_WORDS;
+static unsigned long HEAPbuffer[NUM_HEAP_WORDS * 2];
+static unsigned long *HEAP;
+static unsigned long HEAPactive;
+static unsigned long HEAPinactive;
+static unsigned long HEAPnextunused;
+static unsigned long HEAPnextunusedinactive;
+static unsigned long HEAPscavengeindex;
 
 #define hWordsRemaining (HEAPtotalsize - HEAPnextunused)
 
@@ -72,26 +72,26 @@ void hSwitchHeaps ( void )
   HEAPscavengeindex = 0;
 }
 
-uint32_t hExtractTag ( uint32_t *h )
+unsigned long hExtractTag ( unsigned long *h )
 {
   return (*h & HEAPtagmask);
 }
 
-void setForwardBit ( uint32_t *new_el, uint32_t *old )
+void setForwardBit ( unsigned long *new_el, unsigned long *old )
 {
   *old = *old | HEAPforwardbiton;
-  *(old + 1) = (uint32_t) new_el;
+  *(old + 1) = (unsigned long) new_el;
 }
 
-uint32_t isForwardBitSet ( uint32_t tag )
+unsigned long isForwardBitSet ( unsigned long tag )
 {
   return (tag & HEAPforwardbiton);
 }
 
-uint32_t *hCopyToInactive ( uint32_t *old )
+unsigned long *hCopyToInactive ( unsigned long *old )
 {
-  uint32_t *target;
-  uint32_t i, len;
+  unsigned long *target;
+  unsigned long i, len;
 
   target = HEAP + HEAPinactive + HEAPnextunusedinactive;
 
@@ -131,15 +131,15 @@ uint32_t *hCopyToInactive ( uint32_t *old )
   return target;
 }
 
-uint32_t *hEvacuateNode ( uint32_t *old )
+unsigned long *hEvacuateNode ( unsigned long *old )
 {
-  uint32_t tag;
-  uint32_t *new_el;
+  unsigned long tag;
+  unsigned long *new_el;
 
   tag = *old;
   if (isForwardBitSet(tag))
   {
-    new_el = (uint32_t *) *(old + 1);
+    new_el = (unsigned long *) *(old + 1);
   }
   else
   {
@@ -152,9 +152,9 @@ uint32_t *hEvacuateNode ( uint32_t *old )
 
 void hScavenge ( void )
 {
-  uint32_t inactive_idx, scavenge_idx;
-  uint32_t i, len, dx;
-  uint32_t *scavenge_ptr;
+  unsigned long inactive_idx, scavenge_idx;
+  unsigned long i, len, dx;
+  unsigned long *scavenge_ptr;
 
   inactive_idx = HEAPinactive + HEAPnextunusedinactive;
   scavenge_idx = HEAPinactive + HEAPscavengeindex;
@@ -168,9 +168,9 @@ void hScavenge ( void )
       dx = 2;
       break;
     case HEAPtaggedmask:
-      if ((uint32_t *) *(scavenge_ptr + 1) > 0)
+      if ((unsigned long *) *(scavenge_ptr + 1) > 0)
       {
-        *(scavenge_ptr + 1) = (uint32_t) hEvacuateNode ( (uint32_t *) *(scavenge_ptr + 1) );
+        *(scavenge_ptr + 1) = (unsigned long) hEvacuateNode ( (unsigned long *) *(scavenge_ptr + 1) );
       }
       dx = 2;
       break;
@@ -178,7 +178,7 @@ void hScavenge ( void )
       len = *scavenge_ptr & HEAPmask;
       for (i = 0; i < len; i++)
       {
-        *(scavenge_ptr + i + 1) = (uint32_t) hEvacuateNode ( (uint32_t*) *(scavenge_ptr + i + 1) );
+        *(scavenge_ptr + i + 1) = (unsigned long) hEvacuateNode ( (unsigned long*) *(scavenge_ptr + i + 1) );
       }
       dx = len + 1;
       if (len == 0)
@@ -198,10 +198,10 @@ void hScavenge ( void )
   }
 }
 
-void hTransferStackFrame ( uint32_t context_len )
+void hTransferStackFrame ( unsigned long context_len )
 {
-  uint32_t i;
-  uint32_t *heap_ptr;
+  unsigned long i;
+  unsigned long *heap_ptr;
 
   if (*exception_handler != 0)
   {
@@ -219,10 +219,10 @@ void hTransferStackFrame ( uint32_t context_len )
 }
 
 #ifdef PRINT_HEAP_INFO
-void dumpHeapElement ( uint32_t *h )
+void dumpHeapElement ( unsigned long *h )
 {
-  uint32_t tag;
-  uint32_t i, len;
+  unsigned long tag;
+  unsigned long i, len;
 
   tag = hExtractTag(h);
 
@@ -254,9 +254,9 @@ void dumpHeapElement ( uint32_t *h )
 #ifdef PRINT_HEAP_INFO
 void hScan ( void )
 {
-  uint32_t active_idx, scan_idx;
-  uint32_t len, dx;
-  uint32_t *scan_ptr;
+  unsigned long active_idx, scan_idx;
+  unsigned long len, dx;
+  unsigned long *scan_ptr;
 
   active_idx = HEAPactive + HEAPnextunused;
   scan_idx = HEAPactive;
@@ -288,7 +288,7 @@ void hScan ( void )
 }
 #endif
 
-void hGarbageCollect ( uint32_t context_len )
+void hGarbageCollect ( unsigned long context_len )
 {
   hTransferStackFrame ( context_len );
   hScavenge();
@@ -298,13 +298,13 @@ void hGarbageCollect ( uint32_t context_len )
 #endif
 }
 
-void checkHeapForSpace ( uint32_t context_len, uint32_t size_in_words )
+void checkHeapForSpace ( unsigned long context_len, unsigned long size_in_words )
 {
   if (size_in_words > hWordsRemaining)
   {
     hGarbageCollect ( context_len );
 #ifdef PRINT_HEAP_INFO
-    printf("Heap Size = %d\n", HEAPnextunused * sizeof(uint32_t));
+    printf("Heap Size = %d\n", HEAPnextunused * sizeof(unsigned long));
 #endif
     if (size_in_words > hWordsRemaining)
     {
@@ -313,9 +313,9 @@ void checkHeapForSpace ( uint32_t context_len, uint32_t size_in_words )
   }
 }
 
-uint32_t *hAlloc( uint32_t context_len, uint32_t size_in_words )
+unsigned long *hAlloc( unsigned long context_len, unsigned long size_in_words )
 {
-  uint32_t *new_ptr;
+  unsigned long *new_ptr;
 
   checkHeapForSpace ( context_len, size_in_words );
   new_ptr = HEAP + HEAPactive + HEAPnextunused;
@@ -323,9 +323,9 @@ uint32_t *hAlloc( uint32_t context_len, uint32_t size_in_words )
   return new_ptr;
 }
 
-uint32_t *alloc_untraced(uint32_t value, uint32_t context_len)
+unsigned long *alloc_untraced(unsigned long value, unsigned long context_len)
 {
-  uint32_t *ptr;
+  unsigned long *ptr;
 
   ptr = hAlloc(context_len, 2);
 
@@ -335,12 +335,12 @@ uint32_t *alloc_untraced(uint32_t value, uint32_t context_len)
   return ptr;
 }
 
-uint32_t *alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_len)
+unsigned long *alloc_traced_string(unsigned long traced_size_in_words, unsigned long context_len)
 {
-  uint32_t size;
-  uint32_t *ptr;
-  uint32_t i;
-  uint32_t *first_char_ptr;
+  unsigned long size;
+  unsigned long *ptr;
+  unsigned long i;
+  unsigned long *first_char_ptr;
 
   size = traced_size_in_words;
 
@@ -367,7 +367,7 @@ uint32_t *alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_le
       *(first_char_ptr + (i * 2)) = 0;
 
       /* then assign the character's heap node into the string heap node */
-      *(ptr + i + 1) = (uint32_t) (first_char_ptr + (i * 2));
+      *(ptr + i + 1) = (unsigned long) (first_char_ptr + (i * 2));
     }
   }
   else
@@ -379,10 +379,10 @@ uint32_t *alloc_traced_string(uint32_t traced_size_in_words, uint32_t context_le
   return ptr;
 }
 
-uint32_t *alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len)
+unsigned long *alloc_traced_array(unsigned long traced_size_in_words, unsigned long context_len)
 {
-  uint32_t size;
-  uint32_t *ptr;
+  unsigned long size;
+  unsigned long *ptr;
 
   /* one extra word for the header */
   if (traced_size_in_words > 0)
@@ -402,9 +402,9 @@ uint32_t *alloc_traced_array(uint32_t traced_size_in_words, uint32_t context_len
   return ptr;
 }
 
-uint32_t *alloc_tagged(uint32_t tag, uint32_t context_len)
+unsigned long *alloc_tagged(unsigned long tag, unsigned long context_len)
 {
-  uint32_t *ptr;
+  unsigned long *ptr;
 
   ptr = hAlloc(context_len, 2);
 

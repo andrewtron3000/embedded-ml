@@ -60,7 +60,7 @@ struct
       | NOT l => "(~" ^ (asm_to_string l) ^ ")"
       | LSHIFT (l, r) => "(" ^ (asm_to_string l) ^ " << " ^ (asm_to_string r) ^ ")"
       | RSHIFT (l, r) => "(" ^ (asm_to_string l) ^ " >> " ^ (asm_to_string r) ^ ")"
-      | LABEL_AS_VALUE l => "(uint32_t) " ^ (asm_to_string l) 
+      | LABEL_AS_VALUE l => "(unsigned long) " ^ (asm_to_string l) 
       | TEMP_VARIABLE => "temp" 
       | GOTO_LABEL i => "return " ^ (asm_to_string i) ^ (asm_to_string SEPARATOR)
       | GOTO_ADDRESS i => "return (void (*)())" ^ (asm_to_string i) ^ (asm_to_string SEPARATOR)
@@ -84,7 +84,7 @@ struct
       | SEPARATOR => ";\n"
       | SET (d, t, b) => "efficient_set(" ^
                          (asm_to_string d) ^ ", " ^
-                         "(uint32_t) " ^ (asm_to_string t) ^ ", " ^
+                         "(unsigned long) " ^ (asm_to_string t) ^ ", " ^
                          (asm_to_string b) ^ ")"
       | COPY (d, s, b) => "efficient_copy(" ^
                           (asm_to_string d) ^ ", " ^
@@ -126,9 +126,9 @@ struct
       TextIO.output (f, "#endif\n");
       TextIO.output (f, "\n");
       TextIO.output (f, "typedef struct {\n");
-      TextIO.output (f, "   uint32_t (*availc)();\n");
-      TextIO.output (f, "   uint32_t (*getc)();\n");
-      TextIO.output (f, "   uint32_t (*putc)(uint32_t);\n");
+      TextIO.output (f, "   unsigned long (*availc)();\n");
+      TextIO.output (f, "   unsigned long (*getc)();\n");
+      TextIO.output (f, "   unsigned long (*putc)(unsigned long);\n");
       TextIO.output (f, "} IO_functions_type;\n");
       TextIO.output (f, "\n");
       TextIO.output (f, "void initializeIO(IO_functions_type *io_fns);\n");

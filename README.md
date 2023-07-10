@@ -2,6 +2,8 @@
 
 ## Overview
 
+**As of July 2023, EmbeddedML generates C code that works on both 32-bit and 64-bit architectures.  See the "Compiling to C" code example below.**
+
 This project allows functional programmers to compile functional
 programs that can be run on small hobbyist class machines. This
 compiler was initially developed by the 
@@ -61,9 +63,7 @@ First change directory into the `tests/example` subdirectory.
 
 `cd tests/example`
 
-In this example directory, you'll find a Makefile.  The makefile first compiles the sandmark.uml file into a set of C files including sandmark.c, sandmark.h and the C runtime.  Then the makefile compiles these C files and uses the *-m32* flag to compile as a 32-bit executable.  The C runtime currently only supports 32-bit applications.  If you're running on a 64-bit OS, you'll need to configure gcc with the ability to generate 32-bit executables.  In Ubuntu, you can get the additional gcc tools by installing multilib:
- 
-`sudo apt-get install gcc-multilib`
+In this example directory, you'll find a Makefile.  The makefile first compiles the sandmark.uml file into a set of C files including sandmark.c, sandmark.h and the C runtime.  Then the makefile compiles these C files.
  
 The main.c file contains the `main` function for the application.  It also defines several functions needed by the C runtime.  These include the following functions:
 

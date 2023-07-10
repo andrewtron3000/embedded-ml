@@ -9,17 +9,17 @@
 #include "runtime-c.h"
 #include "sandmark.h"
 
-uint32_t my_availc() {
-  uint32_t bytes;
+unsigned long my_availc() {
+  unsigned long bytes;
   ioctl(0, FIONREAD, &bytes);
   return bytes;
 }
 
-uint32_t my_getc() {
+unsigned long my_getc() {
   return getc(stdin);
 }
 
-uint32_t my_putc(uint32_t x) {
+unsigned long my_putc(unsigned long x) {
   return putc(x, stdout);
 }
 
